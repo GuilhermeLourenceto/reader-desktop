@@ -21,13 +21,13 @@ function validateNetworkUrl(value, { allowPrivate = false } = {}) {
   const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
   if (!host) throw new Error('Host inválido.');
   if (!allowPrivate) {
-    const localName =
+    const ipVersion = isIP(host);
+    const localName = !ipVersion && (
       !host.includes('.') ||
       host === 'localhost' ||
       ['.localhost', '.local', '.lan', '.internal', '.home.arpa'].some(suffix =>
-        host.endsWith(suffix),
-      );
-    const ipVersion = isIP(host);
+        host.endsWith(suffix)
+    );
     if (localName || (ipVersion && denied.check(host, ipVersion === 4 ? 'ipv4' : 'ipv6')))
       throw new Error('Fontes não podem acessar endereços locais ou privados.');
   }
