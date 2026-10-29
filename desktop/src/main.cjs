@@ -373,7 +373,12 @@ app
     register('source-login', async id => {
       const plugin = state.plugins.find(item => item.id === id);
       if (!plugin) throw new Error('Fonte não instalada.');
-      const loginUrl = validateNetworkUrl(plugin.site, { allowPrivate: !app.isPackaged });
+      const rawSite = String(plugin.site || '').trim();
+      if (!rawSite) throw new Error('Esta fonte não informou o endereço do site para login.');
+      const loginUrl = validateNetworkUrl(
+        /^https?:\/\//i.test(rawSite) ? rawSite : 'https://' + rawSite,
+        { allowPrivate: !app.isPackaged },
+      );
       if (new URL(loginUrl).protocol !== 'https:' && app.isPackaged)
         throw new Error('Login requer um site HTTPS.');
       const loginWindow = new BrowserWindow({
