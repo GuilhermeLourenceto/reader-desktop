@@ -90,7 +90,7 @@ jobs:
       - name: Test interactive source login and OAuth popup
         run: npx electron test/source-login-e2e.cjs
         timeout-minutes: 2
-      - name: Test nine independent sources
+      - name: Test 16 independent sources
         run: node test/source-matrix.cjs
         timeout-minutes: 15
       - uses: actions/upload-artifact@v4
