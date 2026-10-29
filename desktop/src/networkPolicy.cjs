@@ -26,8 +26,8 @@ function validateNetworkUrl(value, { allowPrivate = false } = {}) {
       !host.includes('.') ||
       host === 'localhost' ||
       ['.localhost', '.local', '.lan', '.internal', '.home.arpa'].some(suffix =>
-        host.endsWith(suffix)
-    );
+        host.endsWith(suffix),
+    ));
     if (localName || (ipVersion && denied.check(host, ipVersion === 4 ? 'ipv4' : 'ipv6')))
       throw new Error('Fontes não podem acessar endereços locais ou privados.');
   }
