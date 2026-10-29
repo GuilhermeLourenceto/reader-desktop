@@ -41,7 +41,7 @@ async function handleRPC(entry, message) {
         throw new Error('Requisição inválida da fonte.');
       entry.requests.add(second.requestId);
       try {
-        return await window.desktop.request(first, second);
+        return await window.desktop.request(first, { ...second, sourceId: entry.id });
       } finally {
         entry.requests.delete(second.requestId);
       }
