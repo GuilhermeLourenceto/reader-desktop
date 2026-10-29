@@ -5,6 +5,7 @@ const {
   dialog,
   protocol,
   net,
+  session,
   Menu,
 } = require('electron');
 const fs = require('node:fs');
@@ -18,6 +19,7 @@ const {
 } = require('./storage.cjs');
 const { emptyState, safePath } = require('./backup.cjs');
 const { backupJob } = require('./backupJobs.cjs');
+const { validateNetworkUrl } = require('./networkPolicy.cjs');
 const primaryInstance = !app.isPackaged || app.requestSingleInstanceLock();
 if (!primaryInstance) app.quit();
 app.on('second-instance', () => {
@@ -353,8 +355,57 @@ app
       else throw new Error('Operação inválida');
       commit({ ...state, files });
     });
-    const requests = new (require('./request.cjs').RequestPool)(net);
+    const sourceSessions = new Map();
+    const sourceSession = id => {
+      if (typeof id !== 'string' || !/^[\\w.-]+$/.test(id) ||
+          ['.', '..', '__proto__', 'constructor', 'prototype'].includes(id))
+        throw new Error('Identificador de fonte inválido.');
+      if (!sourceSessions.has(id))
+        sourceSessions.set(id, session.fromPartition('persist:lnreader-source-' + id));
+      return sourceSessions.get(id);
+    };
+    const requests = new (require('./request.cjs').RequestPool)(net, 8, 128, {
+      // Allow local fixture servers only in unpackaged test builds.
+      allowPrivate: !app.isPackaged,
+      sessionForSource: id => id ? sourceSession(id) : undefined,
+    });
     register('request', (url, init) => requests.run(url, init));
+    register('source-login', async id => {
+      const plugin = state.plugins.find(item => item.id === id);
+      if (!plugin) throw new Error('Fonte não instalada.');
+      const loginUrl = validateNetworkUrl(plugin.site, { allowPrivate: !app.isPackaged });
+      if (new URL(loginUrl).protocol !== 'https:' && app.isPackaged)
+        throw new Error('Login requer um site HTTPS.');
+      const loginWindow = new BrowserWindow({
+        parent: mainWindow,
+        width: 1050,
+        height: 760,
+        minWidth: 600,
+        minHeight: 480,
+        title: 'Entrar na fonte: ' + plugin.name,
+        autoHideMenuBar: true,
+        webPreferences: {
+          session: sourceSession(id),
+          contextIsolation: true,
+          nodeIntegration: false,
+          sandbox: true,
+        },
+      });
+      loginWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+      loginWindow.webContents.on('will-navigate', (event, url) => {
+        try { validateNetworkUrl(url); }
+        catch { event.preventDefault(); }
+      });
+      loginWindow.webContents.session.setPermissionRequestHandler(
+        (_contents, _permission, callback) => callback(false),
+      );
+      try { await loginWindow.loadURL(loginUrl); }
+      catch (error) {
+        if (!loginWindow.isDestroyed()) loginWindow.close();
+        throw error;
+      }
+      return true;
+    });
     register('cancel-request', id => requests.cancel(id));
     register('cancel-requests', () => requests.cancelAll());
     mainWindow.webContents.on('destroyed', () => requests.cancelAll());
