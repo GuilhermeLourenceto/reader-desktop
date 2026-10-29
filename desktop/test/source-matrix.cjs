@@ -14,7 +14,7 @@ const cases = [
   { id: 'royalroad', lang: 'en', read: true },
   { id: 'scribblehub', lang: 'en', read: false },
   { id: 'novelfull', lang: 'en', read: false },
-  { id: 'hasutl', lang: 'es', read: false },
+  { id: 'HasuTL', lang: 'es', read: false },
   { id: 'noveldeglace', lang: 'fr', read: false },
 ];
 const dir = path.join(__dirname, '../.tmp/source-matrix');
@@ -22,8 +22,10 @@ fs.mkdirSync(dir, { recursive: true });
 const sourceTest = path.join(__dirname, 'repository-smoke.cjs');
 function classification(log, ok) {
   if (ok) return 'PASS';
-  if (/cloudflare|captcha|challenge|turnstile|cf-chl|just a moment|403 forbidden/i.test(log))
+  if (/cloudflare|captcha|challenge|turnstile|cf-chl|just a moment|403 forbidden|\b403\b|try to open in webview/i.test(log))
     return 'AUTH_OR_CHALLENGE';
+  if (/Nenhuma novel encontrada|Nenhum resultado encontrado/i.test(log))
+    return 'EMPTY_LIST_INCONCLUSIVE';
   if (/ERR_NAME_NOT_RESOLVED|ENOTFOUND|ERR_CONNECTION|ERR_SSL|ECONNREFUSED|TLS|certificat|network.*fail|HTTP 5\d\d/i.test(log))
     return 'SITE_OR_NETWORK_UNAVAILABLE';
   if (/timed out|timeout|demorou|ERR_TIMED_OUT/i.test(log))
