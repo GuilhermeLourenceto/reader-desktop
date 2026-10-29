@@ -10,12 +10,12 @@ const cases = [
   { id: 'centralnovel', lang: 'pt', read: true },
   { id: 'kiniga', lang: 'pt', read: false },
   { id: 'betternovels', lang: 'pt', read: false },
-  { id: 'novelmania.com.br', lang: 'pt', read: false },
+  { id: 'novelmania.com.br', lang: 'pt', read: true },
   { id: 'royalroad', lang: 'en', read: true },
   { id: 'scribblehub', lang: 'en', read: false },
-  { id: 'novelfull', lang: 'en', read: false },
-  { id: 'HasuTL', lang: 'es', read: false },
-  { id: 'noveldeglace', lang: 'fr', read: false },
+  { id: 'novelfull', lang: 'en', read: true },
+  { id: 'HasuTL', lang: 'es', read: true },
+  { id: 'noveldeglace', lang: 'fr', read: true },
 ];
 const dir = path.join(__dirname, '../.tmp/source-matrix');
 fs.mkdirSync(dir, { recursive: true });
@@ -28,6 +28,8 @@ function classification(log, ok) {
     return 'EMPTY_LIST_INCONCLUSIVE';
   if (/ERR_NAME_NOT_RESOLVED|ENOTFOUND|ERR_CONNECTION|ERR_SSL|ECONNREFUSED|TLS|certificat|network.*fail|HTTP 5\d\d/i.test(log))
     return 'SITE_OR_NETWORK_UNAVAILABLE';
+  if (/BROWSE PASS:/i.test(log))
+    return 'PARTIAL_READ_FAILED';
   if (/timed out|timeout|demorou|ERR_TIMED_OUT/i.test(log))
     return 'TIMEOUT_INCONCLUSIVE';
   if (/HTTP 40[145]|not found|404/i.test(log))
