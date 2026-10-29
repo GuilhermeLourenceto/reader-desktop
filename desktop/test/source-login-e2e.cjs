@@ -70,7 +70,7 @@ async function main() {
       } else if (!loginWindow) {
         loginWindow = window;
         window.webContents.once('did-finish-load', () => {
-          void window.webContents.executeJavaScript("document.getElementById('login').click()")
+          void window.webContents.executeJavaScript("document.getElementById('login').click()", true)
             .catch(reject);
         });
       } else if (!popup) {
