@@ -6,7 +6,7 @@ function requestHTTP(
   net,
   url,
   init = {},
-  { signal, timeoutMs = 30000, maxBytes = 20 * 1024 * 1024, allowPrivate = false, requestSession } = {},
+  { signal, timeoutMs = 38000, maxBytes = 20 * 1024 * 1024, allowPrivate = false, requestSession } = {},
 ) {
   return new Promise((resolve, reject) => {
     let finalUrl;
@@ -51,7 +51,7 @@ function requestHTTP(
       timer = setTimeout(
         () =>
           finish(
-            new Error('A fonte demorou mais de 30 segundos para responder.'),
+            new Error('A fonte demorou mais de 38 segundos para responder.'),
           ),
         timeoutMs,
       );
@@ -105,7 +105,14 @@ function requestHTTP(
           });
         });
       });
-      for (const [name, value] of Object.entries(init.headers || {})) {
+      // Keep the same browser identity used during interactive login, unless
+      // the original extension explicitly sets its own User-Agent.
+      const headers = init.headers || {};
+      if (requestSession && !Object.keys(headers).some(name => name.toLowerCase() === 'user-agent')) {
+        const userAgent = requestSession.getUserAgent?.();
+        if (userAgent) request.setHeader('User-Agent', userAgent);
+      }
+      for (const [name, value] of Object.entries(headers)) {
         if (
           !['connection', 'host', 'content-length', 'accept-encoding'].includes(
             name.toLowerCase(),
@@ -152,7 +159,7 @@ class RequestPool {
         controller: new AbortController(),
         started: false,
       };
-      entry.timer = setTimeout(() => this.cancel(id), 30000);
+      entry.timer = setTimeout(() => this.cancel(id), 38000);
       this.entries.set(id, entry);
       this.queue.push(entry);
       this.drain();
