@@ -65,3 +65,31 @@ jobs:
             desktop/release/*.exe
             desktop/release/*.AppImage
             desktop/release/*.deb
+
+  source-matrix:
+    name: Real plugin sources (diagnostic only)
+    if: github.ref_name == 'seguranca-e-estabilidade'
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run setup
+      - run: npm run build
+      - name: Test nine independent sources
+        run: node test/source-matrix.cjs
+        timeout-minutes: 15
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lnreader-source-matrix
+          path: desktop/.tmp/source-matrix/
