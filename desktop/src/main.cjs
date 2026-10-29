@@ -357,7 +357,7 @@ app
     });
     const sourceSessions = new Map();
     const sourceSession = id => {
-      if (typeof id !== 'string' || !/^[\\w.-]+$/.test(id) ||
+      if (typeof id !== 'string' || !/^[a-zA-Z0-9_.-]+$/.test(id) ||
           ['.', '..', '__proto__', 'constructor', 'prototype'].includes(id))
         throw new Error('Identificador de fonte inválido.');
       if (!sourceSessions.has(id))
