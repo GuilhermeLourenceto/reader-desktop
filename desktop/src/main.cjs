@@ -409,10 +409,17 @@ app
         }
       };
       loginWindow.webContents.setWindowOpenHandler(({ url }) => {
-        if (
-          loginPopups.size >= 3 ||
-          (url !== 'about:blank' && !validLoginNavigation(url))
-        ) return { action: 'deny' };
+        const publicUrl = url !== 'about:blank' && validLoginNavigation(url)
+          ? new URL(url) : null;
+        // Public external identity providers may open HTTPS popups; legacy
+        // HTTP popups are permitted only at the original source's origin.
+        const allowed = url === 'about:blank' ||
+          (publicUrl && (
+            publicUrl.protocol === 'https:' ||
+            publicUrl.origin === new URL(loginUrl).origin
+          ));
+        if (loginPopups.size >= 3 || !allowed)
+          return { action: 'deny' };
         return {
           action: 'allow',
           overrideBrowserWindowOptions: {
