@@ -1,0 +1,103 @@
+import React, { useState } from 'react';
+import { chapterPercent } from './domain.cjs';
+export default function History({
+  novels,
+  busy,
+  onRead,
+  onRemove,
+  Icon,
+  cover,
+}) {
+  const [query, setQuery] = useState('');
+  const entries = novels
+    .flatMap(novel =>
+      novel.chapters
+        .filter(chapter => chapter.readTime)
+        .map(chapter => ({ novel, chapter })),
+    )
+    .sort(
+      (a, b) => Date.parse(b.chapter.readTime) - Date.parse(a.chapter.readTime),
+    );
+  const filtered = entries.filter(({ novel, chapter }) =>
+    `${novel.name} ${chapter.name}`.toLowerCase().includes(query.toLowerCase()),
+  );
+  return (
+    <div className="history-page">
+      <header>
+        <h2>Histórico</h2>
+        <button
+          disabled={busy || !entries.length}
+          onClick={() => {
+            if (
+              window.confirm(
+                'Remover todo o histórico? Os downloads e a marcação de lido serão mantidos.',
+              )
+            )
+              onRemove(
+                entries.map(({ novel, chapter }) => ({
+                  novelId: novel.id,
+                  chapterId: chapter.id,
+                })),
+              );
+          }}
+        >
+          <Icon name="trash" />
+          Limpar histórico
+        </button>
+      </header>
+      <input
+        aria-label="Pesquisar histórico"
+        placeholder="Pesquisar obra ou capítulo"
+        value={query}
+        onChange={event => setQuery(event.target.value)}
+      />
+      {!filtered.length && (
+        <div className="empty">
+          <Icon name="history" />
+          <h3>Nenhuma leitura no histórico</h3>
+          <p>Os capítulos abertos aparecem aqui, exceto no modo anônimo.</p>
+        </div>
+      )}
+      {filtered.map(({ novel, chapter }) => (
+        <div className="history-row" key={`${novel.id}:${chapter.id}`}>
+          <button
+            className="history-open"
+            disabled={busy}
+            onClick={() => onRead(novel, chapter)}
+          >
+            <span className="history-cover">
+              {cover(novel) ? (
+                <img
+                  src={cover(novel)}
+                  alt={`Capa de ${novel.name}`}
+                  loading="lazy"
+                />
+              ) : (
+                <Icon name="book" />
+              )}
+            </span>
+            <span className="history-entry-copy">
+              <strong>{novel.name}</strong>
+              <span>{chapter.name}</span>
+              <small>
+                {new Date(chapter.readTime).toLocaleString('pt-BR')} ·{' '}
+                {Math.round(chapterPercent(chapter))}%
+              </small>
+            </span>
+          </button>
+          <button
+            className="icon-button"
+            aria-label={`Remover do histórico: ${chapter.name}`}
+            title="Remover do histórico"
+            disabled={busy}
+            onClick={() =>
+              onRemove([{ novelId: novel.id, chapterId: chapter.id }])
+            }
+          >
+            <Icon name="trash" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}

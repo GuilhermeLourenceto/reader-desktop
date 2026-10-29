@@ -1,0 +1,67 @@
+name: Desktop builds
+on:
+  workflow_dispatch:
+    inputs:
+      include_linux:
+        description: 'Também compilar e testar Linux (port ainda pendente de validação)'
+        type: boolean
+        default: false
+  push:
+    paths:
+      - 'desktop/**'
+      - 'src/plugins/**'
+      - 'src/services/backup/types.ts'
+      - 'src/services/backup/options.ts'
+      - '.github/workflows/desktop.yml'
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - 'src/plugins/**'
+      - 'src/services/backup/types.ts'
+      - 'src/services/backup/options.ts'
+      - '.github/workflows/desktop.yml'
+permissions:
+  contents: read
+jobs:
+  package:
+    strategy:
+      matrix:
+        os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.include_linux && '["windows-latest","ubuntu-latest"]' || '["windows-latest"]') }}
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run setup
+      - run: npm run build
+      - run: npm test
+      - if: runner.os == 'Windows'
+        run: npm run test:smoke
+      - if: runner.os == 'Windows'
+        run: npm run test:pagination
+      - if: runner.os == 'Windows'
+        run: npm run test:reader
+      - if: runner.os == 'Linux'
+        run: xvfb-run -a npx electron --no-sandbox test/smoke.cjs --visual-preview
+      - if: runner.os == 'Linux'
+        run: xvfb-run -a npx electron --no-sandbox test/pagination-smoke.cjs --visual-preview
+      - if: runner.os == 'Linux'
+        run: xvfb-run -a npx electron --no-sandbox test/reader-rules-smoke.cjs --visual-preview
+      - if: runner.os == 'Windows'
+        run: npm run dist:win
+      - if: runner.os == 'Linux'
+        run: npm run dist:linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lnreader-desktop-${{ runner.os }}
+          path: |
+            desktop/release/*.exe
+            desktop/release/*.AppImage
+            desktop/release/*.deb

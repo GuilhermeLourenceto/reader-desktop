@@ -1,0 +1,70 @@
+{
+  "name": "lnreader-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LNReader for Windows and Linux",
+  "author": "LNReader contributors",
+  "license": "MIT",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "setup": "node node_modules/electron/install.js",
+    "build": "node build.mjs",
+    "start": "npm run setup && npm run build && electron .",
+    "test:smoke": "electron test/smoke.cjs --visual-preview",
+    "test:pagination": "electron test/pagination-smoke.cjs --visual-preview",
+    "test:reader": "electron test/reader-rules-smoke.cjs --visual-preview",
+    "test": "node --test test/*.test.cjs",
+    "dist:win": "npm run build && electron-builder --win nsis",
+    "dist:linux": "npm run build && electron-builder --linux AppImage deb"
+  },
+  "dependencies": {
+    "@noble/ciphers": "^2.2.0",
+    "adm-zip": "^0.5.16",
+    "buffer": "^6.0.3",
+    "cheerio": "1.0.0-rc.12",
+    "dayjs": "^1.11.21",
+    "htmlparser2": "^12.0.0",
+    "lodash-es": "^4.18.1",
+    "protobufjs": "^8.7.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "sanitize-html": "^2.17.6",
+    "urlencode": "^2.0.0"
+  },
+  "devDependencies": {
+    "electron": "^42.0.0",
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.25.12"
+  },
+  "build": {
+    "appId": "app.lnreader.desktop",
+    "productName": "LNReader Desktop",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "perMachine": true,
+      "include": "build/installer.nsh",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Office"
+    }
+  }
+}
