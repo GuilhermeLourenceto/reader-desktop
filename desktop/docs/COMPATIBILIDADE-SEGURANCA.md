@@ -11,7 +11,7 @@ Reduzir bloqueios desnecessários de fontes legítimas sem voltar ao modelo ante
 - Requisições associadas a uma fonte usam a **mesma sessão persistente de cookies** da janela de login dessa fonte.
 - Se a extensão não definir um User-Agent, a ponte HTTP utiliza o **User-Agent dessa sessão**. Um User-Agent explícito da extensão continua tendo prioridade.
 - Tempo limite HTTP aumentado moderadamente de **30 para 38 segundos**. O limite de execução das operações da fonte continua em **45 segundos**.
-- A janela interativa permite até **três janelas secundárias de autenticação** para sites e provedores HTTP(S) públicos, incluindo `about:blank` inicial que scripts de login podem usar. Janelas secundárias não têm Node.js, preload ou permissões do aplicativo e são fechadas junto com o login.
+- A janela interativa permite até **três janelas secundárias de autenticação** para provedores externos HTTPS e para o próprio site original, incluindo `about:blank` inicial que scripts de login podem usar. Janelas secundárias não têm Node.js, preload ou permissões do aplicativo e são fechadas junto com o login.
 - A autenticação ocorre somente após uma ação do usuário. A interface oferece uma opção para verificar o acesso quando a fonte comunica HTTP 403/Cloudflare e tenta carregar novamente depois de fechar a janela.
 
 ### Proteções mantidas
