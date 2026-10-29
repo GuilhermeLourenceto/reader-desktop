@@ -157,3 +157,29 @@ test('browser session user agent is reused for site requests without overriding 
   reply(1);
   await requestTwo;
 });
+
+test('session lookup failure rejects just one source without freezing other sources', async () => {
+  const { net, requests, respond } = fixture();
+  const pool = new RequestPool(net, 1, 3, {
+    sessionForSource: sourceId => {
+      if (sourceId === 'invalid-source') throw new Error('Sessão inválida da fonte');
+      return undefined;
+    },
+  });
+  const blocked = pool.run('https://example.test/bad', {
+    sourceId: 'invalid-source',
+    requestId: 'invalid',
+  });
+  const healthy = pool.run('https://example.test/good', {
+    sourceId: 'healthy-source',
+    requestId: 'healthy',
+  });
+  await assert.rejects(blocked, /Sessão inválida/);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(requests.length, 1, 'queue continues with the healthy source');
+  respond(0);
+  await healthy;
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(pool.entries.size, 0);
+  assert.equal(pool.active, 0);
+});
