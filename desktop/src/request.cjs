@@ -2,6 +2,24 @@
 // plugins use the final URL to detect login/captcha redirects, so track it
 // through ClientRequest rather than pretending it is the original URL.
 const { validateNetworkUrl } = require('./networkPolicy.cjs');
+
+// Only used by the isolated CI source-matrix runs. Never log URLs (which can
+// contain tokens), cookies or response bodies.
+const diagnose = (url, sourceId, status, bytes, challenge = false) => {
+  if (process.env.LNREADER_SOURCE_DIAGNOSTICS !== '1') return;
+  let host = 'invalid-host';
+  try { host = new URL(url).hostname; } catch {}
+  console.info(
+    '[source-http]',
+    JSON.stringify({
+      source: typeof sourceId === 'string' ? sourceId : 'repository',
+      host,
+      status,
+      bytes,
+      challenge,
+    }),
+  );
+};
 function requestHTTP(
   net,
   url,
@@ -28,6 +46,7 @@ function requestHTTP(
       signal?.removeEventListener('abort', abort);
       chunks.length = 0;
       if (error) {
+        diagnose(finalUrl || url, init.sourceId, 'ERROR:' + (error.code || error.name || 'unknown'), 0);
         reject(error);
         try {
           request?.abort();
@@ -90,6 +109,10 @@ function requestHTTP(
         );
         response.on('end', () => {
           if (settled) return;
+          const prefix = Buffer.concat(chunks.slice(0, 2)).subarray(0, 4096).toString('utf8');
+          const challenge = /<title[^>]*>[^<]*(just a moment|bot verification|checking your browser|attention required)/i.test(prefix) ||
+            /cf-chl-|challenge-platform/i.test(prefix);
+          diagnose(finalUrl, init.sourceId, response.statusCode, size, challenge);
           finish(null, {
             status: response.statusCode,
             statusText: response.statusMessage || '',
