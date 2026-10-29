@@ -6,6 +6,21 @@ Avaliação da branch `seguranca-e-estabilidade` em 29/10/2026.
 
 Reduzir bloqueios desnecessários de fontes legítimas sem voltar ao modelo anterior, no qual fontes tinham uma sessão HTTP compartilhada.
 
+## Referência de segurança: LNReader Android
+
+**Meta definida pelo mantenedor:** oferecer um nível prático de segurança comparável ao LNReader Android, privilegiando a compatibilidade com as fontes originais. Isso não equivale a copiar literalmente suas permissões ou remover proteções necessárias ao Electron.
+
+No LNReader Android, o `src/plugins/pluginManager.ts` avalia as extensões JavaScript com `Function('require', 'module', ...)`, usando um `require` controlado; o isolamento nativo do Android protege o **aplicativo** em relação a outros aplicativos, mas não cria automaticamente um processo isolado por extensão. Portanto, a comparação precisa considerar as diferenças de plataforma.
+
+**Política para o Desktop:**
+- Preferir ajustes de compatibilidade a novos bloqueios, desde que não exponham os dados de outras fontes, a biblioteca pessoal ou o sistema operacional.
+- Preservar sandbox do Electron, `contextIsolation`, Node.js desabilitado no conteúdo remoto, IPC validado e execução das fontes separada da interface.
+- Permitir sites públicos, CDNs e provedores legítimos de login; compartilhar cookies apenas entre a janela de login e as requisições **da mesma fonte**.
+- Não desativar TLS, não permitir acesso arbitrário ao disco ou rede local, nem executar extensões sem fronteira de confiança no processo principal.
+- Se uma medida de segurança quebrar uma fonte legítima, ajustar a regra específica e adicionar teste de regressão; não liberar indiscriminadamente todas as fontes.
+
+**Critério de aceite:** compatibilidade com extensões oficiais em patamar semelhante ao Android, sem regressões verificadas de leitura e com controles desktop proporcionais. Não afirmar que a segurança é idêntica: as superfícies de ataque de Android e Electron são diferentes.
+
 ### Ajustes de compatibilidade
 
 - Requisições associadas a uma fonte usam a **mesma sessão persistente de cookies** da janela de login dessa fonte.
