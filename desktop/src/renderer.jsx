@@ -1972,7 +1972,7 @@ function App() {
                           title="Abrir uma janela segura para autenticação nesta fonte"
                           onClick={() => run(async () => {
                             await window.desktop.sourceLogin(plugin.id);
-                            setNotice('Janela de login aberta. Após entrar, feche a janela e tente a fonte novamente.');
+                            setNotice('Janela fechada. Se a verificação foi concluída, abra a fonte novamente.');
                           })}
                         >
                           Entrar
@@ -2088,6 +2088,22 @@ function App() {
             <div className="row source-toolbar">
               <button
                 disabled={busy}
+                title="Abra o site da fonte para login ou verificação de segurança e tente novamente ao fechar"
+                onClick={() =>
+                  run(async () => {
+                    await window.desktop.sourceLogin(source);
+                    await browse(
+                      source,
+                      browseSession.current?.term || '',
+                      browseSession.current?.options || sourceOptions,
+                    );
+                  })
+                }
+              >
+                Abrir site / login
+              </button>
+              <button
+                disabled={busy}
                 aria-pressed={!sourceOptions.showLatestNovels}
                 onClick={() =>
                   run(() =>
@@ -2195,6 +2211,25 @@ function App() {
                   >
                     Tentar novamente
                   </button>
+                  {/(403|captcha|cloudflare|webview|challenge|verifica)/i.test(
+                    pageError,
+                  ) && (
+                    <button
+                      disabled={busy || loadingMore}
+                      onClick={() =>
+                        run(async () => {
+                          await window.desktop.sourceLogin(source);
+                          await browse(
+                            source,
+                            browseSession.current?.term || '',
+                            browseSession.current?.options || sourceOptions,
+                          );
+                        })
+                      }
+                    >
+                      Verificar acesso no site
+                    </button>
+                  )}
                 </div>
               )}
               {!loadingMore && !pageError && !hasMore && (
