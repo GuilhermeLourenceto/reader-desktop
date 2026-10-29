@@ -90,6 +90,9 @@ jobs:
       - name: Test interactive source login and OAuth popup
         run: npx electron test/source-login-e2e.cjs
         timeout-minutes: 2
+      - name: Central Novel route comparison (isolated source session)
+        run: npx electron test/central-route-diagnostic.cjs --source-session
+        timeout-minutes: 3
       - name: Test 16 independent sources
         run: node test/source-matrix.cjs
         timeout-minutes: 15
