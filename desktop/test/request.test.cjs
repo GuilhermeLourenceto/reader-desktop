@@ -82,3 +82,45 @@ test('network pool bounds concurrency and cancels queued requests without openin
   assert.equal(pool.active, 0);
   assert.equal(requests.length, 2);
 });
+
+test('source HTTP bridge refuses local addresses and redirect hops', async () => {
+  const { net, requests } = fixture();
+  await assert.rejects(
+    requestHTTP(net, 'http://127.0.0.1:8000'),
+    /locais|privados/,
+  );
+  assert.equal(requests.length, 0);
+  const active = requestHTTP(net, 'https://novels.example.org');
+  requests[0].emit('redirect', 302, 'GET', 'http://192.168.1.1/');
+  await assert.rejects(active, /locais|privados/);
+  assert.equal(requests[0].aborted, true);
+});
+test('HTTP bridge forwards the source-scoped Electron session', async () => {
+  let configuredSession;
+  const requests = [];
+  const net = {
+    request(options) {
+      configuredSession = options.session;
+      const request = new EventEmitter();
+      request.setHeader = () => {};
+      request.end = () => {};
+      request.abort = () => request.emit('abort');
+      request.followRedirect = () => {};
+      requests.push(request);
+      return request;
+    },
+  };
+  const expected = { partition: 'persist:test-source' };
+  const active = requestHTTP(
+    net, 'https://novels.example.org', {},
+    { requestSession: expected },
+  );
+  const response = new EventEmitter();
+  response.statusCode = 200;
+  response.headers = {};
+  requests[0].emit('response', response);
+  response.emit('data', Buffer.from('ok'));
+  response.emit('end');
+  await active;
+  assert.equal(configuredSession, expected);
+});
