@@ -60,6 +60,15 @@ state.files['Novels/fixture/1/1/index.html'] = Buffer.from(
     ).join(''),
 ).toString('base64');
 fs.writeFileSync(path.join(profile, 'library.json'), JSON.stringify(state));
+if (process.argv.includes('--video-settings')) {
+  state.settings = {
+    desktopFontSize: 27,
+    desktopLineHeight: 1.85,
+    desktopReaderWidth: 820,
+    desktopPageStep: 85,
+  };
+  fs.writeFileSync(path.join(profile, 'library.json'), JSON.stringify(state));
+}
 const timeout = setTimeout(() => {
   console.error('Version 0.1 test timed out');
   app.exit(1);
@@ -140,7 +149,10 @@ app.on('browser-window-created', (_event, win) => {
       await wait(
         "document.querySelector('.book') && !document.querySelector('.busy')",
       );
-      assert.equal((await execute('window.desktop.info()')).version, '0.1.0');
+      assert.equal(
+        (await execute('window.desktop.info()')).version,
+        require('../package.json').version,
+      );
       await execute("document.querySelector('.book').click()");
       await wait("document.querySelectorAll('.chapter-row').length===100");
       assert.equal(
@@ -191,6 +203,11 @@ app.on('browser-window-created', (_event, win) => {
       const size = await execute(
         "document.querySelector('.reader-scroll').clientHeight",
       );
+      assert.equal(
+        await execute("!!document.querySelector('.reader-view.chrome-hidden')"),
+        true,
+        'Reader must open with hidden toolbars',
+      );
       await wait("document.querySelector('.reader-view.chrome-hidden')");
       assert.equal(
         await execute("document.querySelector('.reader-scroll').clientHeight"),
@@ -203,6 +220,9 @@ app.on('browser-window-created', (_event, win) => {
         size,
       );
       await capture('version01-reader-hidden');
+      await execute(
+        "window.readerOriginalParagraph=document.querySelector('.reader-scroll article p')",
+      );
       await execute(
         "(()=>{const el=document.querySelector('.reader-view');const r=el.getBoundingClientRect();el.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,clientX:r.left+r.width/2,clientY:r.top+r.height/2}));})()",
       );
@@ -219,6 +239,16 @@ app.on('browser-window-created', (_event, win) => {
       assert.equal(
         await execute("!!document.querySelector('.reader-view.chrome-hidden')"),
         false,
+      );
+      await wait("!!document.querySelector('.reader-view.chrome-hidden')");
+      await execute(
+        "document.querySelector('.reader-scroll').dispatchEvent(new MouseEvent('mousedown',{bubbles:true}))",
+      );
+      await pause(50);
+      assert.equal(
+        await execute("!!document.querySelector('.reader-view.chrome-hidden')"),
+        false,
+        'Click must reveal toolbars after automatic hiding',
       );
       await key('Escape');
       await pause(60);
@@ -269,6 +299,13 @@ app.on('browser-window-created', (_event, win) => {
             size * 2,
         ) < 4,
         'Rapid arrow taps must accumulate without losing distance',
+      );
+      assert.equal(
+        await execute(
+          "window.readerOriginalParagraph===document.querySelector('.reader-scroll article p') && window.readerOriginalParagraph.isConnected",
+        ),
+        true,
+        'Updating reader progress must preserve the original chapter DOM nodes',
       );
       await execute(
         "(()=>{const el=document.querySelector('.reader-view');const r=el.getBoundingClientRect();el.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,clientX:r.left+20,clientY:r.top+4}));})()",
@@ -396,7 +433,7 @@ app.on('browser-window-created', (_event, win) => {
         "document.querySelector('article')?.textContent.includes('Uma história de teste')",
       );
       console.log(
-        'PASS: version 0.1.0, automatic chapter chunks and remote retry without loops, full-height hidden bars, configurable page keys, aligned horizontal pages and resize restoration, chapter boundaries, nine palettes, animated spinner and cancellation of a synchronous infinite-loop source without freezing the UI.',
+        'PASS: current package version, automatic chapter chunks and remote retry without loops, full-height hidden bars, configurable page keys, aligned horizontal pages and resize restoration, chapter boundaries, nine palettes, animated spinner and cancellation of a synchronous infinite-loop source without freezing the UI.',
       );
       clearTimeout(timeout);
       win.destroy();

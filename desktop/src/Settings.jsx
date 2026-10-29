@@ -204,7 +204,7 @@ export default function Settings({
           <div className="settings-brand">
             <img src="logo.png" alt="" />
             <h3>LNReader</h3>
-            <span>Desktop · {version || '0.1.0'}</span>
+            <span>Desktop · {version || '0.2.0'}</span>
           </div>
           <div className="settings-group">{quick}</div>
           <div className="settings-group">
@@ -424,7 +424,7 @@ export default function Settings({
           <div className="settings-brand">
             <img src="logo.png" alt="" />
             <h3>LNReader Desktop</h3>
-            <span>{version || '0.1.0'} · Versão experimental para Windows</span>
+            <span>{version || '0.2.0'} · Versão experimental para Windows</span>
           </div>
           <div className="settings-group">
             <p>Leitor de novels com o motor original de fontes do LNReader.</p>

@@ -24,9 +24,10 @@ function safePath(name) {
   }
   return name;
 }
-function readArchive(buffer, budget, outer = false) {
+function readArchive(buffer, budget, outer = false, onFile) {
   const zip = new AdmZip(buffer);
   const entries = new Map();
+  const names = new Set();
   for (const entry of zip.getEntries()) {
     safePath(entry.entryName);
     if (
@@ -49,9 +50,12 @@ function readArchive(buffer, budget, outer = false) {
         'Backup excede o limite total de 512 MB descompactados ou 100000 entradas',
       );
     if (!entry.isDirectory) {
-      if (entries.has(entry.entryName))
+      if (names.has(entry.entryName))
         throw new Error('Entradas duplicadas no backup');
-      entries.set(entry.entryName, entry.getData());
+      names.add(entry.entryName);
+      const data = entry.getData();
+      if (onFile) onFile(entry.entryName, data);
+      else entries.set(entry.entryName, data);
     }
   }
   return entries;
@@ -98,7 +102,10 @@ function emptyState() {
     progressUnit: 'percent',
   };
 }
-function parseBackup(buffer) {
+function parseBackup(
+  buffer,
+  { storeFile = (_name, data) => data.toString('base64') } = {},
+) {
   const budget = { size: 0, count: 0 };
   const entries = unwrapBackup(readArchive(buffer, budget, true), budget);
   const json = (name, fallback) =>
@@ -165,10 +172,11 @@ function parseBackup(buffer) {
   }
   const addFiles = (archive, prefix, select = () => true) => {
     if (!entries.has(archive)) throw new Error(`Backup sem ${archive}`);
-    for (const [name, data] of readArchive(entries.get(archive), budget)) {
+    readArchive(entries.get(archive), budget, false, (name, data) => {
       if (select(name))
-        state.files[safePath(prefix + name)] = data.toString('base64');
-    }
+        state.files[safePath(prefix + name)] = storeFile(prefix + name, data);
+    });
+    entries.delete(archive);
   };
   if (version.formatVersion === 2) {
     if (sections.plugins) addFiles(ZipBackupName.PLUGINS, 'Plugins/');
@@ -183,15 +191,21 @@ function parseBackup(buffer) {
   }
   for (const [name, data] of entries) {
     if (name.startsWith(`${BackupEntryName.COVERS}/`))
-      state.files[name] = data.toString('base64');
+      state.files[name] = storeFile(name, data);
   }
   validateState(state);
   return { state, sections };
 }
 function createBackup(state) {
+  const bytes = value =>
+    Buffer.isBuffer(value) ? value : Buffer.from(value, 'base64');
   const { files, ...metadata } = state;
   const size = Object.values(files).reduce(
-    (total, value) => total + Buffer.byteLength(value, 'base64'),
+    (total, value) =>
+      total +
+      (Buffer.isBuffer(value)
+        ? value.length
+        : Buffer.byteLength(value, 'base64')),
     Buffer.byteLength(JSON.stringify(metadata)) + 1024,
   );
   if (size > MAX_BYTES)
@@ -231,16 +245,18 @@ function createBackup(state) {
     for (const [name, content] of Object.entries(state.files)) {
       safePath(name);
       if (name.startsWith(prefix))
-        nested.addFile(
-          name.slice(prefix.length),
-          Buffer.from(content, 'base64'),
-        );
+        nested.addFile(name.slice(prefix.length), bytes(content));
     }
+    // ZIP members are already compressed; storing the container avoids a second pass.
     zip.addFile(archive, nested.toBuffer());
+    zip.getEntry(archive).header.method = 0;
   }
   for (const [name, content] of Object.entries(state.files)) {
-    if (name.startsWith(`${BackupEntryName.COVERS}/`))
-      zip.addFile(safePath(name), Buffer.from(content, 'base64'));
+    if (name.startsWith(`${BackupEntryName.COVERS}/`)) {
+      zip.addFile(safePath(name), bytes(content));
+      // Covers are image files, normally already compressed.
+      zip.getEntry(name).header.method = 0;
+    }
   }
   return zip.toBuffer();
 }

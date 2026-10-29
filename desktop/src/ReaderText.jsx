@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { readerThemes } from './readerThemes.js';
 export function readerPresentation(settings = {}) {
   const theme = readerThemes.find(
@@ -33,6 +33,8 @@ export default function ReaderText({
   layoutKey,
 }) {
   const article = readerPresentation(settings).article;
+  // Preserve chapter nodes while progress and toolbar state update.
+  const markup = useMemo(() => ({ __html: html }), [html]);
   const textRef = useRef(null);
   const trackRef = useRef(null);
   const callback = useRef(onLayout);
@@ -151,7 +153,7 @@ export default function ReaderText({
             }
           : article
       }
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={markup}
     />
   );
   if (paged)

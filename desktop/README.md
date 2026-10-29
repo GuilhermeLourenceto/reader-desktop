@@ -10,7 +10,7 @@ As opções para definir a direção
 da fonte e ler desde o início também ficam nesse painel. O app Android continua
 separado.
 
-Versão atual: **0.1.0**.
+Versão atual: **0.2.0**.
 
 A interface usa diretamente a paleta escura original de
 `src/theme/md3/defaultTheme.ts` e as fontes Noto Sans, PT Sans e PT Serif
@@ -222,8 +222,7 @@ local e uma pasta temporária própria: instala o plugin pelo carregador origina
 abre uma obra, lê e salva um capítulo, rejeita scripts no HTML e repete a leitura
 offline. A janela de teste fica oculta e fecha ao terminar.
 
-Validação desta entrega em Windows (28/10/2026): build e instalador NSIS da
-versão 0.1.0 gerados; **35 testes de dados** passaram. A interface foi validada
+Validação da versão 0.2.0 em Windows (29/10/2026): **38 testes de dados** passaram. A interface foi validada
 no Electron, incluindo barras sem espaço reservado, amplitude das teclas,
 páginas horizontais alinhadas, posição ao redimensionar a janela, nove paletas,
 carregamento automático e nova tentativa de páginas sem repetir chamadas.
@@ -235,8 +234,11 @@ gerar os metadados com
 `node scripts/generate-env-file.cjs --build-type Debug --git-hash source-archive`.
 O comando geral `pnpm run check` permanece bloqueado por problemas de
 formatação já existentes em 20 arquivos Android. A formatação dos arquivos
-desktop foi verificada separadamente e passou. Falta validar backups e fontes
-reais e executar em outras versões do Windows e no Linux.
+desktop foi verificada separadamente e passou. Um ZIP real do LNReader foi
+restaurado e reexportado com todos os arquivos conferidos. A aba Atualizações
+passou por download, exclusão, nova tentativa, leitura offline e falhas parciais.
+Veja os [testes de volume](docs/STRESS-TESTS.md) e as [mudanças da versão](CHANGELOG.md).
+Falta ampliar a validação para outros computadores e versões do Windows.
 
 ## Estrutura da pasta
 

@@ -29,6 +29,8 @@ import Spinner from './Spinner';
 import { appTheme } from './appThemes';
 import NovelDetails from './NovelDetails';
 import History from './History';
+import Updates from './Updates';
+import { markNewChapters } from './updates.cjs';
 import ReaderControls from './ReaderControls';
 import ReaderText, { readerPresentation } from './ReaderText';
 import BookGrid from './BookGrid';
@@ -60,6 +62,8 @@ for (const [key, value] of Object.entries(defaultTheme.dark)) {
 
 function Icon({ name, ...props }) {
   const paths = {
+    updates:
+      'M12 4a8 8 0 0 1 8 8h3l-4 4-4-4h3a6 6 0 0 0-6-6V4m-7 4 4 4H6a6 6 0 0 0 6 6v2a8 8 0 0 1-8-8H1l4-4Z',
     library:
       'M4 6H2v14a2 2 0 0 0 2 2h14v-2H4V6m16-4H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2m-2 12-4-2-4 2V4h8v10Z',
     sources:
@@ -378,6 +382,9 @@ function App() {
   const chromePinned = useRef(false);
   const [appVersion, setAppVersion] = useState('');
   const [downloadProgress, setDownloadProgress] = useState(null);
+  const [updatesProgress, setUpdatesProgress] = useState(null);
+  const [updatesFailures, setUpdatesFailures] = useState([]);
+  const stopUpdates = useRef(false);
   const cancelDownload = useRef(false);
   const downloading = useRef(false);
   const browseSession = useRef(null);
@@ -408,15 +415,23 @@ function App() {
     if (
       settingsNow.desktopReaderAutoHide === false ||
       readerControlsOpen.current ||
-      chromePinned.current ||
-      (document.activeElement?.matches(':focus-visible') &&
-        document.activeElement?.closest(
-          '.reader-view > header, .reader-view > footer, .reader-controls',
-        ))
+      chromePinned.current
     )
       return;
     chromeTimer.current = setTimeout(() => {
       chromeTimer.current = null;
+      if (
+        readerControlsOpen.current ||
+        chromePinned.current ||
+        current.current?.settings.desktopReaderAutoHide === false
+      )
+        return;
+      if (
+        document.activeElement?.closest(
+          '.reader-view > header, .reader-view > footer',
+        )
+      )
+        readerRef.current?.focus({ preventScroll: true });
       setChromeVisible(false);
     }, 2600);
   };
@@ -516,6 +531,7 @@ function App() {
       closing = true;
       try {
         cancelDownload.current = true;
+        stopUpdates.current = true;
         cancelSourceOperations();
         await window.desktop.cancelRequests();
         const deadline = Date.now() + 2000;
@@ -558,16 +574,20 @@ function App() {
     }
     if (view === 'reader') hideChromeSoon();
   }, [readerControls, view]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (view !== 'reader') {
       chromePinned.current = false;
       clearChromeTimer();
       setChromeVisible(true);
       return undefined;
     }
-    revealChrome();
+    clearChromeTimer();
+    chromePinned.current = false;
+    readerControlsOpen.current = false;
+    setReaderControls(false);
+    setChromeVisible(preferences.desktopReaderAutoHide === false);
     return clearChromeTimer;
-  }, [view, chapterId]);
+  }, [view, chapterId, preferences.desktopReaderAutoHide]);
   const persistNow = async () => {
     clearTimeout(saveTimer.current);
     await window.desktop.save(snapshot(current.current));
@@ -1273,7 +1293,7 @@ function App() {
     )
       saveReaderProgress(previous.bookId, previous.itemId, 100);
   }, []);
-  const loadNovelPage = async (book, page) => {
+  const loadNovelPage = async (book, page, trackUpdates = false) => {
     const plugin = await loadPlugin(book.pluginId);
     if (!plugin?.parsePage)
       throw new Error('Esta fonte não oferece paginação de capítulos.');
@@ -1296,7 +1316,9 @@ function App() {
     );
     const changed = {
       ...latest,
-      chapters,
+      chapters: trackUpdates
+        ? markNewChapters(latest.chapters, chapters, new Date().toISOString())
+        : chapters,
       desktopLoadedPages: [
         ...new Set([...(latest.desktopLoadedPages || [1]), Number(page)]),
       ],
@@ -1496,19 +1518,19 @@ function App() {
     element.addEventListener('wheel', wheel, { passive: false });
     return () => element.removeEventListener('wheel', wheel);
   }, [view, chapterId, paged]);
-  const refreshNovel = async () => {
-    const plugin = await loadPlugin(novel.pluginId);
+  const refreshNovel = async (book = novel, allPages = false) => {
+    const plugin = await loadPlugin(book.pluginId);
     if (!plugin) throw new Error('Fonte não instalada');
     const detail = validateNovelDetails(
-      await withSourceDeadline(() => fetchNovel(novel.pluginId, novel.path)),
+      await withSourceDeadline(() => fetchNovel(book.pluginId, book.path)),
     );
     if (!detail || !Array.isArray(detail.chapters))
       throw new Error('A fonte retornou detalhes inválidos para esta obra.');
-    const latest = current.current.novels.find(item => item.id === novel.id);
+    const latest = current.current.novels.find(item => item.id === book.id);
     const chapters = mergeChapters(
       latest.chapters,
       detail.chapters,
-      novel.id,
+      book.id,
       nextId(current.current.novels.flatMap(item => item.chapters)),
     );
     changeNovel({
@@ -1519,23 +1541,90 @@ function App() {
       pluginId: latest.pluginId,
       path: latest.path,
       inLibrary: latest.inLibrary,
-      chapters,
+      chapters: markNewChapters(
+        latest.chapters,
+        chapters,
+        new Date().toISOString(),
+      ),
     });
     let partial = false;
-    for (const page of [
-      ...new Set(latest.chapters.map(chapter => Number(chapter.page || 1))),
-    ].filter(page => page > 1 && page <= Number(detail.totalPages || 1))) {
+    const pages = allPages
+      ? Array.from(
+          { length: Number(detail.totalPages || 1) },
+          (_, index) => index + 1,
+        )
+      : [...new Set(latest.chapters.map(chapter => Number(chapter.page || 1)))];
+    for (const page of pages.filter(
+      page => page > 1 && page <= Number(detail.totalPages || 1),
+    )) {
+      if (allPages && stopUpdates.current) {
+        partial = true;
+        break;
+      }
       try {
-        await loadNovelPage(latest, page);
+        await loadNovelPage(
+          latest,
+          page,
+          loadedPages(latest).includes(page) ||
+            page > Number(latest.totalPages || 1),
+        );
       } catch {
         partial = true;
       }
     }
+    if (allPages) return { partial };
     setNotice(
       partial
         ? 'Obra atualizada. Algumas páginas falharam; você pode tentar carregá-las novamente.'
         : 'Obra e capítulos atualizados.',
     );
+  };
+  const refreshLibrary = async () => {
+    if (downloading.current)
+      throw new Error(
+        'Aguarde ou pare os downloads antes de atualizar a biblioteca.',
+      );
+    const books = current.current.novels.filter(book => book.inLibrary);
+    if (!books.length) return;
+    stopUpdates.current = false;
+    setUpdatesFailures([]);
+    const failures = [];
+    try {
+      for (let index = 0; index < books.length; index++) {
+        if (stopUpdates.current) break;
+        const book = books[index];
+        setUpdatesProgress({
+          done: index,
+          total: books.length,
+          name: book.name,
+        });
+        try {
+          if ((await refreshNovel(book, true))?.partial)
+            failures.push(
+              `${book.name}: algumas páginas não foram verificadas.`,
+            );
+        } catch (error) {
+          failures.push(`${book.name}: ${errorText(error)}`);
+        }
+      }
+      update({
+        ...current.current,
+        settings: {
+          ...current.current.settings,
+          desktopLastLibraryUpdate: new Date().toISOString(),
+        },
+      });
+      setNotice(
+        stopUpdates.current
+          ? 'Verificação interrompida. Atualizações já encontradas foram mantidas.'
+          : failures.length
+          ? 'Verificação concluída com avisos.'
+          : 'Biblioteca atualizada.',
+      );
+    } finally {
+      setUpdatesFailures(failures);
+      setUpdatesProgress(null);
+    }
   };
   const restore = async () => {
     if (downloading.current) {
@@ -1610,6 +1699,7 @@ function App() {
         <nav aria-label="Navegação principal">
           {[
             ['library', 'Biblioteca'],
+            ['updates', 'Atualizações'],
             ['history', 'Histórico'],
             ['sources', 'Fontes'],
             ['settings', 'Mais'],
@@ -1674,6 +1764,7 @@ function App() {
               <button
                 onClick={() => {
                   cancelDownload.current = true;
+                  stopUpdates.current = true;
                   cancelSourceOperations();
                 }}
               >
@@ -1717,6 +1808,29 @@ function App() {
             onAction={(action, ids) => void libraryAction(action, ids)}
             onRestore={() => run(restore)}
             onSources={() => setView('sources')}
+          />
+        )}
+        {view === 'updates' && (
+          <Updates
+            novels={state.novels}
+            busy={busy || !!downloadProgress}
+            progress={updatesProgress}
+            failures={updatesFailures}
+            lastCheck={preferences.desktopLastLibraryUpdate}
+            Icon={Icon}
+            cover={cover}
+            onRefresh={() => run(refreshLibrary)}
+            onStop={() => {
+              stopUpdates.current = true;
+            }}
+            onOpen={book => {
+              setNovelId(book.id);
+              setView('novel');
+            }}
+            onRead={(book, chapter) => run(() => loadChapter(book, chapter))}
+            onDownload={(book, ids) => void startDownloads(book, ids)}
+            onChange={changeChapterRows}
+            onDelete={(book, ids) => run(() => deleteDownloads(book, ids))}
           />
         )}
         {view === 'history' && (

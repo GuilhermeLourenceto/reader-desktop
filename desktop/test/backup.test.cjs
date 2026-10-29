@@ -62,6 +62,40 @@ test('Android v2 ZIP layout and all data survive a desktop round trip', () => {
   );
   assert.deepEqual(parseBackup(buffer).state, state);
 });
+
+test('binary export and direct file storage retain the Android ZIP layout and every file byte', () => {
+  const state = fixture();
+  const binary = {
+    ...state,
+    files: Object.fromEntries(
+      Object.entries(state.files).map(([name, value]) => [
+        name,
+        Buffer.from(value, 'base64'),
+      ]),
+    ),
+  };
+  const buffer = createBackup(binary);
+  const zip = new AdmZip(buffer);
+  assert.equal(zip.getEntry('plugins.zip').header.method, 0);
+  assert.equal(zip.getEntry('novel-files.zip').header.method, 0);
+  assert.deepEqual(parseBackup(buffer).state, state);
+  const stored = new Map();
+  const restored = parseBackup(buffer, {
+    storeFile: (name, data) => {
+      stored.set(name, data);
+      return (
+        '@file:' +
+        require('node:crypto').createHash('sha256').update(data).digest('hex')
+      );
+    },
+  });
+  assert.equal(stored.size, Object.keys(state.files).length);
+  for (const [name, value] of Object.entries(state.files)) {
+    assert.deepEqual(stored.get(name), Buffer.from(value, 'base64'));
+    assert.match(restored.state.files[name], /^@file:[a-f0-9]{64}$/);
+  }
+  assert.deepEqual(restored.state.novels, state.novels);
+});
 test('reads legacy Android download.zip and the plugin registry in Setting.json', () => {
   const zip = new AdmZip();
   const state = fixture();

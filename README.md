@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img alt="Versão experimental 0.1.0" src="https://img.shields.io/badge/vers%C3%A3o-0.1.0%20experimental-0d7377?style=flat" />
+  <img alt="Versão experimental 0.2.0" src="https://img.shields.io/badge/vers%C3%A3o-0.2.0%20experimental-0d7377?style=flat" />
   <img alt="Windows 10 e 11" src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?style=flat" />
   <a href="./LICENSE"><img alt="Licença MIT" src="https://img.shields.io/badge/licen%C3%A7a-MIT-084c4e?style=flat" /></a>
 </p>
@@ -28,6 +28,7 @@
 ## Recursos
 
 - **Biblioteca:** categorias, busca, capas, seleção de várias obras e ações pelo botão direito.
+- **Atualizações:** verificação da biblioteca, novos capítulos agrupados por data e obra, busca, filtro de não lidos e ações de leitura e download.
 - **Fontes:** extensões no mesmo formato do LNReader, filtro por nome/idioma e busca em todas as fontes instaladas.
 - **Obras e capítulos:** informações à esquerda e capítulos à direita em janelas largas, filtros compactos e carregamento automático ao rolar.
 - **Leitor:** rolagem contínua ou páginas horizontais, atalhos de teclado, tamanho de fonte, espaçamento, temas e prévia dos ajustes.
@@ -51,9 +52,11 @@
 
 ## Instalação
 
+Versão atual: **0.2.0 experimental**. Veja as [mudanças e medições de desempenho](./desktop/CHANGELOG.md).
+
 **Windows 10/11, 64 bits.** Os instaladores deste projeto são gerados em `desktop/release/` e podem ser disponibilizados nas [Releases](https://github.com/GuilhermeLourenceto/lnreader-desktop/releases) quando publicadas.
 
-Feche o aplicativo antes de atualizar. O instalador solicita permissão de administrador automaticamente; depois da instalação, o aplicativo abre normalmente. Os binários locais ainda não possuem assinatura digital de distribuição.
+Feche o aplicativo antes de atualizar. O instalador solicita permissão de administrador automaticamente. Os binários ainda não possuem assinatura digital confiável; o Controle Inteligente de Aplicativos do Windows pode bloquear a execução, inclusive depois da instalação.
 
 Não use os downloads do repositório Android esperando encontrar o aplicativo desktop: são distribuições diferentes.
 

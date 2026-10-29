@@ -19,7 +19,7 @@ try {
       throw new Error('Os arquivos excedem o limite de 512 MB do backup.');
     for (const [name, value] of Object.entries(workerData.state.files)) {
       try {
-        exported[name] = files.read(value).toString('base64');
+        exported[name] = files.read(value);
       } catch (error) {
         if (!['ENOENT', 'CORRUPT_FILE'].includes(error.code)) throw error;
         missing.push(name);
@@ -59,8 +59,9 @@ try {
   } else {
     if (fs.statSync(workerData.filename).size > 512 * 1024 * 1024)
       throw new Error('Backup excede 512 MB');
-    const restored = parseBackup(fs.readFileSync(workerData.filename));
-    restored.state.files = files.import(restored.state.files);
+    const restored = parseBackup(fs.readFileSync(workerData.filename), {
+      storeFile: (_name, data) => files.write(data),
+    });
     parentPort.postMessage({ ok: true, restored });
   }
 } catch (error) {

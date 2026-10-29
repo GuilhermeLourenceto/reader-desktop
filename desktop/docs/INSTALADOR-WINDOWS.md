@@ -1,4 +1,4 @@
-# Instalador Windows 0.1.0
+# Instalador Windows 0.2.0
 
 A detecção prioriza o caminho da instalação com PowerShell/CIM. Se esse recurso não estiver disponível, verifica o nome do executável apenas na sessão do usuário atual; uma cópia com o mesmo nome em outra pasta ou sessão não deve bloquear a instalação.
 
