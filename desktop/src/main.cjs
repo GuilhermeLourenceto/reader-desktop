@@ -396,10 +396,54 @@ app
           sandbox: true,
         },
       });
-      loginWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+      // Some legitimate sign-in providers open an HTTPS popup. Allow those
+      // windows only inside this source's cookie partition; no preload, Node,
+      // filesystem access or special schemes are inherited from the app UI.
+      const loginPopups = new Set();
+      const validLoginNavigation = url => {
+        try {
+          validateNetworkUrl(url, { allowPrivate: !app.isPackaged });
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      loginWindow.webContents.setWindowOpenHandler(({ url }) => {
+        if (
+          loginPopups.size >= 3 ||
+          (url !== 'about:blank' && !validLoginNavigation(url))
+        ) return { action: 'deny' };
+        return {
+          action: 'allow',
+          overrideBrowserWindowOptions: {
+            parent: loginWindow,
+            width: 780,
+            height: 680,
+            autoHideMenuBar: true,
+            webPreferences: {
+              session: sourceSession(id),
+              contextIsolation: true,
+              nodeIntegration: false,
+              sandbox: true,
+            },
+          },
+        };
+      });
+      loginWindow.webContents.on('did-create-window', popup => {
+        loginPopups.add(popup);
+        popup.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+        popup.webContents.on('will-navigate', (event, url) => {
+          if (!validLoginNavigation(url)) event.preventDefault();
+        });
+        popup.on('closed', () => loginPopups.delete(popup));
+      });
+      loginWindow.on('closed', () => {
+        for (const popup of loginPopups)
+          if (!popup.isDestroyed()) popup.close();
+        loginPopups.clear();
+      });
       loginWindow.webContents.on('will-navigate', (event, url) => {
-        try { validateNetworkUrl(url); }
-        catch { event.preventDefault(); }
+        if (!validLoginNavigation(url)) event.preventDefault();
       });
       loginWindow.webContents.session.setPermissionRequestHandler(
         (_contents, _permission, callback) => callback(false),
