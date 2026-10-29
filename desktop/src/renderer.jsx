@@ -1969,6 +1969,16 @@ function App() {
                         </button>
                         <button
                           disabled={busy}
+                          title="Abrir uma janela segura para autenticação nesta fonte"
+                          onClick={() => run(async () => {
+                            await window.desktop.sourceLogin(plugin.id);
+                            setNotice('Janela de login aberta. Após entrar, feche a janela e tente a fonte novamente.');
+                          })}
+                        >
+                          Entrar
+                        </button>
+                        <button
+                          disabled={busy}
                           onClick={() =>
                             run(async () => {
                               if (downloading.current)
