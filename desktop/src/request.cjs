@@ -185,11 +185,17 @@ class RequestPool {
       entry.started = true;
       this.active++;
       clearTimeout(entry.timer);
-      requestHTTP(this.net, entry.url, entry.init, {
-        signal: entry.controller.signal,
-        ...this.options,
-        requestSession: this.options.sessionForSource?.(entry.init.sourceId),
-      })
+      // Session resolution can fail (e.g. invalid plugin metadata). An
+      // exception must reject this request and free the queue slot instead
+      // of leaving every subsequent source request stuck forever.
+      Promise.resolve()
+        .then(() =>
+          requestHTTP(this.net, entry.url, entry.init, {
+            signal: entry.controller.signal,
+            ...this.options,
+            requestSession: this.options.sessionForSource?.(entry.init.sourceId),
+          }),
+        )
         .then(entry.resolve, entry.reject)
         .finally(() => {
           this.active--;
