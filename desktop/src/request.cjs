@@ -109,10 +109,14 @@ function requestHTTP(
         );
         response.on('end', () => {
           if (settled) return;
-          const prefix = Buffer.concat(chunks.slice(0, 2)).subarray(0, 4096).toString('utf8');
-          const challenge = /<title[^>]*>[^<]*(just a moment|bot verification|checking your browser|attention required)/i.test(prefix) ||
-            /cf-chl-|challenge-platform/i.test(prefix);
-          diagnose(finalUrl, init.sourceId, response.statusCode, size, challenge);
+          if (process.env.LNREADER_SOURCE_DIAGNOSTICS === '1') {
+            const prefix = Buffer.concat(chunks.slice(0, 2))
+              .subarray(0, 4096).toString('utf8');
+            const challenge =
+              /<title[^>]*>[^<]*(just a moment|bot verification|checking your browser|attention required)/i.test(prefix) ||
+              /cf-chl-|challenge-platform/i.test(prefix);
+            diagnose(finalUrl, init.sourceId, response.statusCode, size, challenge);
+          }
           finish(null, {
             status: response.statusCode,
             statusText: response.statusMessage || '',
