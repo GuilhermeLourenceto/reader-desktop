@@ -1,18 +1,17 @@
 // Electron net.fetch does not consistently populate Response.url. Source
 // plugins use the final URL to detect login/captcha redirects, so track it
 // through ClientRequest rather than pretending it is the original URL.
+const { validateNetworkUrl } = require('./networkPolicy.cjs');
 function requestHTTP(
   net,
   url,
   init = {},
-  { signal, timeoutMs = 30000, maxBytes = 20 * 1024 * 1024 } = {},
+  { signal, timeoutMs = 30000, maxBytes = 20 * 1024 * 1024, allowPrivate = false, requestSession } = {},
 ) {
   return new Promise((resolve, reject) => {
     let finalUrl;
     try {
-      finalUrl = new URL(url).href;
-      if (!['https:', 'http:'].includes(new URL(finalUrl).protocol))
-        throw new Error('URL inválida');
+      finalUrl = validateNetworkUrl(url, { allowPrivate });
     } catch (error) {
       reject(error);
       return;
@@ -46,6 +45,7 @@ function requestHTTP(
         url: finalUrl,
         method: init.method || 'GET',
         useSessionCookies: true,
+        ...(requestSession ? { session: requestSession } : {}),
         redirect: 'manual',
       });
       timer = setTimeout(
@@ -61,14 +61,11 @@ function requestHTTP(
         if (settled) return;
         try {
           const redirected = new URL(target, finalUrl);
-          if (
-            ++redirects > 20 ||
-            !['https:', 'http:'].includes(redirected.protocol)
-          ) {
+          if (++redirects > 20) {
             finish(new Error('Redirecionamento inválido da fonte.'));
             return;
           }
-          finalUrl = redirected.href;
+          finalUrl = validateNetworkUrl(redirected.href, { allowPrivate });
           request.followRedirect();
         } catch (error) {
           finish(error);
@@ -126,8 +123,9 @@ function requestHTTP(
 }
 
 class RequestPool {
-  constructor(net, concurrency = 8, queueLimit = 128) {
+  constructor(net, concurrency = 8, queueLimit = 128, options = {}) {
     this.net = net;
+    this.options = options;
     this.concurrency = concurrency;
     this.queueLimit = queueLimit;
     this.active = 0;
@@ -182,6 +180,7 @@ class RequestPool {
       clearTimeout(entry.timer);
       requestHTTP(this.net, entry.url, entry.init, {
         signal: entry.controller.signal,
+        ...this.options,
       })
         .then(entry.resolve, entry.reject)
         .finally(() => {
