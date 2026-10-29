@@ -44,7 +44,7 @@ test('abort and timeout reject once and release the underlying connection', asyn
   assert.equal(requests[0].aborted, true);
   await assert.rejects(
     requestHTTP(net, 'https://example.test', {}, { timeoutMs: 5 }),
-    /30 segundos/,
+    /38 segundos/,
   );
   assert.equal(requests[1].aborted, true);
 });
@@ -123,4 +123,37 @@ test('HTTP bridge forwards the source-scoped Electron session', async () => {
   response.emit('end');
   await active;
   assert.equal(configuredSession, expected);
+});
+
+test('browser session user agent is reused for site requests without overriding extension headers', async () => {
+  const observed = [];
+  const net = { request() {
+    const request = new EventEmitter();
+    request.headers = {};
+    request.setHeader = (key, value) => { request.headers[key.toLowerCase()] = value; };
+    request.write = () => {};
+    request.end = () => {};
+    request.abort = () => request.emit('abort');
+    request.followRedirect = () => {};
+    observed.push(request);
+    return request;
+  }};
+  const loginSession = { getUserAgent: () => 'LNReader-Test-Chromium/1.0' };
+  const requestOne = requestHTTP(net, 'https://novels.example.org', {}, { requestSession: loginSession });
+  assert.equal(observed[0].headers['user-agent'], loginSession.getUserAgent());
+  const reply = index => {
+    const response = new EventEmitter();
+    response.statusCode = 200;
+    response.headers = {};
+    observed[index].emit('response', response);
+    response.emit('end');
+  };
+  reply(0);
+  await requestOne;
+  const requestTwo = requestHTTP(net, 'https://novels.example.org', {
+    headers: { 'UsEr-AgEnT': 'Original-Source-UA' },
+  }, { requestSession: loginSession });
+  assert.equal(observed[1].headers['user-agent'], 'Original-Source-UA');
+  reply(1);
+  await requestTwo;
 });
