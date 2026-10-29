@@ -30,7 +30,7 @@ fs.mkdirSync(dir, { recursive: true });
 const sourceTest = path.join(__dirname, 'repository-smoke.cjs');
 function classification(log, ok) {
   if (ok) return 'PASS';
-  if (/cloudflare|captcha|challenge|turnstile|cf-chl|just a moment|403 forbidden|\b403\b|try to open in webview/i.test(log))
+  if (/cloudflare|captcha|challenge|turnstile|cf-chl|just a moment|403 forbidden|\b403\b|try to open in webview|"challenge":true/i.test(log))
     return 'AUTH_OR_CHALLENGE';
   if (/Nenhuma novel encontrada|Nenhum resultado encontrado/i.test(log))
     return 'EMPTY_LIST_INCONCLUSIVE';
@@ -51,7 +51,7 @@ function runOne(item) {
     const start = Date.now();
     const child = spawn(electron, args, {
       cwd: path.join(__dirname, '..'),
-      env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
+      env: { ...process.env, LNREADER_SOURCE_DIAGNOSTICS: '1' },
       windowsHide: true,
     });
     let output = '';
