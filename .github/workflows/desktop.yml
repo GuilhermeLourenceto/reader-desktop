@@ -87,6 +87,9 @@ jobs:
       - run: npm run build
       - name: Test browser login cookie isolation
         run: npx electron test/auth-cookie-smoke.cjs
+      - name: Test interactive source login and OAuth popup
+        run: npx electron test/source-login-e2e.cjs
+        timeout-minutes: 2
       - name: Test nine independent sources
         run: node test/source-matrix.cjs
         timeout-minutes: 15
