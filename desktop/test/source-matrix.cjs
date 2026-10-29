@@ -16,6 +16,14 @@ const cases = [
   { id: 'novelfull', lang: 'en', read: true },
   { id: 'HasuTL', lang: 'es', read: true },
   { id: 'noveldeglace', lang: 'fr', read: true },
+  // Different language families and plugin engines, not only WordPress clones.
+  { id: 'kakuyomu', lang: 'ja', read: false },
+  { id: 'ln.hako', lang: 'vi', read: false },
+  { id: 'bacalightnovel', lang: 'id', read: false },
+  { id: 'arnovel', lang: 'ar', read: false },
+  { id: 'AT', lang: 'ru', read: false },
+  { id: 'noveltr', lang: 'tr', read: false },
+  { id: 'wuxiaworld', lang: 'en', read: false },
 ];
 const dir = path.join(__dirname, '../.tmp/source-matrix');
 fs.mkdirSync(dir, { recursive: true });
