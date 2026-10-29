@@ -181,6 +181,7 @@ class RequestPool {
       requestHTTP(this.net, entry.url, entry.init, {
         signal: entry.controller.signal,
         ...this.options,
+        requestSession: this.options.sessionForSource?.(entry.init.sourceId),
       })
         .then(entry.resolve, entry.reject)
         .finally(() => {
