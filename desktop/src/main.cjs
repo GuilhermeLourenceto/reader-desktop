@@ -404,12 +404,25 @@ app
       loginWindow.webContents.session.setPermissionRequestHandler(
         (_contents, _permission, callback) => callback(false),
       );
-      try { await loginWindow.loadURL(loginUrl); }
-      catch (error) {
-        if (!loginWindow.isDestroyed()) loginWindow.close();
-        throw error;
+      // Wait for the user to finish the login or browser verification.
+      // Calling code can retry the source only after the window closes,
+      // using the same persistent cookie session.
+      let navigationFailure = null;
+      const finished = new Promise((resolve, reject) => {
+        loginWindow.once('closed', () => {
+          if (navigationFailure) reject(navigationFailure);
+          else resolve(true);
+        });
+      });
+      try {
+        await loginWindow.loadURL(loginUrl);
+      } catch (error) {
+        if (!loginWindow.isDestroyed()) {
+          navigationFailure = error;
+          loginWindow.close();
+        }
       }
-      return true;
+      return finished;
     });
     register('cancel-request', id => requests.cancel(id));
     register('cancel-requests', () => requests.cancelAll());
