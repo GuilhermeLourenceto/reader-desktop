@@ -9,7 +9,7 @@ o painel de filtros oferece ordem inversa e ordenação por nome/número.
 As opções para definir a direção
 da fonte e ler desde o início também ficam nesse painel. O código Android antigo continua acessível no histórico Git; a `main` agora contém somente o projeto Desktop.
 
-Versão atual: **0.4.3 Beta (Windows e Linux)**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.4.3.md).
+Versão atual: **0.4.4 Beta (Windows e Linux)**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.4.4.md).
 
 A interface utiliza uma cópia versionada da paleta original,
 em `vendor/lnreader/src/theme/md3/defaultTheme.ts`, e as fontes
@@ -152,6 +152,16 @@ Cloudflare, login interativo, sincronização de WebStorage ou execução de
 `custom.js`/`custom.css` em WebView ainda podem falhar. Os arquivos de scripts
 e estilos personalizados são preservados nos backups, mas não são executados
 no leitor desktop. Instale fontes apenas de repositórios confiáveis.
+
+## Consumo de memória da biblioteca
+
+A partir da **v0.4.4**, bibliotecas filtradas com mais de 100 obras usam
+virtualização de cartões: apenas as linhas visíveis e uma pequena margem
+ficam montadas no renderer. O grid mantém capas, badges, seleção, pesquisa,
+categorias e menus de contexto. Listas pequenas usam a renderização anterior.
+Os metadados das obras e capítulos permanecem em memória, portanto a
+virtualização não garante um tamanho fixo de RAM. A regressão é validada em
+Windows e Linux pelo teste gráfico com 10 mil obras/200 mil capítulos.
 
 ## Biblioteca, leitura e backups
 

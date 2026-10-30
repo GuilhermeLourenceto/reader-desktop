@@ -477,6 +477,24 @@ header {
   gap: 20px 14px;
   margin: 20px 0 28px;
 }
+.grid-virtualized .book-card {
+  /* Stable track height keeps deep-scroll positions predictable. */
+  height: var(--virtual-row-height);
+  overflow: hidden;
+}
+.grid-virtualized .book small {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.35;
+  min-height: 30px;
+  overflow: hidden;
+}
+.grid-virtualized .virtual-grid-spacer {
+  grid-column: 1 / -1;
+  pointer-events: none;
+  min-width: 0;
+}
 .book {
   padding: 0;
   border: none;

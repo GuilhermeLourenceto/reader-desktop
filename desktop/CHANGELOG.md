@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## 0.4.4 Beta — Biblioteca leve no Windows e Linux
+
+- Virtualização dos cartões da biblioteca para coleções com mais de 100 obras: mantém no DOM apenas a área visível e uma margem de três linhas.
+- Melhorias no processamento de filtros, categorias e seleção, sem remover funcionalidades existentes.
+- Testes automatizados em Windows e Linux para rolagem completa, pesquisa, mudança de aba e integridade com 10.000 obras e 200.000 capítulos.
+- Sem alterações no formato de backups, nos arquivos do SDK Android ou na biblioteca armazenada. O uso de memória dos metadados ainda existe.
+
+Consulte [as notas de v0.4.4](docs/RELEASE_NOTES_0.4.4.md). Versão beta, sem assinatura digital.
+
+
 ## 0.4.3 Beta — Windows e Linux
 
 - Primeira distribuição experimental para Linux x64, em AppImage e DEB, junto do instalador Windows.
