@@ -108,6 +108,18 @@ server.listen(0, '127.0.0.1', () => {
     ).toString('base64');
   fs.writeFileSync(path.join(directory, 'library.json'), JSON.stringify(state));
   app.on('browser-window-created', (_event, win) => {
+    // Investigate whether a fixture source/repository causes unexpected
+    // renderer navigation or process termination during startup.
+    win.webContents.on('did-navigate', (_event, url) =>
+      console.log('STABILITY_NAVIGATE', new URL(url).protocol, url.startsWith('lnreader://app/')),
+    );
+    win.webContents.on('render-process-gone', (_event, details) =>
+      console.log('STABILITY_RENDER_GONE', details.reason),
+    );
+    win.webContents.on('did-fail-load', (_event, code, message, url) =>
+      console.log('STABILITY_LOAD_FAILED', code, message, url?.startsWith('lnreader://app/')),
+    );
+    win.on('closed', () => console.log('STABILITY_WINDOW_CLOSED'));
     win.webContents.setBackgroundThrottling(false);
     win.webContents.once('did-finish-load', async () => {
       const execute = code => win.webContents.executeJavaScript(code, true);
