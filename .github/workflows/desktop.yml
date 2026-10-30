@@ -46,6 +46,7 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
+      - run: node scripts/check-standalone.cjs
       - run: npm run setup
       - run: npm run build
       - run: npm test
