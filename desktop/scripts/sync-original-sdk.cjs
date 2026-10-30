@@ -8,6 +8,8 @@ const android = path.resolve(__dirname, '../..');
 const dest = path.resolve(__dirname, '../vendor/lnreader');
 const sources = [
   ['src/plugins', 'src/plugins'],
+  ['src/services/backup/types.ts', 'src/services/backup/types.ts'],
+  ['src/services/backup/options.ts', 'src/services/backup/options.ts'],
   ['src/utils/compareVersion.ts', 'src/utils/compareVersion.ts'],
   ['src/utils/error.ts', 'src/utils/error.ts'],
   ['src/utils/constants/readerConstants.ts', 'src/utils/constants/readerConstants.ts'],
