@@ -11,7 +11,7 @@ const sources = [
   ['src/utils/compareVersion.ts', 'src/utils/compareVersion.ts'],
   ['src/utils/error.ts', 'src/utils/error.ts'],
   ['src/utils/constants/readerConstants.ts', 'src/utils/constants/readerConstants.ts'],
-  ['src/theme/md3/defaultTheme.ts', 'src/theme/md3/defaultTheme.ts'],
+  ['src/theme/md3', 'src/theme/md3'],
   ['assets/reader/fonts/pt-sans-bold.ttf', 'assets/reader/fonts/pt-sans-bold.ttf'],
   ['assets/reader/fonts/noto-sans.ttf', 'assets/reader/fonts/noto-sans.ttf'],
   ['assets/reader/fonts/pt-serif.ttf', 'assets/reader/fonts/pt-serif.ttf'],
