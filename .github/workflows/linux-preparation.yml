@@ -1,12 +1,8 @@
 name: Linux Desktop preparation (experimental)
 
+# Experimental builds are opt-in only. Changes to the Linux branch must not
+# automatically generate installers, artifacts or GitHub releases.
 on:
-  push:
-    branches:
-      - linux/prepare-packaging-and-tests
-    paths:
-      - 'desktop/**'
-      - '.github/workflows/linux-preparation.yml'
   workflow_dispatch:
 
 permissions:
@@ -42,8 +38,8 @@ jobs:
         run: node scripts/check-standalone.cjs
       - name: Compile the same application used on Windows
         run: npm run build
-      - name: Run portable unit tests
-        run: npm test
+      - name: Run lint, formatting and portable unit tests
+        run: npm run check
       - name: Exercise source loading, library and backup on Linux
         timeout-minutes: 3
         run: xvfb-run -a npx electron --no-sandbox test/smoke.cjs --visual-preview
@@ -58,6 +54,9 @@ jobs:
         run: npm run dist:linux
       - name: Inspect installable files and desktop integration
         run: bash scripts/verify-linux-packages.sh
+      - name: Verify the packaged backup worker can run from Linux ASAR
+        timeout-minutes: 2
+        run: xvfb-run -a npx electron --no-sandbox test/packaged-backup-smoke.cjs
       - uses: actions/upload-artifact@v4
         if: success()
         with:

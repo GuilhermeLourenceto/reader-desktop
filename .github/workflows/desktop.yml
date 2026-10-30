@@ -6,7 +6,10 @@ on:
         description: 'Também compilar e testar Linux (port ainda pendente de validação)'
         type: boolean
         default: false
+  # Keep automatic Windows packaging on the published main branch only.
+  # The Linux development branch is deliberately not built on pushes.
   push:
+    branches: [main]
     paths:
       - 'desktop/**'
       - '.github/workflows/desktop.yml'

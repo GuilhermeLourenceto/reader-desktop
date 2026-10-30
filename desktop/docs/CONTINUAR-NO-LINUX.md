@@ -25,12 +25,15 @@ que cada funcionalidade funciona em todas as distribuições.
 
 1. Empacotamento `AppImage` e `.deb` usando ícone próprio do LNReader (PNG).
 2. Workflow separado em `.github/workflows/linux-preparation.yml`,
-   limitado a esta branch: compila em Ubuntu x64, executa testes unitários
-   e smoke tests gráficos via Xvfb, gera os dois pacotes e verifica seus
-   arquivos. **Não** publica um GitHub Release nem muda tags.
+   executado **somente manualmente** nesta etapa: compila em Ubuntu x64,
+   roda lint, testes unitários e smoke tests gráficos via Xvfb, gera os
+   dois pacotes e verifica seus arquivos. A checagem inclui o worker de
+   backup dentro do ASAR Linux. **Não** publica GitHub Release nem muda tags.
+   O fluxo Windows automático só dispara em pushes para a `main`.
 3. `desktop/scripts/verify-linux-packages.sh` verifica cabeçalho AppImage,
-   versão do DEB, lançador `.desktop`, ícones e `app.asar` do pacote, sem
-   instalar nada no computador onde o teste é executado.
+   versão e arquitetura do DEB, lançador `.desktop`, associação do ícone
+   (`StartupWMClass`), arquivos de recursos e `app.asar`, sem instalar
+   nada no computador onde o teste é executado.
 4. A automação Windows existente e sua release permanecem intactas.
 
 ### Executar em Linux (desenvolvimento)
@@ -90,7 +93,7 @@ erros no computador do usuário.
 
 ## Critérios para propor merge à main
 
-Workflow Linux verde (incluindo inspeção dos pacotes), Windows não regredido,
+Workflow Linux executado manualmente e verde (incluindo inspeção dos pacotes), Windows não regredido,
 pelo menos uma validação real de AppImage e DEB e documentação das falhas
 restantes. A matriz de fontes externas continua **diagnóstica**: aprovar
 a auditoria não prova compatibilidade de todas as fontes.

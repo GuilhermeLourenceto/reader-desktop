@@ -24,8 +24,11 @@ test "$elf_magic" = "7f454c46" || {
 
 package_name="$(dpkg-deb --field "${debs[0]}" Package)"
 version="$(dpkg-deb --field "${debs[0]}" Version)"
-test -n "$package_name" && test "$version" = "$(node -p "require('./package.json').version")" || {
-  echo "Unexpected Debian package metadata: $package_name / $version" >&2
+architecture="$(dpkg-deb --field "${debs[0]}" Architecture)"
+test -n "$package_name" &&
+  test "$version" = "$(node -p "require('./package.json').version")" &&
+  test "$architecture" = "amd64" || {
+  echo "Unexpected Debian package metadata: $package_name / $version / $architecture" >&2
   exit 1
 }
 
@@ -38,6 +41,14 @@ grep -q '^\[Desktop Entry\]' "$launcher"
 grep -q '^Name=LNReader Desktop' "$launcher"
 grep -q '^Exec=' "$launcher"
 grep -q '^Icon=' "$launcher"
+# A visible launcher and the running Chromium window must share their ID.
+# Otherwise GNOME/Mint can show a generic/duplicated taskbar entry.
+desktop_name="$(node -p "require('./package.json').desktopName")"
+test -n "$desktop_name"
+grep -Fxq "StartupWMClass=$desktop_name" "$launcher" || {
+  echo "Linux launcher WM_CLASS does not match desktopName: $desktop_name" >&2
+  exit 1
+}
 find "$temp/usr/share/icons" -type f -name '*.png' | grep -q . || {
   echo "Linux icon PNG missing from Debian package" >&2; exit 1;
 }
