@@ -4,7 +4,9 @@ const fs = require('node:fs'),
   assert = require('node:assert/strict');
 const { emptyState } = require('../dist/backup.cjs');
 const { languages, t } = require('../src/i18n.cjs');
-const directory = fs.mkdtempSync(path.join(__dirname, '../.tmp/localization-'));
+const tmpDir = path.join(__dirname, '../.tmp');
+fs.mkdirSync(tmpDir, { recursive: true });
+const directory = fs.mkdtempSync(path.join(tmpDir, 'localization-'));
 app.setPath('userData', directory);
 app.commandLine.appendSwitch('disable-gpu');
 const state = {
