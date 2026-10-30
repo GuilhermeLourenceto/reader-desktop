@@ -174,6 +174,7 @@ server.listen(0, '127.0.0.1', () => {
           'window.desktop.load().then(state=>state.novels[0].chapters[0].isDownloaded===true)',
         );
         await click('Fontes');
+        await click('Gerenciar fontes');
         await click('Carregar repositórios');
         await wait(
           "document.body.innerText.includes('New source') && !document.querySelector('.busy')",
