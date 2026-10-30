@@ -325,8 +325,17 @@ server.listen(0, '127.0.0.1', () => {
           true,
         );
         await click('Fontes');
+        assert.equal(
+          await execute("document.querySelector('.source-mode-tabs button:first-child').textContent.trim()"),
+          'Buscar obras em todas as fontes',
+        );
+        assert.equal(
+          await execute("document.querySelector('.source-mode-tabs button:first-child').getAttribute('aria-pressed')"),
+          'true',
+        );
+        await click('Gerenciar fontes');
         await input(
-          'input[placeholder="Filtrar fontes por nome ou idioma"]',
+          'input[aria-label="Pesquisar fontes"]',
           'Alpha',
         );
         assert.equal(
@@ -344,6 +353,11 @@ server.listen(0, '127.0.0.1', () => {
         for (const plugin of plugins)
           assert.equal(calls.get(plugin.id + ':hero:1'), 1);
         assert.ok(maxActive <= 3);
+        assert.equal(
+          await execute("document.querySelector('.global-source-results:last-child').getAttribute('data-source-id')"),
+          'broken',
+          'a fonte sem resultados aparece depois das fontes com obras',
+        );
         await click('Tentar esta fonte novamente');
         await wait(
           "document.querySelectorAll('[data-source-id=broken] .book').length===1 && !document.querySelector('[data-source-id=broken] [role=alert]')",
