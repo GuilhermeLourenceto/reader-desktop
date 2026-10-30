@@ -25,11 +25,16 @@ que cada funcionalidade funciona em todas as distribuições.
 
 1. Empacotamento `AppImage` e `.deb` usando ícone próprio do LNReader (PNG).
 2. Workflow separado em `.github/workflows/linux-preparation.yml`,
-   executado **somente manualmente** nesta etapa: compila em Ubuntu x64,
+   executado **somente sob solicitação explícita** nesta etapa: compila em Ubuntu x64,
    roda lint, testes unitários e smoke tests gráficos via Xvfb, gera os
    dois pacotes e verifica seus arquivos. A checagem inclui o worker de
    backup dentro do ASAR Linux. **Não** publica GitHub Release nem muda tags.
    O fluxo Windows automático só dispara em pushes para a `main`.
+   Como o workflow Linux existe apenas nesta branch, para acionar uma nova
+   validação sem depender do botão manual do GitHub é necessário alterar
+   intencionalmente o arquivo marcador `desktop/.ci/REQUEST_LINUX_VALIDATION`
+   num commit separado. **Não criar/alterar esse marcador até solicitarmos
+   outro build.** Alterações comuns no código não geram novos instaladores.
 3. `desktop/scripts/verify-linux-packages.sh` verifica cabeçalho AppImage,
    versão e arquitetura do DEB, lançador `.desktop`, associação do ícone
    (`StartupWMClass`), arquivos de recursos e `app.asar`, sem instalar
