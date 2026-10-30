@@ -128,15 +128,58 @@ app.on('browser-window-created', (_, win) => {
         await js("document.querySelector('.book strong').textContent"),
         'Biblioteca',
       );
-      // Category names are stored in the original backup language. Localize
-      // only recognized stock labels, leaving user-created names untouched.
-      const categoryTabs = await js(
-        "Array.from(document.querySelectorAll('.category-tabs [role=tab]')).map(e=>e.textContent.trim())",
+      // Category names are stored in the original backup language. The
+      // unified desktop filter translates only stock categories and labels.
+      assert.equal(await js("document.querySelector('.category-tabs')===null"), true);
+      await click(t('Filtrar biblioteca', 'zh-CN'));
+      await wait("document.querySelector('#library-category')");
+      const categoryOptions = await js(
+        "Array.from(document.querySelector('#library-category').options).map(e=>e.textContent.trim())",
       );
-      assert.ok(categoryTabs.some(x => x.includes(t('Padrão', 'zh-CN'))));
-      assert.ok(categoryTabs.some(x => x.includes(t('Localização', 'zh-CN'))));
-      assert.ok(categoryTabs.some(x => x.includes('Minha categoria')));
-      assert.ok(!categoryTabs.some(x => x.includes('Localização')));
+      assert.ok(categoryOptions.some(x => x.includes(t('Padrão', 'zh-CN'))));
+      assert.ok(categoryOptions.some(x => x.includes(t('Localização', 'zh-CN'))));
+      assert.ok(categoryOptions.some(x => x.includes('Minha categoria')));
+      assert.ok(!categoryOptions.some(x => x.includes('Localização')));
+      assert.equal(
+        await js("document.querySelector('.library-filter-label').textContent.trim()"),
+        t('Estado', 'zh-CN'),
+      );
+      assert.deepEqual(
+        await js("Array.from(document.querySelectorAll('.library-status-options button')).map(e=>e.textContent.trim())"),
+        ['Todas', 'Não lidas', 'Baixadas'].map(key => t(key, 'zh-CN')),
+      );
+      assert.equal(
+        await js("document.querySelector('label[for=library-sort]').textContent.trim()"),
+        t('Ordenar por', 'zh-CN'),
+      );
+      const sortOptions = await js(
+        "Array.from(document.querySelector('#library-sort').options).map(e=>e.textContent.trim())",
+      );
+      assert.deepEqual(
+        sortOptions,
+        ['Ordem original', 'Nome (A–Z)', 'Nome (Z–A)', 'Mais capítulos']
+          .map(key => t(key, 'zh-CN')),
+      );
+      await click(t('Filtrar biblioteca', 'zh-CN'));
+      await js("document.querySelector('.book-card').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,clientX:300,clientY:300}))");
+      await wait("document.querySelector('[role=menu]')");
+      const contextLabels = await js(
+        "Array.from(document.querySelector('[role=menu]').querySelectorAll('button')).map(e=>e.textContent.trim())",
+      );
+      for (const key of ['Abrir obra', 'Selecionar obra', 'Baixar capítulos pendentes', 'Resetar leitura da obra', 'Remover da biblioteca'])
+        assert.ok(contextLabels.includes(t(key, 'zh-CN')), 'Missing translated context option: ' + key);
+      await click(t('Selecionar obra', 'zh-CN'));
+      assert.equal(
+        await js("document.querySelector('.library-selection').dataset.selectedCount"),
+        '1',
+      );
+      await js("document.querySelector('.book-card').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,clientX:300,clientY:300}))");
+      await wait("document.querySelector('[role=menu]')");
+      assert.ok(
+        (await js("document.querySelector('[role=menu]').textContent"))
+          .includes(t('Desmarcar obra', 'zh-CN')),
+      );
+      await click(t('Desmarcar obra', 'zh-CN'));
 
       await click(t('Fontes', 'zh-CN'));
       await wait("document.querySelector('#global-source-language')");
