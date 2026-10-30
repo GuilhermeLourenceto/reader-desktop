@@ -421,6 +421,14 @@ header {
   display: grid;
   place-items: center;
 }
+.section-heading span {
+  font-size: 11px;
+  padding: 2px 6px;
+  margin-left: 5px;
+  background: var(--secondaryContainer);
+  color: var(--onSecondaryContainer);
+  border-radius: 5px;
+}
 .filter-panel {
   display: flex;
   align-items: flex-end;
