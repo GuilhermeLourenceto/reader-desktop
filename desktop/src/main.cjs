@@ -395,7 +395,9 @@ app
       // Allow local fixture servers only in unpackaged test builds.
       allowPrivate: !app.isPackaged,
       sessionForSource: (id) => (id ? sourceSession(id) : undefined),
-      dnsResolver: (hostname, options) => net.resolveHost(hostname, options),
+      // Repository requests have no sourceId and use the default session.
+      // Source requests use their own session.resolveHost in RequestPool.
+      dnsResolver: (hostname, options) => session.defaultSession.resolveHost(hostname, options),
       requireDnsValidation: true,
     });
     register('request', (url, init) => requests.run(url, init));
