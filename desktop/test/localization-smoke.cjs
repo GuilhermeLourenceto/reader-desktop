@@ -77,6 +77,36 @@ app.on('browser-window-created', (_, win) => {
             `document.body.innerText.includes(${JSON.stringify(t('Privacidade e navegação', code))})`,
           ),
         );
+        // Theme names are read from JS metadata; verify they translate live
+        // rather than keeping the original Portuguese labels.
+        await click(t('Voltar nas configurações', code));
+        await click(t('Aparência', code));
+        await wait("document.querySelectorAll('.palette-swatch').length===9");
+        assert.equal(
+          await js("document.querySelector('.palette-swatch:nth-child(2)').getAttribute('title')"),
+          t('Crepúsculo', code),
+        );
+        assert.ok(
+          await js(`Array.from(document.querySelectorAll('.palette-swatch')).some(b=>b.textContent.trim()===${JSON.stringify(t('Morango', code))})`),
+          'Palette names must be translated in ' + code,
+        );
+        await click(t('Voltar nas configurações', code));
+        await click(t('Leitor', code));
+        await wait("document.querySelector('.reader-theme-picker select')");
+        assert.equal(
+          await js("document.querySelector('.reader-theme-picker option[value=app]').textContent.trim()"),
+          t('Seguir aplicativo', code),
+        );
+        assert.equal(
+          await js("document.querySelector('.reader-theme-picker option[value=original-sepia]').textContent.trim()"),
+          t('Sépia original', code),
+        );
+        assert.equal(
+          await js("document.querySelector('.reader-theme-swatches button[title]').getAttribute('title')"),
+          t('Seguir aplicativo', code),
+        );
+        await click(t('Voltar nas configurações', code));
+        await click(t('Geral', code));
       }
       await click(t('Biblioteca', 'zh-CN'));
       await wait("document.querySelector('.book')");
