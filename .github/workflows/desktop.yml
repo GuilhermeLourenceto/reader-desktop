@@ -297,8 +297,15 @@ jobs:
           set -euo pipefail
           test "$(node -p "require('./desktop/package.json').version")" = "0.4.2"
           test -s desktop/docs/RELEASE_NOTES_0.4.2.md
-          installer="$(find release-artifacts -type f -name 'LNReader.Desktop.Setup.0.4.2.exe' -print -quit)"
+          installer="$(find release-artifacts -type f -name '*.exe' -print -quit)"
           test -n "$installer" && test -s "$installer"
+          # Keep the existing downloadable asset URL unchanged even if the
+          # electron-builder output has spaces in its generated filename.
+          target="release-artifacts/LNReader.Desktop.Setup.0.4.2.exe"
+          if [ "$installer" != "$target" ]; then
+            mv -- "$installer" "$target"
+          fi
+          installer="$target"
           tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v0.4.2" --jq '.object.sha')"
           test "$tag_sha" = "9072ffbf63bdbf27f8cee435f52d11793ddaece6"
           release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/v0.4.2" --jq '.id')"
