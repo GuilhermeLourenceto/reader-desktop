@@ -267,7 +267,7 @@ app.on('browser-window-created', (_event, win) => {
           (await execute(
             "document.querySelector('.reader-scroll').scrollTop",
           )) -
-            size * 0.85,
+            size * 0.5,
         ) < 4,
       );
       await click('Ajustes de leitura');
