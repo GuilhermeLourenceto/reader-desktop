@@ -421,55 +421,36 @@ header {
   display: grid;
   place-items: center;
 }
-.category-tabs {
-  display: flex;
-  overflow-x: auto;
-  min-height: 52px;
-  gap: 12px;
-  border-bottom: 1px solid var(--outlineVariant);
-  margin-top: 8px;
-}
-.category-tabs button {
-  border: none;
-  border-radius: 0;
-  color: var(--onSurfaceVariant);
-  padding: 14px 20px;
-  white-space: nowrap;
-  position: relative;
-}
-.category-tabs button.selected {
-  color: var(--primary);
-}
-.category-tabs button.selected::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 12px;
-  right: 12px;
-  height: 3px;
-  border-radius: 3px 3px 0 0;
-  background: var(--primary);
-}
-.category-tabs span,
-.section-heading span {
-  font-size: 11px;
-  padding: 2px 6px;
-  margin-left: 5px;
-  background: var(--secondaryContainer);
-  color: var(--onSecondaryContainer);
-  border-radius: 5px;
-}
 .filter-panel {
   display: flex;
-  align-items: center;
-  gap: 18px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
   padding: 16px;
   background: var(--surfaceContainer);
   border-radius: 12px;
   margin-top: 12px;
 }
-.filter-panel label {
-  margin: 0;
+.library-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.library-filter-field label {
+  color: var(--onSurfaceVariant);
+  font-size: 12px;
+}
+.library-filter-field select {
+  width: 100%;
+}
+.library-selection {
+  margin: 12px 0 0;
+}
+.library-selection button {
+  padding: 7px 12px;
+  font-size: 12px;
 }
 .grid {
   display: grid;
