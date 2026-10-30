@@ -87,10 +87,15 @@ Para executar um AppImage, habilite a permissão de execução; algumas
 distribuições precisam do pacote de compatibilidade do FUSE.
 
 A automação `.github/workflows/desktop.yml` compila e testa Windows por padrão.
-Linux é opcional, habilitado por `include_linux` na execução manual, para
-continuação futura do port. Os instaladores são disponibilizados como artefatos
-do GitHub Actions. A execução local no Windows não valida o funcionamento em
-Linux. Os binários locais não possuem assinatura digital de distribuição.
+Linux é opcional, habilitado por `include_linux` na execução manual. Na
+branch experimental `linux/prepare-packaging-and-tests`, há ainda o workflow
+separado `.github/workflows/linux-preparation.yml`: ele executa testes no
+Ubuntu, produz AppImage e DEB e valida o lançador e os recursos dos pacotes.
+Os arquivos são **artefatos de teste**, não uma release Linux oficial.
+Acompanhe as pendências em
+[Preparação do Linux](docs/CONTINUAR-NO-LINUX.md). A execução local no Windows
+não valida o funcionamento em Linux. Os binários não possuem assinatura
+digital de distribuição.
 
 ## Estrutura independente e código original reaproveitado
 
