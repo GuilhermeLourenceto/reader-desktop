@@ -16,8 +16,10 @@ export default function VirtualBookGrid({
 
   useLayoutEffect(() => {
     if (!virtualized) return;
-    const scroll = scrollContainerRef?.current;
     const grid = gridRef.current;
+    // A child layout effect can run before the parent's ref is attached.
+    // The ancestor DOM node already exists, so resolve it directly on mount.
+    const scroll = scrollContainerRef?.current || grid?.closest('main');
     if (!scroll || !grid) return;
 
     let frame = 0;
