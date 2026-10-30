@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Spinner from './Spinner';
+import { orderGlobalSearchRows } from './globalSourceOrder.cjs';
 export default function GlobalSearch({ plugins, fetchPage, cards }) {
   const [term, setTerm] = useState(''),
     [rows, setRows] = useState([]),
@@ -104,7 +105,7 @@ export default function GlobalSearch({ plugins, fetchPage, cards }) {
           Pesquisando nas fontes…
         </div>
       )}
-      {rows.map(row => (
+      {orderGlobalSearchRows(rows).map(row => (
         <section
           className="global-source-results"
           key={row.plugin.id}
