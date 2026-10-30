@@ -4,11 +4,11 @@ const { validateState } = require('./storage.cjs');
 const {
   BackupEntryName,
   ZipBackupName,
-} = require('../../src/services/backup/types.ts');
+} = require('../vendor/lnreader/src/services/backup/types.ts');
 const {
   resolveBackupOptions,
-} = require('../../src/services/backup/options.ts');
-const { INSTALLED_PLUGINS_KEY } = require('../../src/plugins/constants.ts');
+} = require('../vendor/lnreader/src/services/backup/options.ts');
+const { INSTALLED_PLUGINS_KEY } = require('../vendor/lnreader/src/plugins/constants.ts');
 
 const MAX_BYTES = 512 * 1024 * 1024;
 function safePath(name) {
