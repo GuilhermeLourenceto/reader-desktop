@@ -19,7 +19,9 @@
     "lint": "node scripts/check-code.cjs",
     "format": "prettier --write src/ test/ scripts/ tools/",
     "format:check": "prettier --check src/Icon.jsx src/SourceFilters.jsx src/DesktopErrorBoundary.jsx src/libraryState.js src/sourceRuntime.js",
-    "check": "npm run lint && npm run format:check && npm test"
+    "check": "npm run lint && npm run format:check && npm test",
+    "test:journeys": "node test/user-journeys.cjs",
+    "test:all": "npm run check && npm run test:smoke && npm run test:pagination && npm run test:reader && npm run test:journeys"
   },
   "dependencies": {
     "@noble/ciphers": "^2.2.0",

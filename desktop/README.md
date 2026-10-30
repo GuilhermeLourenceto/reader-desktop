@@ -291,6 +291,8 @@ npm run lint          # Sintaxe Node e dependências fora de desktop/
 npm run format:check  # Formatação dos módulos novos (cobertura incremental)
 npm run format        # Formata código próprio (revise o diff antes de commitar)
 npm run check         # Lint + formatação incremental + testes unitários
+npm run test:journeys # 10 jornadas reais de interface (Electron)
+npm run test:all      # Suíte local completa do Desktop
 ```
 
 O código original em `vendor/lnreader/` é versionado separadamente e não deve

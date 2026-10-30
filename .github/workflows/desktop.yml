@@ -130,7 +130,7 @@ jobs:
       - run: npm run setup
       - run: npm run build
       - name: Test 10 everyday user journeys from real reader issues
-        run: node test/user-journeys.cjs
+        run: npm run test:journeys
         timeout-minutes: 24
       - uses: actions/upload-artifact@v4
         if: always()
