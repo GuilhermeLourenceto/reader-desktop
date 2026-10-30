@@ -29,6 +29,7 @@ test('testes locais podem solicitar explicitamente uma exceção', () => {
 test('DNS público é aceito, mas respostas privadas ou mistas são bloqueadas', async () => {
   const publicAnswer = { resolvedAddresses: [{ address: '93.184.215.14' }, { address: '2606:2800:220:1:248:1893:25c8:1946' }] };
   assert.equal(validateResolvedAddresses(publicAnswer).length, 2);
+  assert.equal(validateResolvedAddresses({ resolvedAddresses: [{ address: '::ffff:93.184.215.14' }] }).length, 1);
   for (const address of ['127.0.0.1', '10.1.2.3', '192.168.0.8', '169.254.169.254', '::1', 'fc00::1', '::ffff:127.0.0.1']) {
     assert.throws(() => validateResolvedAddresses({ resolvedAddresses: [{ address: '93.184.215.14' }, { address }] }), /DNS/);
   }
