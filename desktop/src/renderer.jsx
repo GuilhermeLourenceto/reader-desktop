@@ -22,8 +22,8 @@ import {
   uninstallDesktopPlugin as uninstallPlugin,
 } from './sources';
 import { withSourceDeadline, validateFilters } from './sourceGuards.cjs';
-import { INSTALLED_PLUGINS_KEY } from '../../src/plugins/constants';
-import { defaultTheme } from '../../src/theme/md3/defaultTheme';
+import { INSTALLED_PLUGINS_KEY } from '../vendor/lnreader/src/plugins/constants';
+import { defaultTheme } from '../vendor/lnreader/src/theme/md3/defaultTheme';
 import Settings from './Settings';
 import Spinner from './Spinner';
 import { appTheme } from './appThemes';
@@ -36,7 +36,7 @@ import ReaderText, { readerPresentation } from './ReaderText';
 import BookGrid from './BookGrid';
 import Library from './Library';
 import GlobalSearch from './GlobalSearch';
-import { getErrorChainMessages } from '../../src/utils/error';
+import { getErrorChainMessages } from '../vendor/lnreader/src/utils/error';
 import {
   validateSourceItems,
   mergeChapters,
