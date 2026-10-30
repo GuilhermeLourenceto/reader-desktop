@@ -19,8 +19,8 @@ function PalettePicker({ value = 'default', onChange }) {
           type="button"
           className="palette-swatch"
           aria-pressed={value === theme.id}
-          aria-label={translateMessage('Paleta {v0}', { v0: theme.name })}
-          title={theme.name}
+          aria-label={translateMessage('Paleta {v0}', { v0: translateMessage(theme.name) })}
+          title={translateMessage(theme.name)}
           onClick={() => onChange(theme.id)}
         >
           <span className="palette-dots" aria-hidden="true">
@@ -28,7 +28,7 @@ function PalettePicker({ value = 'default', onChange }) {
             <i style={{ background: theme.dark.secondary }} />
             <i style={{ background: theme.dark.tertiary }} />
           </span>
-          <span>{theme.name}</span>
+          <span>{translateMessage(theme.name)}</span>
         </button>
       ))}
     </div>
