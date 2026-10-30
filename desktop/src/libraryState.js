@@ -32,7 +32,7 @@ export function snapshot(state) {
     ),
   };
 }
-export const nextId = items => {
+export const nextId = (items) => {
   const id = items.reduce((max, item) => Math.max(max, item.id || 0), 0) + 1;
   if (!Number.isSafeInteger(id))
     throw new Error(
@@ -42,15 +42,14 @@ export const nextId = items => {
 };
 export const fileKey = (novel, chapter) =>
   `Novels/${novel.pluginId}/${novel.id}/${chapter.id}/index.html`;
-export const loadedPages = novel => [
+export const loadedPages = (novel) => [
   ...new Set([
     ...(novel.desktopLoadedPages || []),
-    ...novel.chapters.map(chapter => Number(chapter.page || 1)),
+    ...novel.chapters.map((chapter) => Number(chapter.page || 1)),
   ]),
 ];
-export const nextNovelPage = novel =>
+export const nextNovelPage = (novel) =>
   Array.from(
     { length: Number(novel.totalPages || 1) },
     (_, index) => index + 1,
-  ).find(page => !loadedPages(novel).includes(page));
-
+  ).find((page) => !loadedPages(novel).includes(page));

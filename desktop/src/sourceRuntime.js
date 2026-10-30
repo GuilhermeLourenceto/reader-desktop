@@ -3,7 +3,7 @@ import { loadPlugin } from './sourceClient';
 import { withSourceDeadline, validateFilters } from './sourceGuards.cjs';
 import { validateSourceItems } from './domain.cjs';
 
-export const errorText = error =>
+export const errorText = (error) =>
   [...new Set(getErrorChainMessages(error))].join(' — ');
 
 export async function fetchSourcePage(pluginId, term, page, options) {
@@ -26,4 +26,3 @@ export async function fetchSourcePage(pluginId, term, page, options) {
   );
   return validateSourceItems(items);
 }
-
