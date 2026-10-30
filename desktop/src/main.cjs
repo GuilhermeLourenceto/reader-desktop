@@ -1,3 +1,6 @@
+const { t } = require('./i18n.cjs');
+const ui = (message, values = {}) =>
+  t(message, values, state?.settings?.desktopInterfaceLanguage || 'pt-BR');
 const {
   app,
   BrowserWindow,
@@ -34,7 +37,7 @@ let state;
 let mainWindow;
 let stateFile;
 let diskFiles;
-const commit = next => {
+const commit = (next) => {
   writeState(stateFile, next);
   state = next;
 };
@@ -48,7 +51,7 @@ const publicState = (metadataOnly = false) => ({
       )
     : diskFiles.export(state.files),
 });
-const merge = input => {
+const merge = (input) => {
   if (!input || !Array.isArray(input.novels) || !Array.isArray(input.plugins))
     throw new Error('Estado inválido');
   const next = { ...state };
@@ -99,8 +102,8 @@ app
     if (loaded.recovered && app.isPackaged)
       dialog.showMessageBox({
         type: 'warning',
-        message: 'A biblioteca foi recuperada da última cópia válida.',
-        detail: 'O arquivo anterior foi preservado na pasta de dados.',
+        message: ui('A biblioteca foi recuperada da última cópia válida.'),
+        detail: ui('O arquivo anterior foi preservado na pasta de dados.'),
       });
     try {
       const previous = JSON.parse(fs.readFileSync(stateFile + '.bak', 'utf8'));
@@ -132,7 +135,7 @@ app
         }
       state.progressUnit = 'percent';
     }
-    protocol.handle('lnreader', request => {
+    protocol.handle('lnreader', (request) => {
       const url = new URL(request.url);
       if (url.hostname === 'app' && url.pathname === '/asset') {
         const name = url.searchParams.get('name');
@@ -181,7 +184,8 @@ app
     });
     mainWindow = new BrowserWindow({
       show:
-        app.isPackaged || !process.argv.some(arg => arg.endsWith('smoke.cjs')),
+        app.isPackaged ||
+        !process.argv.some((arg) => arg.endsWith('smoke.cjs')),
       width: 1280,
       height: 850,
       minWidth: 800,
@@ -214,12 +218,18 @@ app
         try {
           const answer = await dialog.showMessageBox(mainWindow, {
             type: 'warning',
-            buttons: ['Aguardar', 'Fechar sem salvar alterações pendentes'],
+            buttons: [
+              ui('Aguardar'),
+              ui('Fechar sem salvar alterações pendentes'),
+            ],
             defaultId: 0,
             cancelId: 0,
-            message: 'O LNReader ainda não conseguiu concluir o fechamento.',
-            detail:
+            message: ui(
+              'O LNReader ainda não conseguiu concluir o fechamento.',
+            ),
+            detail: ui(
               'A biblioteca já salva será mantida. Fechar agora pode perder o progresso mais recente.',
+            ),
           });
           if (mayClose || mainWindow.isDestroyed()) return;
           if (answer.response === 1) {
@@ -239,12 +249,13 @@ app
       unresponsiveDialog = true;
       const answer = await dialog.showMessageBox(mainWindow, {
         type: 'warning',
-        buttons: ['Aguardar', 'Recarregar interface'],
+        buttons: [ui('Aguardar'), ui('Recarregar interface')],
         defaultId: 0,
         cancelId: 0,
-        message: 'A interface parou de responder',
-        detail:
+        message: ui('A interface parou de responder'),
+        detail: ui(
           'Uma fonte pode estar travando o aplicativo. Recarregar encerra a tarefa atual e mantém a biblioteca salva. Aguardar mantém a tentativa em andamento.',
+        ),
       });
       unresponsiveDialog = false;
       if (answer.response !== 1) return;
@@ -264,27 +275,31 @@ app
       }
       if (details.reason === 'clean-exit') return;
       rendererFailures = rendererFailures.filter(
-        time => Date.now() - time < 60000,
+        (time) => Date.now() - time < 60000,
       );
       rendererFailures.push(Date.now());
       if (rendererFailures.length >= 3) {
         dialog.showErrorBox(
-          'Não foi possível recuperar a interface',
-          'O LNReader falhou repetidamente e será fechado. A biblioteca salva foi mantida.',
+          ui('Não foi possível recuperar a interface'),
+          ui(
+            'O LNReader falhou repetidamente e será fechado. A biblioteca salva foi mantida.',
+          ),
         );
         mainWindow.destroy();
         return;
       }
       if (!recoveringRenderer)
         dialog.showErrorBox(
-          'A interface foi reiniciada',
-          'O LNReader precisou recarregar a interface depois de uma falha. A biblioteca salva será restaurada.',
+          ui('A interface foi reiniciada'),
+          ui(
+            'O LNReader precisou recarregar a interface depois de uma falha. A biblioteca salva será restaurada.',
+          ),
         );
       recoveringRenderer = false;
       mainWindow.reload();
     });
     let mayClose = false;
-    mainWindow.on('close', event => {
+    mainWindow.on('close', (event) => {
       if (!mayClose && !mainWindow.webContents.isCrashed()) {
         event.preventDefault();
         if (closeRequested) return;
@@ -294,7 +309,7 @@ app
       }
     });
     mainWindow.on('closed', () => clearTimeout(closeTimer));
-    ipcMain.on('finish-close', event => {
+    ipcMain.on('finish-close', (event) => {
       if (
         event.sender === mainWindow.webContents &&
         event.senderFrame?.url.startsWith('lnreader://app/')
@@ -304,11 +319,13 @@ app
         mainWindow.close();
       }
     });
-    mainWindow.webContents.on('will-navigate', event => event.preventDefault());
+    mainWindow.webContents.on('will-navigate', (event) =>
+      event.preventDefault(),
+    );
     mainWindow.webContents.session.setPermissionRequestHandler(
       (_contents, _permission, callback) => callback(false),
     );
-    register('load', options => publicState(options?.metadataOnly === true));
+    register('load', (options) => publicState(options?.metadataOnly === true));
     register('info', () => ({
       version: require('../package.json').version,
       platform: process.platform,
@@ -358,27 +375,38 @@ app
       commit({ ...state, files });
     });
     const sourceSessions = new Map();
-    const sourceSession = id => {
-      if (typeof id !== 'string' || !/^[a-zA-Z0-9_.-]+$/.test(id) ||
-          ['.', '..', '__proto__', 'constructor', 'prototype'].includes(id))
+    const sourceSession = (id) => {
+      if (
+        typeof id !== 'string' ||
+        !/^[a-zA-Z0-9_.-]+$/.test(id) ||
+        ['.', '..', ui('__proto__'), ui('constructor'), 'prototype'].includes(
+          id,
+        )
+      )
         throw new Error('Identificador de fonte inválido.');
       if (!sourceSessions.has(id))
-        sourceSessions.set(id, session.fromPartition('persist:lnreader-source-' + id));
+        sourceSessions.set(
+          id,
+          session.fromPartition('persist:lnreader-source-' + id),
+        );
       return sourceSessions.get(id);
     };
     const requests = new (require('./request.cjs').RequestPool)(net, 8, 128, {
       // Allow local fixture servers only in unpackaged test builds.
       allowPrivate: !app.isPackaged,
-      sessionForSource: id => id ? sourceSession(id) : undefined,
+      sessionForSource: (id) => (id ? sourceSession(id) : undefined),
       dnsResolver: (hostname, options) => net.resolveHost(hostname, options),
       requireDnsValidation: true,
     });
     register('request', (url, init) => requests.run(url, init));
-    register('source-login', async id => {
-      const plugin = state.plugins.find(item => item.id === id);
+    register('source-login', async (id) => {
+      const plugin = state.plugins.find((item) => item.id === id);
       if (!plugin) throw new Error('Fonte não instalada.');
       const rawSite = String(plugin.site || '').trim();
-      if (!rawSite) throw new Error('Esta fonte não informou o endereço do site para login.');
+      if (!rawSite)
+        throw new Error(
+          'Esta fonte não informou o endereço do site para login.',
+        );
       const loginUrl = validateNetworkUrl(
         /^https?:\/\//i.test(rawSite) ? rawSite : 'https://' + rawSite,
         { allowPrivate: !app.isPackaged },
@@ -391,7 +419,7 @@ app
         height: 760,
         minWidth: 600,
         minHeight: 480,
-        title: 'Entrar na fonte: ' + plugin.name,
+        title: ui('Entrar na fonte: {name}', { name: plugin.name }),
         autoHideMenuBar: true,
         webPreferences: {
           session: sourceSession(id),
@@ -404,7 +432,7 @@ app
       // windows only inside this source's cookie partition; no preload, Node,
       // filesystem access or special schemes are inherited from the app UI.
       const loginPopups = new Set();
-      const validLoginNavigation = url => {
+      const validLoginNavigation = (url) => {
         try {
           validateNetworkUrl(url, { allowPrivate: !app.isPackaged });
           return true;
@@ -413,17 +441,18 @@ app
         }
       };
       loginWindow.webContents.setWindowOpenHandler(({ url }) => {
-        const publicUrl = url !== 'about:blank' && validLoginNavigation(url)
-          ? new URL(url) : null;
+        const publicUrl =
+          url !== 'about:blank' && validLoginNavigation(url)
+            ? new URL(url)
+            : null;
         // Public external identity providers may open HTTPS popups; legacy
         // HTTP popups are permitted only at the original source's origin.
-        const allowed = url === 'about:blank' ||
-          (publicUrl && (
-            publicUrl.protocol === 'https:' ||
-            publicUrl.origin === new URL(loginUrl).origin
-          ));
-        if (loginPopups.size >= 3 || !allowed)
-          return { action: 'deny' };
+        const allowed =
+          url === 'about:blank' ||
+          (publicUrl &&
+            (publicUrl.protocol === 'https:' ||
+              publicUrl.origin === new URL(loginUrl).origin));
+        if (loginPopups.size >= 3 || !allowed) return { action: 'deny' };
         return {
           action: 'allow',
           overrideBrowserWindowOptions: {
@@ -440,7 +469,7 @@ app
           },
         };
       });
-      loginWindow.webContents.on('did-create-window', popup => {
+      loginWindow.webContents.on('did-create-window', (popup) => {
         loginPopups.add(popup);
         popup.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
         popup.webContents.on('will-navigate', (event, url) => {
@@ -479,10 +508,10 @@ app
       }
       return finished;
     });
-    register('cancel-request', id => requests.cancel(id));
+    register('cancel-request', (id) => requests.cancel(id));
     register('cancel-requests', () => requests.cancelAll());
     mainWindow.webContents.on('destroyed', () => requests.cancelAll());
-    register('backup', async input => {
+    register('backup', async (input) => {
       const result = await dialog.showSaveDialog(mainWindow, {
         defaultPath: `LNReader-${new Date().toISOString().slice(0, 10)}.zip`,
         filters: [{ name: 'Backup LNReader', extensions: ['zip'] }],
@@ -510,12 +539,15 @@ app
       });
       const confirmation = await dialog.showMessageBox(mainWindow, {
         type: 'question',
-        buttons: ['Cancelar', 'Restaurar'],
+        buttons: [ui('Cancelar'), 'Restaurar'],
         defaultId: 0,
         cancelId: 0,
-        message: `Restaurar ${restored.state.novels.length} obras?`,
-        detail:
+        message: ui('Restaurar {count} obras?', {
+          count: restored.state.novels.length,
+        }),
+        detail: ui(
           'As seções presentes no backup substituirão os dados atuais. Uma cópia do estado anterior será salva como before-restore.json na pasta de dados do aplicativo.',
+        ),
       });
       if (confirmation.response !== 1) return null;
       writeState(
@@ -539,9 +571,9 @@ app
       }
       Object.assign(next.files, diskFiles.import(restored.state.files));
       if (restored.sections.library)
-        next.novels = next.novels.map(novel => ({
+        next.novels = next.novels.map((novel) => ({
           ...novel,
-          chapters: novel.chapters.map(chapter => ({
+          chapters: novel.chapters.map((chapter) => ({
             ...chapter,
             isDownloaded: Boolean(
               chapter.isDownloaded &&
@@ -557,8 +589,8 @@ app
     });
     return mainWindow.loadURL('lnreader://app/index.html');
   })
-  .catch(error => {
-    dialog.showErrorBox('Não foi possível abrir o LNReader', error.message);
+  .catch((error) => {
+    dialog.showErrorBox(ui('Não foi possível abrir o LNReader'), error.message);
     app.exit(1);
   });
 app.on('window-all-closed', () => app.quit());

@@ -1,8 +1,10 @@
+import { t as translateMessage } from './i18n.cjs';
 import React, { useState } from 'react';
 import ReaderPreview from './ReaderPreview';
 import ReaderThemes from './ReaderThemes';
 import Spinner from './Spinner';
 import { appThemes } from './appThemes';
+import { languages } from './i18n.cjs';
 
 function PalettePicker({ value = 'default', onChange }) {
   return (
@@ -11,13 +13,13 @@ function PalettePicker({ value = 'default', onChange }) {
       role="group"
       aria-label="Paleta do aplicativo"
     >
-      {appThemes.map(theme => (
+      {appThemes.map((theme) => (
         <button
           key={theme.id}
           type="button"
           className="palette-swatch"
           aria-pressed={value === theme.id}
-          aria-label={`Paleta ${theme.name}`}
+          aria-label={translateMessage('Paleta {v0}', { v0: theme.name })}
           title={theme.name}
           onClick={() => onChange(theme.id)}
         >
@@ -88,7 +90,7 @@ function Choice({ title, description, value, options, onChange }) {
       <select
         aria-label={title}
         value={value}
-        onChange={event => onChange(event.target.value)}
+        onChange={(event) => onChange(event.target.value)}
       >
         {options.map(([value, label]) => (
           <option value={value} key={value}>
@@ -116,7 +118,7 @@ function Slider({ title, value, min, max, step = 1, suffix = '', onChange }) {
         min={min}
         max={max}
         step={step}
-        onChange={event => onChange(Number(event.target.value))}
+        onChange={(event) => onChange(Number(event.target.value))}
       />
     </label>
   );
@@ -167,13 +169,13 @@ export default function Settings({
         title="Somente baixados"
         description="Mostrar na biblioteca apenas obras com capítulos baixados"
         value={Boolean(settings.desktopDownloadedOnly)}
-        onChange={value => change('desktopDownloadedOnly', value)}
+        onChange={(value) => change('desktopDownloadedOnly', value)}
       />
       <Toggle
         title="Modo anônimo"
         description="Não salvar histórico nem progresso das próximas leituras"
         value={Boolean(settings.desktopIncognito)}
-        onChange={value => change('desktopIncognito', value)}
+        onChange={(value) => change('desktopIncognito', value)}
       />
     </>
   );
@@ -181,8 +183,8 @@ export default function Settings({
     page === 'more'
       ? 'Mais'
       : page === 'settings'
-      ? 'Configurações'
-      : entries.find(entry => entry[0] === page)?.[1];
+        ? 'Configurações'
+        : entries.find((entry) => entry[0] === page)?.[1];
   return (
     <div className="settings-screen" data-settings-page={page}>
       <header className="settings-header">
@@ -233,12 +235,18 @@ export default function Settings({
       )}
       {page === 'general' && (
         <>
+          <div className="settings-group">
+            <Choice
+              title="Idioma da interface"
+              value={settings.desktopInterfaceLanguage || 'pt-BR'}
+              options={languages}
+              onChange={(value) => change('desktopInterfaceLanguage', value)}
+            />
+          </div>
           <h3 className="settings-section-title">Privacidade e navegação</h3>
           <div className="settings-group">{quick}</div>
           <p className="settings-note">
-            O modo anônimo preserva seu histórico anterior. Capítulos abertos
-            ainda podem ser salvos para leitura offline. Pressione F11 para
-            alternar a tela cheia em qualquer aba do aplicativo.
+            O histórico anterior é mantido. F11 alterna a tela cheia.
           </p>
         </>
       )}
@@ -254,19 +262,19 @@ export default function Settings({
                 ['light', 'Claro'],
                 ['dark', 'Escuro'],
               ]}
-              onChange={value => change('desktopTheme', value)}
+              onChange={(value) => change('desktopTheme', value)}
             />
           </div>
           <h3 className="settings-section-title">Paleta do aplicativo</h3>
           <div className="settings-group">
             <PalettePicker
               value={settings.desktopPalette || 'default'}
-              onChange={value => change('desktopPalette', value)}
+              onChange={(value) => change('desktopPalette', value)}
             />
           </div>
           <p className="settings-note">
-            A paleta vale para todo o aplicativo. O tema “Seguir aplicativo” do
-            leitor usa as cores escolhidas aqui.
+            As cores escolhidas também se aplicam ao leitor quando ele segue o
+            tema do aplicativo.
           </p>
         </>
       )}
@@ -282,19 +290,19 @@ export default function Settings({
                 ['normal', 'Padrão'],
                 ['large', 'Grande'],
               ]}
-              onChange={value => change('desktopCoverSize', value)}
+              onChange={(value) => change('desktopCoverSize', value)}
             />
             <Toggle
               title="Mostrar contadores nas capas"
               description="Exibir capítulos baixados e não lidos"
               value={settings.desktopShowBadges !== false}
-              onChange={value => change('desktopShowBadges', value)}
+              onChange={(value) => change('desktopShowBadges', value)}
             />
             <Toggle
               title="Mostrar quantidade de capítulos"
               description="Exibir o resumo de capítulos abaixo de cada capa"
               value={settings.desktopShowChapterCount !== false}
-              onChange={value => change('desktopShowChapterCount', value)}
+              onChange={(value) => change('desktopShowChapterCount', value)}
             />
           </div>
         </>
@@ -312,7 +320,7 @@ export default function Settings({
                   ['sans', 'Noto Sans'],
                   ['system', 'Fonte do sistema'],
                 ]}
-                onChange={value => change('desktopFontFamily', value)}
+                onChange={(value) => change('desktopFontFamily', value)}
               />
               <Slider
                 title="Tamanho da fonte"
@@ -320,7 +328,7 @@ export default function Settings({
                 min={14}
                 max={40}
                 suffix=" px"
-                onChange={value => change('desktopFontSize', value)}
+                onChange={(value) => change('desktopFontSize', value)}
               />
               <Slider
                 title="Espaçamento entre linhas"
@@ -328,7 +336,7 @@ export default function Settings({
                 min={1.2}
                 max={2.6}
                 step={0.05}
-                onChange={value => change('desktopLineHeight', value)}
+                onChange={(value) => change('desktopLineHeight', value)}
               />
               <Slider
                 title="Largura do texto"
@@ -337,7 +345,7 @@ export default function Settings({
                 max={1200}
                 step={20}
                 suffix=" px"
-                onChange={value => change('desktopReaderWidth', value)}
+                onChange={(value) => change('desktopReaderWidth', value)}
               />
               <Choice
                 title="Alinhamento do texto"
@@ -346,11 +354,11 @@ export default function Settings({
                   ['left', 'À esquerda'],
                   ['justify', 'Justificado'],
                 ]}
-                onChange={value => change('desktopTextAlign', value)}
+                onChange={(value) => change('desktopTextAlign', value)}
               />
               <ReaderThemes
                 value={settings.desktopReaderTheme || 'app'}
-                onChange={value => change('desktopReaderTheme', value)}
+                onChange={(value) => change('desktopReaderTheme', value)}
               />
               <Choice
                 title="Modo de leitura"
@@ -359,7 +367,7 @@ export default function Settings({
                   ['scroll', 'Rolagem contínua'],
                   ['pages', 'Páginas horizontais'],
                 ]}
-                onChange={value => change('desktopPagination', value)}
+                onChange={(value) => change('desktopPagination', value)}
               />
               <Slider
                 title="Avanço por página (rolagem)"
@@ -368,22 +376,20 @@ export default function Settings({
                 max={100}
                 step={5}
                 suffix=" %"
-                onChange={value => change('desktopPageStep', value)}
+                onChange={(value) => change('desktopPageStep', value)}
               />
               <Toggle
                 title="Ocultar barras durante a leitura"
-                description="Aparecem ao mover o mouse, clicar ou usar o teclado"
+                description="Aparecem ao aproximar o mouse das bordas ou clicar na página."
                 value={settings.desktopReaderAutoHide !== false}
-                onChange={value => change('desktopReaderAutoHide', value)}
+                onChange={(value) => change('desktopReaderAutoHide', value)}
               />
             </div>
             <ReaderPreview settings={settings} />
           </div>
           <p className="settings-note">
-            Atalhos no leitor: setas, Page Up/Page Down e espaço avançam uma
-            página; Home e End vão ao início e ao fim do capítulo; Esc fecha os
-            ajustes. Os atalhos ficam dentro do capítulo; use Anterior/Próximo
-            para trocar de capítulo.
+            Setas e espaço rolam a página. Home e End vão ao início e ao fim.
+            Anterior e Próximo trocam de capítulo.
           </p>
         </>
       )}
@@ -432,10 +438,7 @@ export default function Settings({
             <p>
               Backups ZIP locais e leitura offline dos capítulos armazenados.
             </p>
-            <p>
-              Login interativo, Cloudflare, nuvem, rastreadores e TTS ainda não
-              estão disponíveis nesta versão.
-            </p>
+            <p>Algumas fontes podem exigir login ou bloquear o acesso.</p>
           </div>
         </>
       )}

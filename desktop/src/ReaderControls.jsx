@@ -16,7 +16,7 @@ export default function ReaderControls({
       <select
         aria-label={title}
         value={settings[key] || value}
-        onChange={event => onChange({ [key]: event.target.value })}
+        onChange={(event) => onChange({ [key]: event.target.value })}
       >
         {options.map(([value, label]) => (
           <option key={value} value={value}>
@@ -40,7 +40,7 @@ export default function ReaderControls({
         max={max}
         step={step}
         value={settings[key] ?? value}
-        onChange={event => onChange({ [key]: Number(event.target.value) })}
+        onChange={(event) => onChange({ [key]: Number(event.target.value) })}
       />
     </label>
   );
@@ -58,7 +58,7 @@ export default function ReaderControls({
         ])}
         <ReaderThemes
           value={settings.desktopReaderTheme || 'app'}
-          onChange={value => onChange({ desktopReaderTheme: value })}
+          onChange={(value) => onChange({ desktopReaderTheme: value })}
         />
         {choice('desktopTextAlign', 'Alinhamento do texto', 'left', [
           ['left', 'À esquerda'],
@@ -91,7 +91,7 @@ export default function ReaderControls({
           <input
             type="checkbox"
             checked={settings.desktopReaderAutoHide !== false}
-            onChange={event =>
+            onChange={(event) =>
               onChange({ desktopReaderAutoHide: event.target.checked })
             }
           />
@@ -99,9 +99,8 @@ export default function ReaderControls({
         </label>
       </div>
       <p className="reader-shortcuts">
-        Setas, Page Up/Page Down e espaço avançam uma página; Home e End vão ao
-        início e ao fim do capítulo. Para trocar de capítulo, use Anterior ou
-        Próximo.
+        Setas e espaço rolam a página. Home e End vão ao início e ao fim.
+        Anterior e Próximo trocam de capítulo.
       </p>
       <div className="reader-chapter-actions">
         <button

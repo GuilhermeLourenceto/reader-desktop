@@ -38,6 +38,7 @@
     "urlencode": "^2.0.0"
   },
   "devDependencies": {
+    "@babel/parser": "^8.0.10",
     "electron": "^42.0.0",
     "electron-builder": "^26.0.12",
     "esbuild": "^0.25.12",

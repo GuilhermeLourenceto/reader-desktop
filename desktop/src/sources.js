@@ -1,3 +1,4 @@
+import { t } from './i18n.cjs';
 import {
   installSource as installOriginal,
   loadPlugin,
@@ -61,16 +62,17 @@ export async function initializeDesktopPlugins() {
   if (missing.length)
     window.dispatchEvent(
       new CustomEvent('notice', {
-        detail: `Fontes sem código disponível: ${missing.join(
-          ', ',
-        )}. Reinstale-as em Fontes. A biblioteca continua disponível offline.`,
+        detail: t(
+          'Fontes sem código disponível: {names}. Reinstale-as em Fontes. A biblioteca continua disponível offline.',
+          { names: missing.join(', ') },
+        ),
       }),
     );
 }
 
 export async function uninstallDesktopPlugin(plugin) {
   const prefix = `plugin_db:${plugin.id}`;
-  const owned = key =>
+  const owned = (key) =>
     key.startsWith(prefix + '_DB_') ||
     key === prefix + '_LocalStorage' ||
     key === prefix + '_SessionStorage';
@@ -105,7 +107,7 @@ export async function fetchDesktopPlugins() {
         const plugins = await response.json();
         if (!Array.isArray(plugins) || plugins.length > 20000)
           throw new Error('O índice do repositório não é uma lista válida.');
-        results[position] = plugins.filter(plugin => {
+        results[position] = plugins.filter((plugin) => {
           try {
             validatePluginMetadata(plugin);
             return true;
@@ -131,7 +133,9 @@ export async function fetchDesktopPlugins() {
   );
   return [
     ...new Map(
-      results.flatMap(items => items || []).map(plugin => [plugin.id, plugin]),
+      results
+        .flatMap((items) => items || [])
+        .map((plugin) => [plugin.id, plugin]),
     ).values(),
   ];
 }

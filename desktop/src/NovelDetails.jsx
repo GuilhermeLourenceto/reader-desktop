@@ -1,3 +1,4 @@
+import { t as translateMessage } from './i18n.cjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import sanitize from 'sanitize-html';
 import Spinner from './Spinner';
@@ -49,10 +50,10 @@ export default function NovelDetails({
       ? novel.genres
       : String(novel.genres || '').split(/[,;\n]/)
   )
-    .map(value => value.trim())
+    .map((value) => value.trim())
     .filter(Boolean);
   let chapters = novel.chapters.filter(
-    chapter =>
+    (chapter) =>
       ((chapter.name || '').toLowerCase().includes(query.toLowerCase()) ||
         String(ordinals.get(chapter.id)) === query.trim()) &&
       (filter === 'all' ||
@@ -91,9 +92,9 @@ export default function NovelDetails({
     setPageError('');
     try {
       if (info.limit < info.total) {
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
         if (alive.current && info.queryKey === pendingLoad.current.queryKey)
-          setLimit(value => Math.min(value + 100, info.total));
+          setLimit((value) => Math.min(value + 100, info.total));
       } else await info.load();
     } catch (error) {
       if (alive.current) setPageError(error.message || String(error));
@@ -113,8 +114,8 @@ export default function NovelDetails({
     if (!node) return undefined;
     if (pageLoading || pageError || busy) return;
     const observer = new IntersectionObserver(
-      entries => {
-        if (entries.some(entry => entry.isIntersecting)) void requestMore();
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) void requestMore();
       },
       { rootMargin: '400px 0px' },
     );
@@ -135,13 +136,13 @@ export default function NovelDetails({
     order,
     novel.desktopLoadedPages?.join(','),
   ]);
-  const apply = patch => {
+  const apply = (patch) => {
     onChange(selected, patch);
     setSelected([]);
   };
-  const toggle = id =>
-    setSelected(ids =>
-      ids.includes(id) ? ids.filter(value => value !== id) : [...ids, id],
+  const toggle = (id) =>
+    setSelected((ids) =>
+      ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id],
     );
   return (
     <div className="novel-page">
@@ -169,12 +170,12 @@ export default function NovelDetails({
               onDownload(
                 chapters
                   .filter(
-                    chapter =>
+                    (chapter) =>
                       !chapter.isDownloaded ||
                       chapter.desktopAssetsCached === false,
                   )
                   .slice(0, 10)
-                  .map(chapter => chapter.id),
+                  .map((chapter) => chapter.id),
               )
             }
           >
@@ -196,7 +197,10 @@ export default function NovelDetails({
             )}
             <div className="novel-cover">
               {cover ? (
-                <img src={cover} alt={`Capa de ${novel.name}`} />
+                <img
+                  src={cover}
+                  alt={translateMessage('Capa de {v0}', { v0: novel.name })}
+                />
               ) : (
                 <div className="placeholder">
                   <Icon name="book" />
@@ -244,7 +248,7 @@ export default function NovelDetails({
           )}
           {genres.length > 0 && (
             <div className="genre-chips">
-              {[...new Set(genres)].map(genre => (
+              {[...new Set(genres)].map((genre) => (
                 <span key={genre}>{genre}</span>
               ))}
             </div>
@@ -256,10 +260,11 @@ export default function NovelDetails({
               busy ||
               !resume ||
               (!direction.detected &&
-                !novel.chapters.some(chapter => chapter.readTime))
+                !novel.chapters.some((chapter) => chapter.readTime))
             }
             onClick={() =>
-              !novel.chapters.some(chapter => chapter.readTime) && hasMorePages
+              !novel.chapters.some((chapter) => chapter.readTime) &&
+              hasMorePages
                 ? onStart()
                 : onRead(resume)
             }
@@ -287,7 +292,7 @@ export default function NovelDetails({
             aria-label="Pesquisar capítulos"
             placeholder="Pesquisar capítulos por nome ou número"
             value={query}
-            onChange={event => {
+            onChange={(event) => {
               setQuery(event.target.value);
               setLimit(100);
             }}
@@ -299,7 +304,7 @@ export default function NovelDetails({
                 <select
                   aria-label="Filtrar capítulos"
                   value={filter}
-                  onChange={event => {
+                  onChange={(event) => {
                     setFilter(event.target.value);
                     setLimit(100);
                   }}
@@ -316,7 +321,7 @@ export default function NovelDetails({
                 <select
                   aria-label="Ordenar capítulos"
                   value={order}
-                  onChange={event => {
+                  onChange={(event) => {
                     setOrder(event.target.value);
                     setLimit(100);
                   }}
@@ -331,7 +336,7 @@ export default function NovelDetails({
                 <select
                   aria-label="Início da história na fonte"
                   value={novel.desktopChapterOrder || 'auto'}
-                  onChange={event => onDirectionChange(event.target.value)}
+                  onChange={(event) => onDirectionChange(event.target.value)}
                 >
                   <option value="auto">Detectar automaticamente</option>
                   <option value="ascending">Início da lista (crescente)</option>
@@ -341,13 +346,13 @@ export default function NovelDetails({
                 </select>
                 <small role="status">
                   {direction.detected
-                    ? `Ordem ${
-                        direction.manual ? 'definida' : 'identificada'
-                      }: ${
-                        direction.direction === 'ascending'
-                          ? 'crescente'
-                          : 'decrescente'
-                      }`
+                    ? translateMessage('Ordem {v0}: {v1}', {
+                        v0: direction.manual ? 'definida' : 'identificada',
+                        v1:
+                          direction.direction === 'ascending'
+                            ? 'crescente'
+                            : 'decrescente',
+                      })
                     : 'Ordem não identificada; escolha onde começa a história.'}
                 </small>
               </label>
@@ -368,7 +373,9 @@ export default function NovelDetails({
             >
               <strong>{selected.length} selecionados</strong>
               <button
-                onClick={() => setSelected(chapters.map(chapter => chapter.id))}
+                onClick={() =>
+                  setSelected(chapters.map((chapter) => chapter.id))
+                }
               >
                 Selecionar filtrados
               </button>
@@ -404,7 +411,7 @@ export default function NovelDetails({
             </div>
           )}
           <div className="chapters">
-            {chapters.slice(0, limit).map(chapter => (
+            {chapters.slice(0, limit).map((chapter) => (
               <div
                 className={`chapter-row ${
                   chapter.unread === false ? 'is-read' : ''
@@ -417,7 +424,9 @@ export default function NovelDetails({
               >
                 <input
                   type="checkbox"
-                  aria-label={`Selecionar ${chapter.name}`}
+                  aria-label={translateMessage('Selecionar {v0}', {
+                    v0: chapter.name,
+                  })}
                   checked={selected.includes(chapter.id)}
                   onChange={() => toggle(chapter.id)}
                 />
@@ -469,7 +478,9 @@ export default function NovelDetails({
                     </span>
                     {' · '}
                     {chapterPercent(chapter) > 0
-                      ? `Progresso ${Math.round(chapterPercent(chapter))}% · `
+                      ? translateMessage('Progresso {v0}% · ', {
+                          v0: Math.round(chapterPercent(chapter)),
+                        })
                       : ''}
                     {chapter.unread === false ? 'Lido' : 'Não lido'}
                     {chapter.isDownloaded ? ' · Baixado' : ''}
@@ -479,7 +490,10 @@ export default function NovelDetails({
                       <span className="chapter-download-label">
                         {downloadProgress.phase === 'images'
                           ? downloadProgress.imageTotal
-                            ? `Baixando imagens ${downloadProgress.imageIndex}/${downloadProgress.imageTotal}`
+                            ? translateMessage('Baixando imagens {v0}/{v1}', {
+                                v0: downloadProgress.imageIndex,
+                                v1: downloadProgress.imageTotal,
+                              })
                             : 'Salvando capítulo…'
                           : 'Baixando capítulo…'}
                       </span>
@@ -491,7 +505,9 @@ export default function NovelDetails({
                             : ''
                         }`}
                         role="progressbar"
-                        aria-label={`Download de ${chapter.name}`}
+                        aria-label={translateMessage('Download de {v0}', {
+                          v0: chapter.name,
+                        })}
                         aria-valuemin={0}
                         aria-valuemax={
                           downloadProgress.imageTotal > 0
@@ -507,7 +523,10 @@ export default function NovelDetails({
                         aria-valuetext={
                           downloadProgress.phase === 'images' &&
                           downloadProgress.imageTotal > 0
-                            ? `${downloadProgress.imageIndex} de ${downloadProgress.imageTotal} imagens`
+                            ? translateMessage('{v0} de {v1} imagens', {
+                                v0: downloadProgress.imageIndex,
+                                v1: downloadProgress.imageTotal,
+                              })
                             : 'Em andamento'
                         }
                       >

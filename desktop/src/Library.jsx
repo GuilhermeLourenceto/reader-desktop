@@ -1,3 +1,4 @@
+import { t as translateMessage } from './i18n.cjs';
 import React, { useEffect, useRef, useState } from 'react';
 import BookGrid from './BookGrid';
 export default function Library({
@@ -19,24 +20,24 @@ export default function Library({
     [selected, setSelected] = useState([]),
     [context, setContext] = useState(null);
   const menu = useRef(null);
-  const books = novels.filter(book => book.inLibrary);
+  const books = novels.filter((book) => book.inLibrary);
   const visible = books.filter(
-    book =>
+    (book) =>
       (!settings.desktopDownloadedOnly ||
-        book.chapters.some(chapter => chapter.isDownloaded)) &&
+        book.chapters.some((chapter) => chapter.isDownloaded)) &&
       (filter !== 'downloaded' ||
-        book.chapters.some(chapter => chapter.isDownloaded)) &&
+        book.chapters.some((chapter) => chapter.isDownloaded)) &&
       (filter !== 'unread' ||
-        book.chapters.some(chapter => chapter.unread !== false)) &&
+        book.chapters.some((chapter) => chapter.unread !== false)) &&
       book.name.toLowerCase().includes(query.toLowerCase()) &&
       (!category ||
         categories
-          .find(item => String(item.id) === category)
+          .find((item) => String(item.id) === category)
           ?.novelIds.includes(book.id)),
   );
-  const toggle = id =>
-    setSelected(ids =>
-      ids.includes(id) ? ids.filter(item => item !== id) : [...ids, id],
+  const toggle = (id) =>
+    setSelected((ids) =>
+      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
     );
   const act = (action, ids) => {
     setContext(null);
@@ -45,7 +46,7 @@ export default function Library({
   };
   useEffect(() => {
     if (!context) return;
-    const close = event => {
+    const close = (event) => {
       if (event.type === 'keydown' && event.key !== 'Escape') return;
       if (event.type === 'pointerdown' && menu.current?.contains(event.target))
         return;
@@ -61,8 +62,10 @@ export default function Library({
   }, [context]);
   useEffect(
     () =>
-      setSelected(ids =>
-        ids.filter(id => novels.some(book => book.id === id && book.inLibrary)),
+      setSelected((ids) =>
+        ids.filter((id) =>
+          novels.some((book) => book.id === id && book.inLibrary),
+        ),
       ),
     [novels],
   );
@@ -76,7 +79,7 @@ export default function Library({
             placeholder="Pesquisar na biblioteca"
             aria-label="Pesquisar na biblioteca"
             value={query}
-            onChange={event => setQuery(event.target.value)}
+            onChange={(event) => setQuery(event.target.value)}
           />
           <button
             className="icon-button"
@@ -94,7 +97,7 @@ export default function Library({
           <select
             id="library-filter"
             value={filter}
-            onChange={event => setFilter(event.target.value)}
+            onChange={(event) => setFilter(event.target.value)}
           >
             <option value="all">Todas as obras</option>
             <option value="unread">Com capítulos não lidos</option>
@@ -111,7 +114,7 @@ export default function Library({
         >
           Todas <span>{books.length}</span>
         </button>
-        {categories.map(item => (
+        {categories.map((item) => (
           <button
             key={item.id}
             role="tab"
@@ -121,7 +124,7 @@ export default function Library({
           >
             {item.name}{' '}
             <span>
-              {books.filter(book => item.novelIds.includes(book.id)).length}
+              {books.filter((book) => item.novelIds.includes(book.id)).length}
             </span>
           </button>
         ))}
@@ -134,7 +137,7 @@ export default function Library({
         </span>
         {selected.length > 0 && (
           <>
-            <button onClick={() => setSelected(visible.map(book => book.id))}>
+            <button onClick={() => setSelected(visible.map((book) => book.id))}>
               Selecionar visíveis
             </button>
             <button disabled={busy} onClick={() => act('download', selected)}>
@@ -186,7 +189,9 @@ export default function Library({
           ref={menu}
           className="book-context-menu"
           role="menu"
-          aria-label={`Ações de ${context.book.name}`}
+          aria-label={translateMessage('Ações de {v0}', {
+            v0: context.book.name,
+          })}
           style={{ left: context.x, top: context.y }}
         >
           <strong>{context.book.name}</strong>

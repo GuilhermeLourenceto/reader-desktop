@@ -1,16 +1,30 @@
+import { t as translateMessage } from './i18n.cjs';
 import React, {
   useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react';
 import { createRoot } from 'react-dom/client';
 import Icon from './Icon';
+import { getLocale, setLocale, subscribe } from './i18n.cjs';
 import SourceFilters from './SourceFilters';
-import { sourceLanguageOptions, matchesSourceLanguage, matchesSourceSearch } from './sourceLanguages.cjs';
+import {
+  sourceLanguageOptions,
+  matchesSourceLanguage,
+  matchesSourceSearch,
+} from './sourceLanguages.cjs';
 import DesktopErrorBoundary from './DesktopErrorBoundary';
-import { hydrate, snapshot, nextId, fileKey, loadedPages, nextNovelPage } from './libraryState';
+import {
+  hydrate,
+  snapshot,
+  nextId,
+  fileKey,
+  loadedPages,
+  nextNovelPage,
+} from './libraryState';
 import { errorText, fetchSourcePage } from './sourceRuntime';
 import sanitize from 'sanitize-html';
 import {
@@ -57,7 +71,7 @@ import {
 import { readerProgress, pageAmplitude } from './readerPaging.cjs';
 
 // As paletas do app misturam `rgb(...)`, `#RRGGBB` e `rgba(...)`.
-const isColor = value =>
+const isColor = (value) =>
   typeof value === 'string' && /^(rgb|rgba|#|hsl)/i.test(value);
 
 for (const [key, value] of Object.entries(defaultTheme.dark)) {
@@ -99,7 +113,9 @@ window.fetch = async (input, init) => {
   } finally {
     request.signal.removeEventListener('abort', cancel);
   }
-  const bytes = Uint8Array.from(atob(result.body), char => char.charCodeAt(0));
+  const bytes = Uint8Array.from(atob(result.body), (char) =>
+    char.charCodeAt(0),
+  );
   const response = new Response(
     request.method === 'HEAD' || [204, 205, 304].includes(result.status)
       ? null
@@ -114,6 +130,7 @@ window.fetch = async (input, init) => {
 };
 
 function App() {
+  useSyncExternalStore(subscribe, getLocale);
   const [state, setState] = useState(null);
   const current = useRef(null);
   const [view, setView] = useState('library');
@@ -182,8 +199,8 @@ function App() {
   const activeTasks = useRef(0);
   const progressTimer = useRef(null);
   const pendingProgress = useRef(null);
-  const novel = state?.novels.find(item => item.id === novelId);
-  const chapter = novel?.chapters.find(item => item.id === chapterId);
+  const novel = state?.novels.find((item) => item.id === novelId);
+  const chapter = novel?.chapters.find((item) => item.id === chapterId);
   const fontSize = state?.settings?.desktopFontSize || 21;
   const preferences = state?.settings || {};
   const presentation = readerPresentation(preferences);
@@ -245,16 +262,16 @@ function App() {
         preferences.desktopPalette && preferences.desktopPalette !== 'default'
           ? `color-mix(in srgb, ${palette.surface} 94%, ${palette.onSurface})`
           : dark
-          ? '#24252c'
-          : '#f1f2fa',
+            ? '#24252c'
+            : '#f1f2fa',
       );
       document.documentElement.style.setProperty(
         '--surfaceContainerHigh',
         preferences.desktopPalette && preferences.desktopPalette !== 'default'
           ? `color-mix(in srgb, ${palette.surface} 88%, ${palette.onSurface})`
           : dark
-          ? '#2d2e36'
-          : '#e7e8f1',
+            ? '#2d2e36'
+            : '#e7e8f1',
       );
       document.documentElement.style.setProperty(
         '--readerBackground',
@@ -269,7 +286,7 @@ function App() {
     media.addEventListener('change', apply);
     return () => media.removeEventListener('change', apply);
   }, [preferences.desktopTheme, preferences.desktopPalette]);
-  const update = next => {
+  const update = (next) => {
     current.current = next;
     setState(next);
     clearTimeout(saveTimer.current);
@@ -277,11 +294,11 @@ function App() {
       () =>
         window.desktop
           .save(snapshot(current.current))
-          .catch(error => setNotice(error.message)),
+          .catch((error) => setNotice(error.message)),
       300,
     );
   };
-  const run = async task => {
+  const run = async (task) => {
     activeTasks.current++;
     setBusy(true);
     setNotice('');
@@ -295,8 +312,8 @@ function App() {
     }
   };
   useEffect(() => {
-    const onNotice = event => setNotice(String(event.detail));
-    const onSourceActivity = event => setSourceWorking(Boolean(event.detail));
+    const onNotice = (event) => setNotice(String(event.detail));
+    const onSourceActivity = (event) => setSourceWorking(Boolean(event.detail));
     const onStorage = () => {
       if (current.current) update({ ...current.current });
     };
@@ -308,6 +325,7 @@ function App() {
       hydrate(loaded);
       current.current = loaded;
       setState(loaded);
+      setLocale(loaded.settings?.desktopInterfaceLanguage);
       await initializeInstalledPlugins();
     });
     const stopCloseListener = window.desktop.onBeforeClose(async () => {
@@ -320,7 +338,7 @@ function App() {
         await window.desktop.cancelRequests();
         const deadline = Date.now() + 2000;
         while (downloading.current && Date.now() < deadline)
-          await new Promise(resolve => setTimeout(resolve, 25));
+          await new Promise((resolve) => setTimeout(resolve, 25));
         flushProgress();
         clearTimeout(saveTimer.current);
         if (current.current)
@@ -328,7 +346,11 @@ function App() {
         window.desktop.finishClose();
       } catch (error) {
         closing = false;
-        setNotice(`Não foi possível salvar antes de fechar: ${error.message}`);
+        setNotice(
+          translateMessage('Não foi possível salvar antes de fechar: {v0}', {
+            v0: error.message,
+          }),
+        );
       }
     });
     return () => {
@@ -346,7 +368,7 @@ function App() {
     if (window.desktop.info)
       window.desktop
         .info()
-        .then(info => setAppVersion(info.version))
+        .then((info) => setAppVersion(info.version))
         .catch(() => {});
   }, []);
   useEffect(() => {
@@ -422,7 +444,7 @@ function App() {
       );
       if (browseSession.current !== session) return;
       const items = [
-        ...new Map(response.map(item => [item.path, item])).values(),
+        ...new Map(response.map((item) => [item.path, item])).values(),
       ];
       session.items = items;
       session.page = 1;
@@ -450,8 +472,8 @@ function App() {
         session.options,
       );
       if (browseSession.current !== session) return;
-      const seen = new Set(session.items.map(item => item.path));
-      const additions = response.filter(item => {
+      const seen = new Set(session.items.map((item) => item.path));
+      const additions = response.filter((item) => {
         if (seen.has(item.path)) return false;
         seen.add(item.path);
         return true;
@@ -485,8 +507,8 @@ function App() {
     )
       return;
     const observer = new IntersectionObserver(
-      entries => {
-        if (entries.some(entry => entry.isIntersecting)) void loadMore();
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) void loadMore();
       },
       { root: mainRef.current, rootMargin: '0px 0px 280px 0px' },
     );
@@ -495,7 +517,7 @@ function App() {
   }, [view, busy, loadingMore, pageError, hasMore, results.length, loadMore]);
   const openNovel = async (item, pluginId) => {
     const existing = current.current.novels.find(
-      n => n.path === item.path && n.pluginId === pluginId,
+      (n) => n.path === item.path && n.pluginId === pluginId,
     );
     if (existing) {
       setNovelId(existing.id);
@@ -513,10 +535,10 @@ function App() {
       );
     const id = nextId(current.current.novels);
     const firstChapterId = nextId(
-      current.current.novels.flatMap(n => n.chapters),
+      current.current.novels.flatMap((n) => n.chapters),
     );
     const alreadyOpened = current.current.novels.find(
-      book => book.path === item.path && book.pluginId === pluginId,
+      (book) => book.path === item.path && book.pluginId === pluginId,
     );
     if (alreadyOpened) {
       setNovelId(alreadyOpened.id);
@@ -540,10 +562,10 @@ function App() {
     setNovelId(id);
     setView('novel');
   };
-  const changeNovel = changed =>
+  const changeNovel = (changed) =>
     update({
       ...current.current,
-      novels: current.current.novels.map(n =>
+      novels: current.current.novels.map((n) =>
         n.id === changed.id ? changed : n,
       ),
     });
@@ -555,25 +577,25 @@ function App() {
       pendingProgress.current = null;
       clearTimeout(progressTimer.current);
     }
-    const book = current.current.novels.find(item => item.id === bookId);
+    const book = current.current.novels.find((item) => item.id === bookId);
     const chosen = new Set(ids);
     if (book)
       changeNovel({
         ...book,
-        chapters: book.chapters.map(chapter =>
+        chapters: book.chapters.map((chapter) =>
           chosen.has(chapter.id) ? { ...chapter, ...patch } : chapter,
         ),
       });
   };
-  const removeHistory = entries => {
+  const removeHistory = (entries) => {
     const chosen = new Set(
-      entries.map(entry => `${entry.novelId}:${entry.chapterId}`),
+      entries.map((entry) => `${entry.novelId}:${entry.chapterId}`),
     );
     update({
       ...current.current,
-      novels: current.current.novels.map(book => ({
+      novels: current.current.novels.map((book) => ({
         ...book,
-        chapters: book.chapters.map(chapter =>
+        chapters: book.chapters.map((chapter) =>
           chosen.has(`${book.id}:${chapter.id}`)
             ? { ...chapter, readTime: null }
             : chapter,
@@ -606,7 +628,7 @@ function App() {
   };
   const downloadChapters = async (book, ids, preserveCancellation = false) => {
     const chapters = book.chapters.filter(
-      chapter =>
+      (chapter) =>
         ids.includes(chapter.id) &&
         (!chapter.isDownloaded || chapter.desktopAssetsCached === false),
     );
@@ -657,12 +679,12 @@ function App() {
           const doc = new DOMParser().parseFromString(content, 'text/html');
           doc
             .querySelectorAll('script, style, noscript')
-            .forEach(element => element.remove());
+            .forEach((element) => element.remove());
           if (!doc.body.textContent.trim() && !doc.querySelector('img[src]'))
             throw new Error('Capítulo sem conteúdo');
           let imageFailures = 0;
           const images = [...doc.querySelectorAll('img[src]')];
-          setDownloadProgress(progress =>
+          setDownloadProgress((progress) =>
             progress?.novelId === book.id && progress.chapterId === chapter.id
               ? {
                   ...progress,
@@ -703,7 +725,7 @@ function App() {
                 }
               }
             } finally {
-              setDownloadProgress(progress =>
+              setDownloadProgress((progress) =>
                 progress?.novelId === book.id &&
                 progress.chapterId === chapter.id
                   ? { ...progress, imageIndex: imageIndex + 1 }
@@ -722,7 +744,10 @@ function App() {
           });
           if (imageFailures)
             failures.push(
-              `${chapter.name}: ${imageFailures} imagem(ns) não baixada(s)`,
+              translateMessage('{v0}: {v1} imagem(ns) não baixada(s)', {
+                v0: chapter.name,
+                v1: imageFailures,
+              }),
             );
         } catch (error) {
           failures.push(`${chapter.name}: ${errorText(error)}`);
@@ -730,10 +755,12 @@ function App() {
       }
       setNotice(
         failures.length
-          ? `Download concluído com avisos: ${failures.join('; ')}`
+          ? translateMessage('Download concluído com avisos: {v0}', {
+              v0: failures.join('; '),
+            })
           : cancelDownload.current
-          ? 'Downloads interrompidos após o capítulo atual.'
-          : 'Downloads concluídos.',
+            ? 'Downloads interrompidos após o capítulo atual.'
+            : 'Downloads concluídos.',
       );
     } finally {
       setDownloadProgress(null);
@@ -757,36 +784,42 @@ function App() {
   };
   const libraryAction = async (action, ids) => {
     const books = current.current.novels.filter(
-      book => ids.includes(book.id) && book.inLibrary,
+      (book) => ids.includes(book.id) && book.inLibrary,
     );
     if (!books.length) return;
     if (action === 'remove') {
       if (
         !window.confirm(
-          `Remover ${books.length} obra(s) da biblioteca? Histórico e downloads serão mantidos.`,
+          translateMessage(
+            'Remover {v0} obra(s) da biblioteca? Histórico e downloads serão mantidos.',
+            { v0: books.length },
+          ),
         )
       )
         return;
       update({
         ...current.current,
-        novels: current.current.novels.map(book =>
+        novels: current.current.novels.map((book) =>
           ids.includes(book.id) ? { ...book, inLibrary: false } : book,
         ),
       });
     } else if (action === 'reset') {
       if (
         !window.confirm(
-          `Resetar a leitura de ${books.length} obra(s)? O progresso e o histórico serão zerados e os capítulos ficarão não lidos. Downloads e marcadores serão mantidos.`,
+          translateMessage(
+            'Resetar a leitura de {v0} obra(s)? O progresso e o histórico serão zerados e os capítulos ficarão não lidos. Downloads e marcadores serão mantidos.',
+            { v0: books.length },
+          ),
         )
       )
         return;
       update({
         ...current.current,
-        novels: current.current.novels.map(book =>
+        novels: current.current.novels.map((book) =>
           ids.includes(book.id)
             ? {
                 ...book,
-                chapters: book.chapters.map(chapter => ({
+                chapters: book.chapters.map((chapter) => ({
                   ...chapter,
                   unread: true,
                   progress: 0,
@@ -813,11 +846,11 @@ function App() {
             book,
             book.chapters
               .filter(
-                chapter =>
+                (chapter) =>
                   !chapter.isDownloaded ||
                   chapter.desktopAssetsCached === false,
               )
-              .map(chapter => chapter.id),
+              .map((chapter) => chapter.id),
             true,
           );
         }
@@ -830,9 +863,9 @@ function App() {
   };
   const saveReaderProgress = (bookId, itemId, percentage) => {
     if (current.current.settings.desktopIncognito) return;
-    const latest = current.current.novels.find(book => book.id === bookId);
+    const latest = current.current.novels.find((book) => book.id === bookId);
     if (!latest) return;
-    const previous = latest.chapters.find(item => item.id === itemId);
+    const previous = latest.chapters.find((item) => item.id === itemId);
     if (
       !previous ||
       (Math.abs(chapterPercent(previous) - percentage) < 0.1 &&
@@ -841,7 +874,7 @@ function App() {
       return;
     changeNovel({
       ...latest,
-      chapters: latest.chapters.map(item =>
+      chapters: latest.chapters.map((item) =>
         item.id === itemId ? recordProgress(item, percentage) : item,
       ),
     });
@@ -865,8 +898,8 @@ function App() {
   }, [view]);
   const loadChapter = async (book, item, force = false) => {
     flushProgress();
-    book = current.current.novels.find(value => value.id === book.id) || book;
-    item = book.chapters.find(value => value.id === item.id) || item;
+    book = current.current.novels.find((value) => value.id === book.id) || book;
+    item = book.chapters.find((value) => value.id === item.id) || item;
     const loadId = ++chapterLoadId.current;
     setReaderError(null);
     setChapterLoading(true);
@@ -900,7 +933,7 @@ function App() {
       const document = new DOMParser().parseFromString(content, 'text/html');
       document
         .querySelectorAll('script, style, noscript')
-        .forEach(element => element.remove());
+        .forEach((element) => element.remove());
       if (
         !document.body.textContent.trim() &&
         !document.querySelector('img[src]')
@@ -934,7 +967,7 @@ function App() {
             else {
               const metadata = JSON.parse(
                 localStorage.getItem(INSTALLED_PLUGINS_KEY) || '[]',
-              ).find(value => value.id === book.pluginId);
+              ).find((value) => value.id === book.pluginId);
               const site =
                 metadata?.site ||
                 (await loadPlugin(book.pluginId))?.site ||
@@ -974,9 +1007,10 @@ function App() {
           cached = true;
         } catch (error) {
           setNotice(
-            `Capítulo aberto, mas não foi possível salvá-lo offline: ${errorText(
-              error,
-            )}`,
+            translateMessage(
+              'Capítulo aberto, mas não foi possível salvá-lo offline: {v0}',
+              { v0: errorText(error) },
+            ),
           );
         }
       }
@@ -987,12 +1021,12 @@ function App() {
       setNovelId(book.id);
       setChapterId(item.id);
       setView('reader');
-      setReaderRevision(value => value + 1);
-      const latest = current.current.novels.find(n => n.id === book.id);
+      setReaderRevision((value) => value + 1);
+      const latest = current.current.novels.find((n) => n.id === book.id);
       if (!latest) return;
       changeNovel({
         ...latest,
-        chapters: latest.chapters.map(c =>
+        chapters: latest.chapters.map((c) =>
           c.id === item.id
             ? {
                 ...c,
@@ -1072,7 +1106,7 @@ function App() {
       max <= 0 &&
       document.fonts.status === 'loaded' &&
       [...element.querySelectorAll('img')].every(
-        image => image.complete && image.naturalHeight > 0,
+        (image) => image.complete && image.naturalHeight > 0,
       )
     )
       saveReaderProgress(previous.bookId, previous.itemId, 100);
@@ -1090,12 +1124,12 @@ function App() {
       throw new Error(
         'Esta página não retornou capítulos. Tente novamente; a página não será pulada.',
       );
-    const latest = current.current.novels.find(item => item.id === book.id);
+    const latest = current.current.novels.find((item) => item.id === book.id);
     const chapters = mergeChapters(
       latest.chapters,
       response.chapters,
       book.id,
-      nextId(current.current.novels.flatMap(item => item.chapters)),
+      nextId(current.current.novels.flatMap((item) => item.chapters)),
       String(page),
     );
     const changed = {
@@ -1111,12 +1145,12 @@ function App() {
     changeNovel(changed);
     return changed;
   };
-  const navigateChapter = async offset => {
-    let book = current.current.novels.find(item => item.id === novelId);
+  const navigateChapter = async (offset) => {
+    let book = current.current.novels.find((item) => item.id === novelId);
     const step =
       chapterDirection(book).direction === 'descending' ? -offset : offset;
-    const active = book.chapters.find(item => item.id === chapterId);
-    let index = book.chapters.findIndex(item => item.id === chapterId) + step;
+    const active = book.chapters.find((item) => item.id === chapterId);
+    let index = book.chapters.findIndex((item) => item.id === chapterId) + step;
     const page = Number(active.page || 1);
     const targetPage = page + step;
     const adjacent = book.chapters[index];
@@ -1127,7 +1161,7 @@ function App() {
       !loadedPages(book).includes(targetPage)
     ) {
       book = await loadNovelPage(book, targetPage);
-      index = book.chapters.findIndex(item => item.id === chapterId) + step;
+      index = book.chapters.findIndex((item) => item.id === chapterId) + step;
     }
     if (book.chapters[index]) await loadChapter(book, book.chapters[index]);
     else
@@ -1153,7 +1187,7 @@ function App() {
       }),
     };
   };
-  const stepReader = async direction => {
+  const stepReader = async (direction) => {
     const metrics = readerMetrics();
     if (!metrics) return;
     const settingsNow = current.current.settings || {};
@@ -1195,7 +1229,7 @@ function App() {
   useEffect(() => {
     if (view !== 'reader') return undefined;
     let lastRepeatedStep = 0;
-    const onKeyDown = event => {
+    const onKeyDown = (event) => {
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target;
       if (event.key === 'Tab') {
@@ -1287,7 +1321,7 @@ function App() {
       };
     }
     let last = 0;
-    const wheel = event => {
+    const wheel = (event) => {
       if (event.ctrlKey) return;
       const distance =
         Math.abs(event.deltaX) > Math.abs(event.deltaY)
@@ -1310,12 +1344,12 @@ function App() {
     );
     if (!detail || !Array.isArray(detail.chapters))
       throw new Error('A fonte retornou detalhes inválidos para esta obra.');
-    const latest = current.current.novels.find(item => item.id === book.id);
+    const latest = current.current.novels.find((item) => item.id === book.id);
     const chapters = mergeChapters(
       latest.chapters,
       detail.chapters,
       book.id,
-      nextId(current.current.novels.flatMap(item => item.chapters)),
+      nextId(current.current.novels.flatMap((item) => item.chapters)),
     );
     changeNovel({
       ...latest,
@@ -1337,9 +1371,13 @@ function App() {
           { length: Number(detail.totalPages || 1) },
           (_, index) => index + 1,
         )
-      : [...new Set(latest.chapters.map(chapter => Number(chapter.page || 1)))];
+      : [
+          ...new Set(
+            latest.chapters.map((chapter) => Number(chapter.page || 1)),
+          ),
+        ];
     for (const page of pages.filter(
-      page => page > 1 && page <= Number(detail.totalPages || 1),
+      (page) => page > 1 && page <= Number(detail.totalPages || 1),
     )) {
       if (allPages && stopUpdates.current) {
         partial = true;
@@ -1368,7 +1406,7 @@ function App() {
       throw new Error(
         'Aguarde ou pare os downloads antes de atualizar a biblioteca.',
       );
-    const books = current.current.novels.filter(book => book.inLibrary);
+    const books = current.current.novels.filter((book) => book.inLibrary);
     if (!books.length) return;
     stopUpdates.current = false;
     setUpdatesFailures([]);
@@ -1385,7 +1423,9 @@ function App() {
         try {
           if ((await refreshNovel(book, true))?.partial)
             failures.push(
-              `${book.name}: algumas páginas não foram verificadas.`,
+              translateMessage('{v0}: algumas páginas não foram verificadas.', {
+                v0: book.name,
+              }),
             );
         } catch (error) {
           failures.push(`${book.name}: ${errorText(error)}`);
@@ -1402,8 +1442,8 @@ function App() {
         stopUpdates.current
           ? 'Verificação interrompida. Atualizações já encontradas foram mantidas.'
           : failures.length
-          ? 'Verificação concluída com avisos.'
-          : 'Biblioteca atualizada.',
+            ? 'Verificação concluída com avisos.'
+            : 'Biblioteca atualizada.',
       );
     } finally {
       setUpdatesFailures(failures);
@@ -1429,9 +1469,10 @@ function App() {
     setNovelId(null);
     setNotice(
       missing.length
-        ? `Backup restaurado. Fontes sem código no backup: ${missing.join(
-            ', ',
-          )}. Reinstale-as em Fontes.`
+        ? translateMessage(
+            'Backup restaurado. Fontes sem código no backup: {v0}. Reinstale-as em Fontes.',
+            { v0: missing.join(', ') },
+          )
         : 'Backup restaurado.',
     );
     // Keep metadata even when a source bundle is missing, so it can be reinstalled.
@@ -1453,13 +1494,14 @@ function App() {
     localStorage.getItem(INSTALLED_PLUGINS_KEY) || '[]',
   );
   const languages = sourceLanguageOptions(installed, available);
-  const visibleSource = plugin =>
-    matchesSourceLanguage(plugin, sourceLanguage) && matchesSourceSearch(plugin, sourceQuery);
-  const cover = item => {
+  const visibleSource = (plugin) =>
+    matchesSourceLanguage(plugin, sourceLanguage) &&
+    matchesSourceSearch(plugin, sourceQuery);
+  const cover = (item) => {
     const name = [
       `Covers/${item.id}`,
       `Novels/${item.pluginId}/${item.id}/cover.png`,
-    ].find(key => state.files?.[key]);
+    ].find((key) => state.files?.[key]);
     const local = name && state.files[name];
     if (local)
       return local.startsWith('@file:')
@@ -1530,10 +1572,10 @@ function App() {
               onClick={() =>
                 run(() => {
                   const book = current.current.novels.find(
-                    item => item.id === readerError.bookId,
+                    (item) => item.id === readerError.bookId,
                   );
                   const item = book?.chapters.find(
-                    item => item.id === readerError.chapterId,
+                    (item) => item.id === readerError.chapterId,
                   );
                   if (book && item)
                     return loadChapter(book, item, readerError.force);
@@ -1561,8 +1603,14 @@ function App() {
             <span className="spinner" aria-hidden="true" />
             {downloadProgress
               ? downloadProgress.index === 0
-                ? `Preparando downloads de ${downloadProgress.name}…`
-                : `Baixando ${downloadProgress.index}/${downloadProgress.total}: ${downloadProgress.name}`
+                ? translateMessage('Preparando downloads de {v0}…', {
+                    v0: downloadProgress.name,
+                  })
+                : translateMessage('Baixando {v0}/{v1}: {v2}', {
+                    v0: downloadProgress.index,
+                    v1: downloadProgress.total,
+                    v2: downloadProgress.name,
+                  })
               : 'Processando…'}
             {downloadProgress && (
               <button
@@ -1610,7 +1658,7 @@ function App() {
             onStop={() => {
               stopUpdates.current = true;
             }}
-            onOpen={book => {
+            onOpen={(book) => {
               setNovelId(book.id);
               setView('novel');
             }}
@@ -1657,9 +1705,31 @@ function App() {
                 Gerenciar fontes
               </button>
             </div>
+            {sourceMode === 'search' && (
+              <div className="source-language-row">
+                <label htmlFor="global-source-language">
+                  Idioma das fontes
+                </label>
+                <select
+                  id="global-source-language"
+                  value={sourceLanguage}
+                  onChange={(event) => setSourceLanguage(event.target.value)}
+                >
+                  <option value="all">Todos os idiomas</option>
+                  {languages.map((item) => (
+                    <option key={item.code} value={item.code}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             {sourceMode === 'search' ? (
               <GlobalSearch
-                plugins={installed}
+                key={sourceLanguage}
+                plugins={installed.filter((plugin) =>
+                  matchesSourceLanguage(plugin, sourceLanguage),
+                )}
                 fetchPage={fetchSourcePage}
                 cards={cards}
               />
@@ -1670,22 +1740,24 @@ function App() {
                     aria-label="Pesquisar fontes"
                     placeholder="Pesquisar fontes por nome ou idioma"
                     value={sourceQuery}
-                    onChange={e => setSourceQuery(e.target.value)}
+                    onChange={(e) => setSourceQuery(e.target.value)}
                   />
                   <label htmlFor="source-language">Idioma</label>
                   <select
                     id="source-language"
                     value={sourceLanguage}
-                    onChange={e => setSourceLanguage(e.target.value)}
+                    onChange={(e) => setSourceLanguage(e.target.value)}
                   >
                     <option value="all">Todos os idiomas</option>
-                    {languages.map(item => (
-                      <option key={item.code} value={item.code}>{item.label}</option>
+                    {languages.map((item) => (
+                      <option key={item.code} value={item.code}>
+                        {item.label}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <form
-                  onSubmit={event => {
+                  onSubmit={(event) => {
                     event.preventDefault();
                     run(async () => {
                       const url = new URL(repo);
@@ -1712,19 +1784,21 @@ function App() {
                       type="url"
                       required
                       value={repo}
-                      onChange={e => setRepo(e.target.value)}
+                      onChange={(e) => setRepo(e.target.value)}
                       placeholder="https://…/plugins.json"
                     />
                     <button disabled={busy}>Adicionar</button>
                   </div>
                 </form>
-                {state.repositories.map(url => (
+                {state.repositories.map((url) => (
                   <div className="row repository" key={url}>
                     <span>{url}</span>
                     <button
                       disabled={busy}
                       onClick={() => {
-                        const repos = state.repositories.filter(r => r !== url);
+                        const repos = state.repositories.filter(
+                          (r) => r !== url,
+                        );
                         localStorage.setItem(
                           'repositories',
                           JSON.stringify(repos),
@@ -1740,121 +1814,121 @@ function App() {
                   Instaladas <span>{installed.length}</span>
                 </h3>
                 {installed.length === 0 && <p>Nenhuma fonte instalada.</p>}
-                {installed
-                  .filter(visibleSource)
-                  .map(plugin => (
-                    <div className="source" key={plugin.id}>
-                      <div className="source-icon">
-                        {plugin.iconUrl ? (
-                          <img src={plugin.iconUrl} alt="" loading="lazy" />
-                        ) : (
-                          <Icon name="sources" />
-                        )}
-                      </div>
-                      <div>
-                        <strong>{plugin.name}</strong>
-                        <small>
-                          {plugin.lang} · {plugin.version}
-                        </small>
-                      </div>
-                      <div className="row">
-                        <button
-                          disabled={busy}
-                          onClick={() => run(() => browse(plugin.id))}
-                        >
-                          Abrir
-                        </button>
-                        <button
-                          disabled={busy}
-                          title="Abrir uma janela segura para autenticação nesta fonte"
-                          onClick={() => run(async () => {
-                            await window.desktop.sourceLogin(plugin.id);
-                            setNotice('Janela fechada. Se a verificação foi concluída, abra a fonte novamente.');
-                          })}
-                        >
-                          Entrar
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() =>
-                            run(async () => {
-                              if (downloading.current)
-                                throw new Error(
-                                  'Aguarde ou pare a fila de downloads antes de desinstalar fontes.',
-                                );
-                              await uninstallPlugin(plugin);
-                              localStorage.setItem(
-                                INSTALLED_PLUGINS_KEY,
-                                JSON.stringify(
-                                  installed.filter(p => p.id !== plugin.id),
-                                ),
-                              );
-                              update({ ...current.current });
-                            })
-                          }
-                        >
-                          Desinstalar
-                        </button>
-                      </div>
+                {installed.filter(visibleSource).map((plugin) => (
+                  <div className="source" key={plugin.id}>
+                    <div className="source-icon">
+                      {plugin.iconUrl ? (
+                        <img src={plugin.iconUrl} alt="" loading="lazy" />
+                      ) : (
+                        <Icon name="sources" />
+                      )}
                     </div>
-                  ))}
-                <h3 className="section-heading">
-                  Disponíveis <span>{available.length}</span>
-                </h3>
-                {available
-                  .filter(visibleSource)
-                  .map(plugin => (
-                    <div className="source" key={plugin.id}>
-                      <div className="source-icon">
-                        {plugin.iconUrl ? (
-                          <img src={plugin.iconUrl} alt="" loading="lazy" />
-                        ) : (
-                          <Icon name="sources" />
-                        )}
-                      </div>
-                      <div>
-                        <strong>{plugin.name}</strong>
-                        <small>
-                          {plugin.lang} · {plugin.version}
-                        </small>
-                      </div>
+                    <div>
+                      <strong>{plugin.name}</strong>
+                      <small>
+                        {plugin.lang} · {plugin.version}
+                      </small>
+                    </div>
+                    <div className="row">
+                      <button
+                        disabled={busy}
+                        onClick={() => run(() => browse(plugin.id))}
+                      >
+                        Abrir
+                      </button>
+                      <button
+                        disabled={busy}
+                        title="Abrir uma janela segura para autenticação nesta fonte"
+                        onClick={() =>
+                          run(async () => {
+                            await window.desktop.sourceLogin(plugin.id);
+                            setNotice(
+                              'Janela fechada. Se a verificação foi concluída, abra a fonte novamente.',
+                            );
+                          })
+                        }
+                      >
+                        Entrar
+                      </button>
                       <button
                         disabled={busy}
                         onClick={() =>
                           run(async () => {
                             if (downloading.current)
                               throw new Error(
-                                'Aguarde ou pare a fila de downloads antes de instalar ou atualizar fontes.',
+                                'Aguarde ou pare a fila de downloads antes de desinstalar fontes.',
                               );
-                            const loaded = await installPlugin(plugin);
-                            if (!loaded)
-                              throw new Error(
-                                'Não foi possível carregar esta fonte.',
-                              );
+                            await uninstallPlugin(plugin);
                             localStorage.setItem(
                               INSTALLED_PLUGINS_KEY,
-                              JSON.stringify([
-                                ...installed.filter(p => p.id !== plugin.id),
-                                {
-                                  ...plugin,
-                                  version: loaded.version,
-                                  site: loaded.site,
-                                  name: loaded.name,
-                                  hasUpdate: false,
-                                  hasSettings: Boolean(loaded.pluginSettings),
-                                },
-                              ]),
+                              JSON.stringify(
+                                installed.filter((p) => p.id !== plugin.id),
+                              ),
                             );
                             update({ ...current.current });
                           })
                         }
                       >
-                        {installed.some(p => p.id === plugin.id)
-                          ? 'Atualizar'
-                          : 'Instalar'}
+                        Desinstalar
                       </button>
                     </div>
-                  ))}
+                  </div>
+                ))}
+                <h3 className="section-heading">
+                  Disponíveis <span>{available.length}</span>
+                </h3>
+                {available.filter(visibleSource).map((plugin) => (
+                  <div className="source" key={plugin.id}>
+                    <div className="source-icon">
+                      {plugin.iconUrl ? (
+                        <img src={plugin.iconUrl} alt="" loading="lazy" />
+                      ) : (
+                        <Icon name="sources" />
+                      )}
+                    </div>
+                    <div>
+                      <strong>{plugin.name}</strong>
+                      <small>
+                        {plugin.lang} · {plugin.version}
+                      </small>
+                    </div>
+                    <button
+                      disabled={busy}
+                      onClick={() =>
+                        run(async () => {
+                          if (downloading.current)
+                            throw new Error(
+                              'Aguarde ou pare a fila de downloads antes de instalar ou atualizar fontes.',
+                            );
+                          const loaded = await installPlugin(plugin);
+                          if (!loaded)
+                            throw new Error(
+                              'Não foi possível carregar esta fonte.',
+                            );
+                          localStorage.setItem(
+                            INSTALLED_PLUGINS_KEY,
+                            JSON.stringify([
+                              ...installed.filter((p) => p.id !== plugin.id),
+                              {
+                                ...plugin,
+                                version: loaded.version,
+                                site: loaded.site,
+                                name: loaded.name,
+                                hasUpdate: false,
+                                hasSettings: Boolean(loaded.pluginSettings),
+                              },
+                            ]),
+                          );
+                          update({ ...current.current });
+                        })
+                      }
+                    >
+                      {installed.some((p) => p.id === plugin.id)
+                        ? 'Atualizar'
+                        : 'Instalar'}
+                    </button>
+                  </div>
+                ))}
               </>
             )}
           </>
@@ -1862,10 +1936,10 @@ function App() {
         {view === 'browse' && (
           <>
             <header>
-              <h2>{installed.find(p => p.id === source)?.name || source}</h2>
+              <h2>{installed.find((p) => p.id === source)?.name || source}</h2>
               <form
                 className="row"
-                onSubmit={e => {
+                onSubmit={(e) => {
                   e.preventDefault();
                   run(() => browse(source, novelQuery, sourceOptions));
                 }}
@@ -1873,7 +1947,7 @@ function App() {
                 <input
                   placeholder="Buscar obras"
                   value={novelQuery}
-                  onChange={e => setNovelQuery(e.target.value)}
+                  onChange={(e) => setNovelQuery(e.target.value)}
                 />
                 <button disabled={busy}>Buscar</button>
               </form>
@@ -1951,7 +2025,7 @@ function App() {
                 <SourceFilters
                   schema={sourceFilters}
                   values={sourceOptions.filters}
-                  onChange={filters =>
+                  onChange={(filters) =>
                     setSourceOptions({ ...sourceOptions, filters })
                   }
                 />
@@ -2041,7 +2115,7 @@ function App() {
             novel={novel}
             cover={cover(novel)}
             sourceName={
-              installed.find(plugin => plugin.id === novel.pluginId)?.name ||
+              installed.find((plugin) => plugin.id === novel.pluginId)?.name ||
               novel.pluginId
             }
             Icon={Icon}
@@ -2055,19 +2129,19 @@ function App() {
             onToggleLibrary={() =>
               changeNovel({ ...novel, inLibrary: !novel.inLibrary })
             }
-            onRead={chapter => run(() => loadChapter(novel, chapter))}
+            onRead={(chapter) => run(() => loadChapter(novel, chapter))}
             onChange={(ids, patch) => changeChapterRows(novel.id, ids, patch)}
-            onDownload={ids => void startDownloads(novel, ids)}
-            onDelete={ids => run(() => deleteDownloads(novel, ids))}
+            onDownload={(ids) => void startDownloads(novel, ids)}
+            onDelete={(ids) => run(() => deleteDownloads(novel, ids))}
             onMorePages={() => loadNovelPage(novel, nextNovelPage(novel))}
             hasMorePages={Boolean(nextNovelPage(novel))}
-            onDirectionChange={value =>
+            onDirectionChange={(value) =>
               changeNovel({ ...novel, desktopChapterOrder: value })
             }
             onStart={() =>
               run(async () => {
                 let book = current.current.novels.find(
-                  item => item.id === novel.id,
+                  (item) => item.id === novel.id,
                 );
                 while (nextNovelPage(book))
                   book = await loadNovelPage(book, nextNovelPage(book));
@@ -2081,7 +2155,7 @@ function App() {
           <div
             className={`reader-view${chromeVisible ? '' : ' chrome-hidden'}`}
             style={presentation.surface}
-            onMouseMove={event => {
+            onMouseMove={(event) => {
               const bounds = event.currentTarget.getBoundingClientRect();
               const top =
                 event.currentTarget
@@ -2140,9 +2214,9 @@ function App() {
                   ).get(chapter.id)}{' '}
                   de {novel.chapters.length}
                   {chapterReleaseLabel(chapter.releaseTime) &&
-                    ` · Lançamento: ${chapterReleaseLabel(
-                      chapter.releaseTime,
-                    )}`}
+                    translateMessage(' · Lançamento: {v0}', {
+                      v0: chapterReleaseLabel(chapter.releaseTime),
+                    })}
                 </small>
               </div>
               <div className="row">
@@ -2190,13 +2264,13 @@ function App() {
                 Icon={Icon}
                 chapter={chapter}
                 busy={busy}
-                onChange={changes =>
+                onChange={(changes) =>
                   update({
                     ...current.current,
                     settings: { ...current.current.settings, ...changes },
                   })
                 }
-                onChapterChange={patch => {
+                onChapterChange={(patch) => {
                   changeChapterRows(novel.id, [chapter.id], patch);
                   if (patch.unread && readerRef.current)
                     readerRef.current.scrollTop = 0;
@@ -2210,12 +2284,12 @@ function App() {
               ref={readerRef}
               tabIndex={0}
               aria-label="Texto do capítulo"
-              onMouseDown={event => {
+              onMouseDown={(event) => {
                 stopReaderJump();
                 if (!event.target.closest('a, button, input'))
                   readerRef.current?.focus({ preventScroll: true });
               }}
-              onScroll={event => {
+              onScroll={(event) => {
                 const element = event.currentTarget;
                 const metrics = readerProgress({
                   paged,
@@ -2238,7 +2312,7 @@ function App() {
                       Math.round(element.scrollLeft / element.clientWidth) + 1,
                     )
                   : 1;
-                setViewer(currentView =>
+                setViewer((currentView) =>
                   Math.round(currentView.progress) ===
                     Math.round(metrics.progress) &&
                   currentView.page === page &&
@@ -2291,13 +2365,13 @@ function App() {
               }}
               onFocusCapture={revealChrome}
             >
-              {[-1, 1].map(offset => {
+              {[-1, 1].map((offset) => {
                 const step =
                   chapterDirection(novel).direction === 'descending'
                     ? -offset
                     : offset;
                 const index =
-                  novel.chapters.findIndex(c => c.id === chapter.id) + step;
+                  novel.chapters.findIndex((c) => c.id === chapter.id) + step;
                 const page = Number(chapter.page || 1) + step;
                 const canFetchPage =
                   page >= 1 &&
@@ -2338,7 +2412,10 @@ function App() {
               )}
               <span className="reader-page-indicator">
                 {paged
-                  ? `Página ${viewer.page} de ${viewer.total}`
+                  ? translateMessage('Página {v0} de {v1}', {
+                      v0: viewer.page,
+                      v1: viewer.total,
+                    })
                   : `${Math.round(viewer.progress)}%`}
               </span>
             </footer>
@@ -2349,12 +2426,14 @@ function App() {
             settings={preferences}
             busy={busy}
             version={appVersion}
-            onChange={changes =>
+            onChange={(changes) => {
+              if (changes.desktopInterfaceLanguage)
+                setLocale(changes.desktopInterfaceLanguage);
               update({
                 ...current.current,
                 settings: { ...current.current.settings, ...changes },
-              })
-            }
+              });
+            }}
             onSources={() => {
               setSourceQuery('');
               setView('sources');
@@ -2368,7 +2447,10 @@ function App() {
                 if (exported)
                   setNotice(
                     exported.missingCount
-                      ? `Backup exportado. ${exported.missingCount} arquivo(s) ausente(s) ou corrompido(s) não puderam ser incluídos; os demais dados foram preservados.`
+                      ? translateMessage(
+                          'Backup exportado. {v0} arquivo(s) ausente(s) ou corrompido(s) não puderam ser incluídos; os demais dados foram preservados.',
+                          { v0: exported.missingCount },
+                        )
                       : 'Backup exportado.',
                   );
               })

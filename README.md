@@ -12,6 +12,8 @@ do LNReader Android, com código específico para computador.
 
 Biblioteca, busca global de obras, filtro de fontes por idioma, tela cheia, progresso de leitura, capítulos offline,
 downloads, temas, histórico, marcadores e exportação/restauração de backups.
+A interface está disponível em português, inglês, espanhol, francês, alemão, italiano, russo, japonês, coreano e chinês simplificado. Escolha em **Mais → Configurações → Geral → Idioma da interface**. O filtro de idioma das fontes também funciona na busca global; o conteúdo das obras permanece no idioma original.
+
 O suporte a fontes pode variar conforme autenticação e bloqueios dos sites.
 
 ![Leitura Desktop](./desktop/docs/screenshots/desktop-reader.png)

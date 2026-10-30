@@ -1,3 +1,5 @@
+import { t as translateMessage } from './i18n.cjs';
+import { getLocale, t } from './i18n.cjs';
 import React, { useState } from 'react';
 import { updateGroups } from './updates.cjs';
 import { chapterOrdinals, chapterDirection } from './domain.cjs';
@@ -9,7 +11,7 @@ function dateLabel(day) {
   const date = new Date(day + 'T12:00:00');
   if (date.toDateString() === today.toDateString()) return 'Hoje';
   if (date.toDateString() === yesterday.toDateString()) return 'Ontem';
-  return date.toLocaleDateString('pt-BR', {
+  return date.toLocaleDateString(getLocale(), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -37,24 +39,24 @@ export default function Updates({
   const [limit, setLimit] = useState(30);
   const all = updateGroups(novels);
   const groups = all
-    .map(group => ({
+    .map((group) => ({
       ...group,
       chapters: group.chapters.filter(
-        chapter =>
+        (chapter) =>
           (!onlyUnread || chapter.unread !== false) &&
           `${group.novel.name} ${chapter.name}`
             .toLocaleLowerCase()
             .includes(query.toLocaleLowerCase()),
       ),
     }))
-    .filter(group => group.chapters.length);
+    .filter((group) => group.chapters.length);
   let previousDay;
   return (
     <div className="updates-page history-page">
       <header>
         <h2>Atualizações</h2>
         <button
-          disabled={busy || !!progress || !novels.some(n => n.inLibrary)}
+          disabled={busy || !!progress || !novels.some((n) => n.inLibrary)}
           onClick={onRefresh}
         >
           <Icon name="refresh" /> Atualizar biblioteca
@@ -66,7 +68,7 @@ export default function Updates({
           aria-label="Pesquisar atualizações"
           placeholder="Pesquisar obra ou capítulo"
           value={query}
-          onChange={event => {
+          onChange={(event) => {
             setQuery(event.target.value);
             setLimit(30);
           }}
@@ -75,7 +77,7 @@ export default function Updates({
           <input
             type="checkbox"
             checked={onlyUnread}
-            onChange={event => {
+            onChange={(event) => {
               setOnlyUnread(event.target.checked);
               setLimit(30);
             }}
@@ -85,14 +87,18 @@ export default function Updates({
       </div>
       {lastCheck && (
         <p className="updates-last-check">
-          Última verificação: {new Date(lastCheck).toLocaleString('pt-BR')}
+          Última verificação: {new Date(lastCheck).toLocaleString(getLocale())}
         </p>
       )}
       {progress && (
         <div className="updates-progress" role="status">
           <Spinner small label="Atualizando biblioteca" />
           <span>
-            Verificando {progress.done + 1} de {progress.total}: {progress.name}
+            {t('Verificando {current} de {total}: {name}', {
+              current: progress.done + 1,
+              total: progress.total,
+              name: progress.name,
+            })}
           </span>
           <button onClick={onStop}>Parar após esta obra</button>
         </div>
@@ -100,7 +106,7 @@ export default function Updates({
       {failures.length > 0 && (
         <details className="updates-errors">
           <summary>
-            {failures.length} obra(s) não puderam ser verificadas
+            {t('Obras não verificadas: {count}', { count: failures.length })}
           </summary>
           {failures.map((failure, index) => (
             <p key={index}>{failure}</p>
@@ -118,14 +124,14 @@ export default function Updates({
           <p>
             {all.length
               ? 'Altere os filtros para ver outros capítulos.'
-              : 'Use Atualizar biblioteca para consultar suas fontes. Capítulos antigos ainda não sincronizados não são anunciados como novos.'}
+              : 'Atualize a biblioteca para consultar novos capítulos. Capítulos antigos ainda não sincronizados não são anunciados como novos.'}
           </p>
         </div>
       )}
-      {groups.slice(0, limit).map(group => {
+      {groups.slice(0, limit).map((group) => {
         const showDate = previousDay !== group.day;
         previousDay = group.day;
-        const ids = group.chapters.map(chapter => chapter.id);
+        const ids = group.chapters.map((chapter) => chapter.id);
         const numbering = chapterOrdinals(
           group.novel.chapters,
           chapterDirection(group.novel).direction,
@@ -134,7 +140,9 @@ export default function Updates({
           <section
             className="update-group"
             key={group.key}
-            aria-label={`Atualizações de ${group.novel.name}`}
+            aria-label={translateMessage('Atualizações de {v0}', {
+              v0: group.novel.name,
+            })}
           >
             {showDate && (
               <h3 className="update-date">{dateLabel(group.day)}</h3>
@@ -149,7 +157,9 @@ export default function Updates({
                   {cover(group.novel) ? (
                     <img
                       src={cover(group.novel)}
-                      alt={`Capa de ${group.novel.name}`}
+                      alt={translateMessage('Capa de {v0}', {
+                        v0: group.novel.name,
+                      })}
                       loading="lazy"
                     />
                   ) : (
@@ -159,14 +169,18 @@ export default function Updates({
                 <span>
                   <strong>{group.novel.name}</strong>
                   <small>
-                    {ids.length} capítulo(s) ·{' '}
-                    {group.chapters.filter(c => c.unread !== false).length} não
-                    lido(s)
+                    {t('Capítulos: {total} · Não lidos: {unread}', {
+                      total: ids.length,
+                      unread: group.chapters.filter((c) => c.unread !== false)
+                        .length,
+                    })}
                   </small>
                 </span>
               </button>
               <button
-                aria-label={`Expandir capítulos: ${group.novel.name}`}
+                aria-label={translateMessage('Expandir capítulos: {v0}', {
+                  v0: group.novel.name,
+                })}
                 aria-expanded={!!expanded[group.key]}
                 onClick={() =>
                   setExpanded({
@@ -206,7 +220,7 @@ export default function Updates({
             </div>
             {expanded[group.key] && (
               <div className="update-chapters">
-                {group.chapters.map(chapter => (
+                {group.chapters.map((chapter) => (
                   <div
                     className={`update-chapter ${
                       chapter.unread === false ? 'is-read' : ''

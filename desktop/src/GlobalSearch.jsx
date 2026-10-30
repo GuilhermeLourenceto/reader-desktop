@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Spinner from './Spinner';
+import { t } from './i18n.cjs';
 import { orderGlobalSearchRows } from './globalSourceOrder.cjs';
 export default function GlobalSearch({ plugins, fetchPage, cards }) {
   const [term, setTerm] = useState(''),
@@ -13,13 +14,13 @@ export default function GlobalSearch({ plugins, fetchPage, cards }) {
     },
     [],
   );
-  const request = async session => {
+  const request = async (session) => {
     if (!session || session.pending) return;
     session.pending = true;
     const token = generation.current;
     const publish = () => {
       if (token === generation.current)
-        setRows([...sessions.current.values()].map(row => ({ ...row })));
+        setRows([...sessions.current.values()].map((row) => ({ ...row })));
     };
     session.error = '';
     publish();
@@ -30,8 +31,8 @@ export default function GlobalSearch({ plugins, fetchPage, cards }) {
         session.page + 1,
       );
       if (token !== generation.current) return;
-      const seen = new Set(session.items.map(item => item.path));
-      const additions = response.filter(item => {
+      const seen = new Set(session.items.map((item) => item.path));
+      const additions = response.filter((item) => {
         if (seen.has(item.path)) return false;
         seen.add(item.path);
         return true;
@@ -47,11 +48,11 @@ export default function GlobalSearch({ plugins, fetchPage, cards }) {
       publish();
     }
   };
-  const search = async event => {
+  const search = async (event) => {
     event.preventDefault();
     if (!term.trim()) return;
     const token = ++generation.current;
-    const entries = plugins.map(plugin => ({
+    const entries = plugins.map((plugin) => ({
       plugin,
       term: term.trim(),
       page: 0,
@@ -61,8 +62,10 @@ export default function GlobalSearch({ plugins, fetchPage, cards }) {
       hasMore: true,
       queued: true,
     }));
-    sessions.current = new Map(entries.map(entry => [entry.plugin.id, entry]));
-    setRows(entries.map(entry => ({ ...entry })));
+    sessions.current = new Map(
+      entries.map((entry) => [entry.plugin.id, entry]),
+    );
+    setRows(entries.map((entry) => ({ ...entry })));
     setRunning(true);
     let index = 0;
     const worker = async () => {
@@ -81,7 +84,7 @@ export default function GlobalSearch({ plugins, fetchPage, cards }) {
     <div className="global-search">
       <form className="global-search-form" onSubmit={search}>
         <label htmlFor="global-novel-query">
-          Buscar obras nas {plugins.length} fontes instaladas
+          {t('Buscar em {count} fontes', { count: plugins.length })}
         </label>
         <div className="row">
           <input
@@ -89,7 +92,7 @@ export default function GlobalSearch({ plugins, fetchPage, cards }) {
             aria-label="Buscar em todas as fontes"
             placeholder="Nome da obra"
             value={term}
-            onChange={event => setTerm(event.target.value)}
+            onChange={(event) => setTerm(event.target.value)}
           />
           <button disabled={!term.trim() || !plugins.length}>
             Buscar em todas
@@ -105,7 +108,7 @@ export default function GlobalSearch({ plugins, fetchPage, cards }) {
           Pesquisando nas fontes…
         </div>
       )}
-      {orderGlobalSearchRows(rows).map(row => (
+      {orderGlobalSearchRows(rows).map((row) => (
         <section
           className="global-source-results"
           key={row.plugin.id}

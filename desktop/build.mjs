@@ -1,4 +1,5 @@
 import { build } from 'esbuild';
+import { localization } from './scripts/localize-build.mjs';
 import { mkdir, copyFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { readFile } from 'node:fs/promises';
@@ -44,6 +45,7 @@ await build({
 });
 await build({
   entryPoints: ['src/renderer.jsx'],
+  plugins: [localization],
   bundle: true,
   outfile: 'dist/renderer.js',
   platform: 'browser',

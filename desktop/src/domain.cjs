@@ -1,9 +1,10 @@
+const { getLocale } = require('./i18n.cjs');
 function validateSourceItems(items, kind = 'obras') {
   if (
     !Array.isArray(items) ||
     items.length > 100000 ||
     items.some(
-      item =>
+      (item) =>
         !item ||
         typeof item.path !== 'string' ||
         !item.path.trim() ||
@@ -15,7 +16,7 @@ function validateSourceItems(items, kind = 'obras') {
       `A fonte retornou uma lista inválida de ${kind}. Atualize o plugin e tente novamente.`,
     );
   }
-  return items.map(item => ({ ...item, name: item.name || item.path }));
+  return items.map((item) => ({ ...item, name: item.name || item.path }));
 }
 
 function validateNovelDetails(detail) {
@@ -31,7 +32,7 @@ function validateNovelDetails(detail) {
     if (
       typeof detail.genres !== 'string' &&
       (!Array.isArray(detail.genres) ||
-        detail.genres.some(value => typeof value !== 'string'))
+        detail.genres.some((value) => typeof value !== 'string'))
     )
       throw new Error('A fonte retornou gêneros inválidos.');
     result.genres = detail.genres;
@@ -84,10 +85,10 @@ function mergeChapters(existing, incoming, novelId, firstId, page) {
       releaseTime:
         typeof chapter.releaseTime === 'string'
           ? chapter.releaseTime
-          : previous?.releaseTime ?? '',
+          : (previous?.releaseTime ?? ''),
       scanlator: Array.isArray(chapter.scanlator)
         ? chapter.scanlator.filter(Boolean).join(', ')
-        : chapter.scanlator ?? null,
+        : (chapter.scanlator ?? null),
       page: String(page ?? chapter.page ?? 1),
       position: index,
     });
@@ -121,11 +122,11 @@ function recordProgress(chapter, percentage) {
 
 function resumeChapter(novel) {
   const last = novel.chapters
-    .filter(chapter => chapter.readTime)
+    .filter((chapter) => chapter.readTime)
     .sort((a, b) => Date.parse(b.readTime) - Date.parse(a.readTime))[0];
   return (
     last ||
-    readingChapters(novel).find(chapter => chapter.unread !== false) ||
+    readingChapters(novel).find((chapter) => chapter.unread !== false) ||
     readingChapters(novel)[0]
   );
 }
@@ -157,7 +158,7 @@ function chapterDirection(novel) {
   const chapters = novel.chapters;
   if (chapters.length === 1 && Number(novel.totalPages || 1) === 1)
     return { direction: 'ascending', detected: true, manual: false };
-  const titleNumber = chapter => {
+  const titleNumber = (chapter) => {
     const match = String(chapter.name || '').match(
       /(?:\b(?:chapter|chap|cap[ií]tulo|cap|ch)\.?\s*|^\s*)(\d+(?:[.,]\d+)?)(?:\b|\s|[:.\-])/i,
     );
@@ -166,14 +167,14 @@ function chapterDirection(novel) {
   const legacyGeneratedNumbers = chapters.every(
     (item, position) => Number(item.chapterNumber) === position + 1,
   );
-  const metadataNumber = chapter => {
+  const metadataNumber = (chapter) => {
     if (chapter.desktopSourceChapterNumber != null)
       return Number(chapter.desktopSourceChapterNumber);
     // Old desktop versions generated 1..N even when the source had no number.
     if (legacyGeneratedNumbers) return NaN;
     return chapter.chapterNumber != null ? Number(chapter.chapterNumber) : NaN;
   };
-  const dateNumber = chapter =>
+  const dateNumber = (chapter) =>
     /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(chapter.releaseTime || '')
       ? Date.parse(chapter.releaseTime)
       : NaN;
@@ -207,7 +208,9 @@ function chapterReleaseLabel(value) {
   // Preserve source-specific and relative dates rather than guessing day/month.
   if (!/^\d{4}-\d{2}-\d{2}(?:T|$)/.test(text)) return text;
   const date = new Date(text.length === 10 ? `${text}T12:00:00` : text);
-  return Number.isNaN(date.getTime()) ? text : date.toLocaleDateString('pt-BR');
+  return Number.isNaN(date.getTime())
+    ? text
+    : date.toLocaleDateString(getLocale());
 }
 
 module.exports = {

@@ -117,7 +117,7 @@ server.listen(0, '127.0.0.1', () => {
       };
       const click = label =>
         execute(
-          `Array.from(document.querySelectorAll('button')).find(button=>(button.getAttribute('aria-label')||button.textContent)===${JSON.stringify(
+          `Array.from(document.querySelectorAll('button')).find(button=>(button.getAttribute('aria-label')||button.textContent.trim())===${JSON.stringify(
             label,
           )}).click()`,
         );
@@ -214,7 +214,7 @@ server.listen(0, '127.0.0.1', () => {
         win.destroy();
         app.exit(0);
       } catch (error) {
-        console.error(error);
+        console.error(error);console.error(await execute("document.body.innerText"));
         clearTimeout(timeout);
         server.close();
         win.destroy();

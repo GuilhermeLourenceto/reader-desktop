@@ -1,6 +1,8 @@
 import { INSTALLED_PLUGINS_KEY } from '../vendor/lnreader/src/plugins/constants';
+import { setLocale } from './i18n.cjs';
 
 export function hydrate(state) {
+  setLocale(state.settings?.desktopInterfaceLanguage);
   for (const key of Object.keys(localStorage))
     if (key.startsWith('plugin_db:')) localStorage.removeItem(key);
   localStorage.setItem(INSTALLED_PLUGINS_KEY, JSON.stringify(state.plugins));

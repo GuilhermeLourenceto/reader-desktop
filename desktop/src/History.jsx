@@ -1,3 +1,5 @@
+import { t as translateMessage } from './i18n.cjs';
+import { getLocale } from './i18n.cjs';
 import React, { useState } from 'react';
 import { chapterPercent } from './domain.cjs';
 export default function History({
@@ -10,10 +12,10 @@ export default function History({
 }) {
   const [query, setQuery] = useState('');
   const entries = novels
-    .flatMap(novel =>
+    .flatMap((novel) =>
       novel.chapters
-        .filter(chapter => chapter.readTime)
-        .map(chapter => ({ novel, chapter })),
+        .filter((chapter) => chapter.readTime)
+        .map((chapter) => ({ novel, chapter })),
     )
     .sort(
       (a, b) => Date.parse(b.chapter.readTime) - Date.parse(a.chapter.readTime),
@@ -49,7 +51,7 @@ export default function History({
         aria-label="Pesquisar histórico"
         placeholder="Pesquisar obra ou capítulo"
         value={query}
-        onChange={event => setQuery(event.target.value)}
+        onChange={(event) => setQuery(event.target.value)}
       />
       {!filtered.length && (
         <div className="empty">
@@ -69,7 +71,7 @@ export default function History({
               {cover(novel) ? (
                 <img
                   src={cover(novel)}
-                  alt={`Capa de ${novel.name}`}
+                  alt={translateMessage('Capa de {v0}', { v0: novel.name })}
                   loading="lazy"
                 />
               ) : (
@@ -80,14 +82,16 @@ export default function History({
               <strong>{novel.name}</strong>
               <span>{chapter.name}</span>
               <small>
-                {new Date(chapter.readTime).toLocaleString('pt-BR')} ·{' '}
+                {new Date(chapter.readTime).toLocaleString(getLocale())} ·{' '}
                 {Math.round(chapterPercent(chapter))}%
               </small>
             </span>
           </button>
           <button
             className="icon-button"
-            aria-label={`Remover do histórico: ${chapter.name}`}
+            aria-label={translateMessage('Remover do histórico: {v0}', {
+              v0: chapter.name,
+            })}
             title="Remover do histórico"
             disabled={busy}
             onClick={() =>

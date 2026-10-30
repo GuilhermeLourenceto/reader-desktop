@@ -1,3 +1,5 @@
+import { t as translateMessage } from './i18n.cjs';
+import { t } from './i18n.cjs';
 import React from 'react';
 export default function BookGrid({
   items,
@@ -22,7 +24,7 @@ export default function BookGrid({
         }px,1fr))`,
       }}
     >
-      {items.map(item => (
+      {items.map((item) => (
         <div
           className={`book-card ${
             selected.includes(item.id) ? 'is-selected' : ''
@@ -30,7 +32,7 @@ export default function BookGrid({
           key={`${item.pluginId || pluginId}:${item.path}`}
           onContextMenu={
             onContext
-              ? event => {
+              ? (event) => {
                   event.preventDefault();
                   onContext(item, event.clientX, event.clientY);
                 }
@@ -48,7 +50,7 @@ export default function BookGrid({
             }
             onKeyDown={
               onContext
-                ? event => {
+                ? (event) => {
                     if (
                       event.key === 'ContextMenu' ||
                       (event.shiftKey && event.key === 'F10')
@@ -71,19 +73,21 @@ export default function BookGrid({
               )}
               {item.chapters && settings.desktopShowBadges !== false && (
                 <div className="badges">
-                  {item.chapters.some(chapter => chapter.isDownloaded) && (
+                  {item.chapters.some((chapter) => chapter.isDownloaded) && (
                     <span className="download-badge" title="Capítulos baixados">
                       {
-                        item.chapters.filter(chapter => chapter.isDownloaded)
+                        item.chapters.filter((chapter) => chapter.isDownloaded)
                           .length
                       }
                     </span>
                   )}
-                  {item.chapters.some(chapter => chapter.unread !== false) && (
+                  {item.chapters.some(
+                    (chapter) => chapter.unread !== false,
+                  ) && (
                     <span className="unread-badge" title="Capítulos não lidos">
                       {
                         item.chapters.filter(
-                          chapter => chapter.unread !== false,
+                          (chapter) => chapter.unread !== false,
                         ).length
                       }
                     </span>
@@ -94,11 +98,12 @@ export default function BookGrid({
             <strong>{item.name}</strong>
             {item.chapters && settings.desktopShowChapterCount !== false && (
               <small>
-                {
-                  item.chapters.filter(chapter => chapter.unread !== false)
-                    .length
-                }{' '}
-                não lidos · {item.chapters.length} capítulos
+                {t('Capítulos: {total} · Não lidos: {unread}', {
+                  total: item.chapters.length,
+                  unread: item.chapters.filter(
+                    (chapter) => chapter.unread !== false,
+                  ).length,
+                })}
               </small>
             )}
           </button>
@@ -106,7 +111,9 @@ export default function BookGrid({
             <input
               className="book-select"
               type="checkbox"
-              aria-label={`Selecionar obra: ${item.name}`}
+              aria-label={translateMessage('Selecionar obra: {v0}', {
+                v0: item.name,
+              })}
               checked={selected.includes(item.id)}
               onChange={() => onToggle(item.id)}
               disabled={busy}
