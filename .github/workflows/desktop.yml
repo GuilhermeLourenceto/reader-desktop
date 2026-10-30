@@ -94,6 +94,7 @@ jobs:
         run: npm run test:reader
       - name: Verify all ten interface languages and localized option choices
         if: runner.os == 'Windows'
+        timeout-minutes: 3
         run: npx electron test/localization-smoke.cjs
       - name: Real public DNS and source-session HTTP probe
         if: runner.os == 'Windows'
