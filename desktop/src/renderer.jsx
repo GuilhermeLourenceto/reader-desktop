@@ -1652,6 +1652,7 @@ function App() {
         )}
         {view === 'library' && (
           <Library
+            scrollContainerRef={mainRef}
             novels={state.novels}
             categories={state.categories}
             settings={preferences}
