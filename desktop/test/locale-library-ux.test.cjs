@@ -16,7 +16,13 @@ const labels = [
   "Selecionar todos",
   "Desmarcar obra",
   "Filtros e ordenação da biblioteca",
-  "{count} obra(s)"
+  "{count} obra(s)",
+  "Categoria da biblioteca",
+  "Ordenar biblioteca",
+  "Marcador",
+  "{count} selecionados",
+  "{v0} de {v1}",
+  "Capítulo {v0} de {v1}"
 ];
 
 test('all ten desktop languages translate the library filter and context labels', () => {
