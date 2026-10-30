@@ -33,3 +33,22 @@ test('locale switching preserves unknown source content, safely interpolates and
   setLocale('invalid');
   assert.equal(getLocale(), 'pt-BR');
 });
+
+test('palette and reader theme options have localized labels for all ten interfaces', () => {
+  const options = [
+    'Padrão', 'Crepúsculo', 'Turquesa', 'Lavanda', 'Morango',
+    'Seguir aplicativo', 'Escuro', 'Claro', 'Sépia',
+    'Claro original', 'Sépia original', 'Verde suave',
+    'Escuro original', 'Preto AMOLED',
+  ];
+  for (const key of options) {
+    assert.ok(messages[key], 'Missing theme label: ' + key);
+    for (const [code] of languages) {
+      assert.equal(typeof t(key, {}, code), 'string', key + ': ' + code);
+      assert.ok(t(key, {}, code).trim(), key + ': ' + code);
+    }
+  }
+  for (const label of ['Crepúsculo', 'Turquesa', 'Lavanda', 'Morango', 'Sépia', 'Seguir aplicativo']) {
+    assert.notEqual(t(label, {}, 'en'), label, label + ' must translate into English');
+  }
+});
