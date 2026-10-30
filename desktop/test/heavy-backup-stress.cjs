@@ -58,7 +58,7 @@ function assertIntegrity(state, expected, contentStore) {
     assert.equal(state.novels[i].id, expected.books[i].id, 'Original book order changed at index ' + i);
   assert.equal(state.novels.reduce((n, novel) => n + novel.chapters.length, 0), expected.chapterCount);
   assert.equal(state.categories.length, 16);
-  assert.equal(Object.keys(state.files).length, Object.keys(sourceFiles).length);
+  assert.equal(Object.keys(state.files).length, expected.hashes.size);
   for (const bookIndex of [0, Math.floor(config.books / 2), config.books - 1]) {
     const original = expected.books[bookIndex];
     const restored = state.novels[bookIndex];
