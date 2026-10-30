@@ -1,48 +1,99 @@
-# Continuar o port no Linux
+# Preparação do LNReader Desktop para Linux
 
-Pedido do usuário: priorizar Windows agora e concluir Linux depois, usando
-esta mesma pasta de código. Não é necessário recriar o app ou reescrever as fontes.
+## Objetivo desta branch
 
-## Estado entregue
+**Branch de trabalho:** `linux/prepare-packaging-and-tests` (base: `main`).
 
-- Port experimental Electron em `desktop/`, sem alterar o motor original
-  de fontes em `src/plugins/`.
-- Interface React desktop, biblioteca, busca, instalação/atualização de fontes,
-  leitor, texto offline e importação/exportação ZIP dos formatos Android v1/v2.
-- Código multiplataforma usa `node:path`, `app.getPath('userData')` e APIs
-  Electron. Não depende de PowerShell, caminhos Windows ou módulos nativos Android.
-- Instalador Windows NSIS; alvos Linux AppImage e deb configurados.
-- `desktop/package-lock.json` permite instalação independente. Não copiar
-  `node_modules` ou `release/win-unpacked` do Windows para Linux.
-- `desktop/README.md` descreve a arquitetura e limitações conhecidas.
+Preparar uma primeira etapa de compatibilidade Linux **sem alterar a versão
+publicada para Windows**. Este trabalho não deve ser considerado uma release
+Linux nem mesclado automaticamente à `main`.
 
-## Próximos passos no Linux
+## O que já é multiplataforma
 
-1. Copiar o repositório inteiro, incluindo `src/`, `desktop/`, `LICENSE` e
-   `.github/`. Não copiar apenas `desktop/`: o build importa arquivos originais
-   da pasta `src/` da raiz.
-2. Usar Node.js 24. Na pasta `desktop`, executar `npm ci`, `npm run setup`,
-   `npm run build`, `npm test` e `npm start`.
-3. Executar `npm run test:smoke` em uma sessão gráfica comum. Para CI,
-   `xvfb-run -a npx electron --no-sandbox test/smoke.cjs` usa sandbox desabilitado
-   apenas no runner de teste. Não remover o sandbox da aplicação distribuída.
-4. Conferir dependências de sistema do Electron, sandbox do Chromium,
-   permissão de execução e FUSE para AppImage na distribuição escolhida.
-5. Rodar `npm run dist:linux`; instalar/testar tanto `.deb` quanto `.AppImage`.
-6. Validar dialogs, HTTP/cookies, persistência após reiniciar e leitura offline.
-7. Testar cópias de backups Android reais v1/v2 e pelo menos algumas fontes reais.
-   Os testes atuais usam arquivos e uma fonte local de teste, não validam todas
-   as fontes disponíveis. Verificar imagens locais, categorias, IDs e progresso.
-8. A automação `desktop.yml` executa Windows por padrão. Em `workflow_dispatch`,
-   marque `include_linux` para habilitar Ubuntu. Só tornar Linux obrigatório
-   depois de conferir os resultados e os instaladores.
+- UI React, renderização Electron, carregamento das fontes, leitura e biblioteca.
+- Caminhos de arquivos por `node:path` e diretório de dados por
+  `app.getPath('userData')`, respeitando XDG no Linux.
+- Backups ZIP, downloads de capítulos e arquivos do leitor.
+- Build independente em `desktop/`, com o SDK de extensões fixado em
+  `desktop/vendor/lnreader/`. **Não** requer a pasta Android nem React Native.
+- `F11` usa eventos do Electron em vez de atalhos específicos do Windows.
 
-## Pontos a manter explícitos
+Essas áreas precisam de testes no Linux; compartilhar código não comprova
+que cada funcionalidade funciona em todas as distribuições.
 
-Este port não tem paridade completa com Android. Não há login interativo/
-Cloudflare, TTS, nuvem, rastreadores, EPUB, download em lote ou tarefas com o
-app fechado. Configurações Android são preservadas no backup, mas nem todas
-têm efeito no desktop. O armazenamento JSON/base64 limita bibliotecas grandes.
-Plugins são código de terceiros executado no renderer; confiar no repositório
-continua necessário. Scripts `custom.js` e `custom.css` são preservados, sem
-execução no leitor.
+## Primeira etapa preparada aqui
+
+1. Empacotamento `AppImage` e `.deb` usando ícone próprio do LNReader (PNG).
+2. Workflow separado em `.github/workflows/linux-preparation.yml`,
+   limitado a esta branch: compila em Ubuntu x64, executa testes unitários
+   e smoke tests gráficos via Xvfb, gera os dois pacotes e verifica seus
+   arquivos. **Não** publica um GitHub Release nem muda tags.
+3. `desktop/scripts/verify-linux-packages.sh` verifica cabeçalho AppImage,
+   versão do DEB, lançador `.desktop`, ícones e `app.asar` do pacote, sem
+   instalar nada no computador onde o teste é executado.
+4. A automação Windows existente e sua release permanecem intactas.
+
+### Executar em Linux (desenvolvimento)
+
+Requisitos: Node.js 24, npm, ambiente gráfico e bibliotecas do Electron.
+
+```bash
+cd desktop
+npm ci
+npm run setup
+npm run build
+npm test
+npm start
+```
+
+Testar a interface com a janela aberta. Para CI gráfico sem desktop (somente
+em runner isolado, nunca na distribuição final):
+
+```bash
+xvfb-run -a npx electron --no-sandbox test/smoke.cjs --visual-preview
+xvfb-run -a npx electron --no-sandbox test/pagination-smoke.cjs --visual-preview
+xvfb-run -a npx electron --no-sandbox test/reader-rules-smoke.cjs --visual-preview
+```
+
+### Gerar os pacotes
+
+```bash
+npm run dist:linux
+bash scripts/verify-linux-packages.sh
+```
+
+Arquivos gerados em `desktop/release/`. `AppImage` é portátil; `.deb`
+atende distribuições baseadas em Debian (Ubuntu e Linux Mint, por exemplo).
+Para usar AppImage, autorize a execução do arquivo. Dependendo da
+distribuição/runtime, pode ser necessária uma biblioteca de compatibilidade
+FUSE; isso **não** foi resolvido nem validado em todas as versões do Linux.
+Não desabilite permanentemente o sandbox do aplicativo para contornar
+erros no computador do usuário.
+
+## Testes manuais ainda necessários antes do merge
+
+- [ ] Executar AppImage como usuário comum numa sessão X11 real.
+- [ ] Executar AppImage numa sessão Wayland e conferir comportamento da janela.
+- [ ] Instalar e remover o DEB em ambiente de teste; conferir ícone, menu,
+      abertura por atalho, permissões, múltiplas janelas e foco.
+- [ ] Confirmar persistência de `library.json` em `~/.config/` ou
+      `$XDG_CONFIG_HOME` e ausência de perda de dados após reinstalação.
+- [ ] Instalar fonte real, listar obras, pesquisar, abrir detalhes e capítulo.
+- [ ] Testar login/cookies das fontes em sessão gráfica real.
+- [ ] Exportar e importar um backup real do LNReader Android (v1/v2).
+- [ ] Ler capítulos offline, retomar progresso e verificar imagens/capas.
+- [ ] Testar download e restauração depois de fechar/reabrir.
+- [ ] Verificar consumo, rolagem, F11, temas, fontes, diálogos e clipboard.
+- [ ] Testar Linux Mint/Ubuntu em pelo menos uma máquina real.
+- [ ] Investigar soluções seguras para o sandbox quando namespaces estiverem
+      indisponíveis; não alterar a segurança global só para fazer o CI passar.
+
+## Critérios para propor merge à main
+
+Workflow Linux verde (incluindo inspeção dos pacotes), Windows não regredido,
+pelo menos uma validação real de AppImage e DEB e documentação das falhas
+restantes. A matriz de fontes externas continua **diagnóstica**: aprovar
+a auditoria não prova compatibilidade de todas as fontes.
+
+Quando chegar essa etapa, revisar as diferenças em um PR separado. Não criar
+uma release Linux antes de validar as instalações reais.
