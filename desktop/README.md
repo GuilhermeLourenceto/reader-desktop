@@ -1,4 +1,4 @@
-# LNReader Desktop — versão experimental
+# LNReader Desktop — versão beta para Windows e Linux
 
 Port para Windows 10/11 e Linux usando Electron. A interface desktop é nova,
 adaptada para mouse, teclado e telas maiores. Em janelas largas, os detalhes da
@@ -9,7 +9,7 @@ o painel de filtros oferece ordem inversa e ordenação por nome/número.
 As opções para definir a direção
 da fonte e ler desde o início também ficam nesse painel. O código Android antigo continua acessível no histórico Git; a `main` agora contém somente o projeto Desktop.
 
-Versão atual: **0.4.2 Beta**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.4.2.md).
+Versão atual: **0.4.3 Beta (Windows e Linux)**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.4.3.md).
 
 A interface utiliza uma cópia versionada da paleta original,
 em `vendor/lnreader/src/theme/md3/defaultTheme.ts`, e as fontes
@@ -86,7 +86,7 @@ produz `.AppImage` e `.deb`. Gere cada instalador no respectivo sistema.
 Para executar um AppImage, habilite a permissão de execução; algumas
 distribuições precisam do pacote de compatibilidade do FUSE.
 
-A automação `.github/workflows/desktop.yml` compila e testa Windows por padrão.
+A automação `.github/workflows/desktop.yml` compila e testa Windows por padrão; para a release v0.4.3 e nas pull requests, também compila e testa Linux.
 Linux é opcional, habilitado por `include_linux` na execução manual. Na
 branch experimental `linux/prepare-packaging-and-tests`, há ainda o workflow
 separado `.github/workflows/linux-preparation.yml`, acionado apenas
@@ -94,7 +94,7 @@ sob solicitação explícita (por mudança no marcador documentado no guia Linux
 ou `workflow_dispatch` via API): quando solicitado, executa testes no Ubuntu, produz
 AppImage e DEB e valida o lançador, a associação da janela e os recursos
 dos pacotes. **Pushes nesta branch não geram pacotes automaticamente.**
-Os arquivos são artefatos experimentais, não uma release Linux oficial.
+Os arquivos desse workflow de preparação são artefatos de diagnóstico. A v0.4.3 passa a distribuir Linux beta pela CI da `main`, com AppImage e DEB gerados e inspecionados após a validação automatizada. A instalação em máquina Linux real ainda precisa de conferência manual.
 Acompanhe as pendências em
 [Preparação do Linux](docs/CONTINUAR-NO-LINUX.md). A execução local no Windows
 não valida o funcionamento em Linux. Os binários não possuem assinatura
