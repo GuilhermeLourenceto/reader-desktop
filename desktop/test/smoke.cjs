@@ -108,6 +108,7 @@ server.listen(0, '127.0.0.1', () => {
           "document.body.innerText.includes('Biblioteca') && !document.body.innerText.includes('Processando…')",
         );
         await click('Fontes');
+        await click('Gerenciar fontes');
         const url = `http://127.0.0.1:${server.address().port}/index.json`;
         await execute(
           `(() => { const input=document.querySelector('input[type=url]'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input, ${JSON.stringify(
