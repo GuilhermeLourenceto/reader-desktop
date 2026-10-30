@@ -183,3 +183,39 @@ test('session lookup failure rejects just one source without freezing other sour
   assert.equal(pool.entries.size, 0);
   assert.equal(pool.active, 0);
 });
+
+test('pool rejeita DNS privado antes de criar conexão', async () => {
+  const { net, requests } = fixture();
+  const pool = new RequestPool(net, 2, 8, {
+    requireDnsValidation: true,
+    dnsResolver: async () => ({ resolvedAddresses: [{ address: '127.0.0.1' }] }),
+  });
+  await assert.rejects(pool.run('https://host.example.org'), /DNS/);
+  assert.equal(requests.length, 0);
+});
+test('redirecionamento para novo domínio valida DNS antes da próxima conexão', async () => {
+  const { net, requests, respond } = fixture();
+  const seen = [];
+  const pool = new RequestPool(net, 2, 8, {
+    requireDnsValidation: true,
+    dnsResolver: async host => {
+      seen.push(host);
+      return { resolvedAddresses: [{ address: host === 'bad.example.org' ? '10.1.2.3' : '93.184.215.14' }] };
+    },
+  });
+  const good = pool.run('https://good.example.org/', { requestId: 'r1' });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(requests.length, 1);
+  requests[0].emit('redirect', 302, 'GET', 'https://bad.example.org/private');
+  await assert.rejects(good, /DNS/);
+  assert.deepEqual(seen, ['good.example.org', 'bad.example.org']);
+  assert.equal(requests.length, 1);
+  const retry = pool.run('https://good.example.org/', { requestId: 'r2' });
+  await new Promise(resolve => setImmediate(resolve));
+  requests[1].emit('redirect', 302, 'GET', 'https://cdn.example.org/novel');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(requests.length, 3);
+  respond(2);
+  await retry;
+  assert.equal(seen.includes('cdn.example.org'), true);
+});
