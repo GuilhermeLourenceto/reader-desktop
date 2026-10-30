@@ -150,6 +150,11 @@ server.listen(0, '127.0.0.1', () => {
           (await execute('window.desktop.load()')).novels[0].chapters[0].unread,
           true,
         );
+        // Wait until the restore animation frame has cleared the guard so
+        // the next scroll is treated as an actual reader interaction.
+        await execute(
+          'new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))',
+        );
         await execute(
           "void(document.querySelector('.reader-scroll').scrollTop=document.querySelector('.reader-scroll').scrollHeight)",
         );
