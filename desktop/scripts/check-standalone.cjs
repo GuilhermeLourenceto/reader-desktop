@@ -35,6 +35,13 @@ for (const file of [
 const build = fs.readFileSync(path.join(root, 'build.mjs'), 'utf8');
 if (/resolve\(['"]\.\.\//.test(build) || /copyFile\(\s*['"]\.\.\//.test(build))
   errors.push('Desktop build still resolves files outside desktop/');
+// The standalone icon generator is not called by normal builds, but it must
+// also work from desktop/ alone when maintainers need to refresh icons.
+const iconMaker = fs.readFileSync(path.join(root, 'build/make-icon.cjs'), 'utf8');
+if (!iconMaker.includes('../vendor/lnreader/assets/native/ic_launcher.png'))
+  errors.push('Icon generator must use desktop/vendor/lnreader, not the external Android tree.');
+if (/\.\.\/\.\.\/assets\/|android-icons\/|ANDROID_HOME|react-native(?:\/|$)/.test(iconMaker))
+  errors.push('Icon generator contains an Android-only or out-of-tree resource path.');
 if (errors.length) {
   console.error('Desktop isolation FAILED:\n' + errors.join('\n'));
   process.exitCode = 1;
