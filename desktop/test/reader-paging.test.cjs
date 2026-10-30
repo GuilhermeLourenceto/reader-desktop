@@ -60,8 +60,10 @@ test('page amplitude stays within the configured range', () => {
   assert.equal(pageAmplitude(85), 0.85);
   assert.equal(pageAmplitude(30), 0.3);
   assert.equal(pageAmplitude(100), 1);
-  assert.equal(pageAmplitude(10), 0.2);
+  assert.equal(pageAmplitude(10), 0.1);
+  assert.equal(pageAmplitude(0), 0);
+  assert.equal(pageAmplitude(-20), 0);
   assert.equal(pageAmplitude(500), 1);
-  assert.equal(pageAmplitude(undefined), 0.85);
+  assert.equal(pageAmplitude(undefined), 0.5);
   assert.equal(pageAmplitude('60'), 0.6);
 });
