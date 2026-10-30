@@ -1,0 +1,57 @@
+name: Giant library + backup stress (Windows and Linux)
+
+# Explicitly stress a disposable profile. NO installer or release is built.
+on:
+  push:
+    branches: [linux/prepare-packaging-and-tests]
+    paths:
+      - '.github/workflows/giant-library-stress.yml'
+      - 'desktop/test/heavy-backup-stress.cjs'
+      - 'desktop/test/huge-library-ui-smoke.cjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  huge-library-and-backup:
+    name: 18k books / 470k chapters / 320MiB assets (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: desktop
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - if: runner.os == 'Linux'
+        name: Install Xvfb without touching app security settings
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Install dependencies
+        run: npm ci
+      - name: Compile temporary application modules (no installer)
+        run: npm run build
+      - name: Extreme backup export, repeated import, corruption recovery and limit
+        timeout-minutes: 27
+        run: node test/heavy-backup-stress.cjs --profile=extreme
+      - name: Set up Electron only for UI test
+        run: npm run setup
+      - name: Render and navigate 10k book / 200k chapter library on Windows
+        if: runner.os == 'Windows'
+        timeout-minutes: 4
+        run: npx electron test/huge-library-ui-smoke.cjs --visual-preview
+      - name: Render and navigate 10k book / 200k chapter library on Linux
+        if: runner.os == 'Linux'
+        timeout-minutes: 4
+        run: xvfb-run -a npx electron --no-sandbox test/huge-library-ui-smoke.cjs --visual-preview
