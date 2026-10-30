@@ -1,12 +1,15 @@
-# LNReader Desktop 0.4.0 Beta
+## Novidades
 
-- Destaque uniforme na linha inteira do capítulo ao passar o mouse, incluindo seleção e ações.
-- Tela cheia para leitura com menos distrações.
-- Busca global de obras em destaque na aba Fontes.
-- Filtro por idioma nas fontes instaladas, no catálogo e na busca global.
-- Interface em português, inglês, espanhol, francês, alemão, italiano, russo, japonês, coreano e chinês simplificado, com troca imediata e preferência salva.
-- Datas, contadores, avisos e confirmações adaptados ao idioma escolhido.
-- Ajuste de avanço da leitura com valor inicial de 50% e controle centralizado.
-- Correções na conexão das fontes e proteção contra redirecionamentos para endereços privados, permitindo respostas DNS públicas válidas.
+- O destaque ao passar o mouse agora cobre a linha inteira do capítulo, incluindo seleção e ações.
+- Use **F11** para alternar a tela cheia em qualquer área do aplicativo.
+- A aba **Fontes** abre diretamente na busca em todas as fontes, priorizando aquelas com resultados.
+- Filtre fontes por idioma, tanto no catálogo quanto na busca global.
+- Interface disponível em 10 idiomas, com preferência salva.
+- Datas, contadores, avisos e confirmações adaptados ao idioma selecionado.
+- Avanço por página configurado em **50%** por padrão, com controle visual corrigido.
 
-Versão experimental para Windows 10/11 x64. Algumas fontes podem exigir login ou apresentar bloqueios. O aplicativo ainda não possui assinatura digital confiável e pode ser bloqueado pelo Windows.
+## Observações
+
+- Versão beta para **Windows 10/11 x64**. Algumas fontes exigem login ou apresentam bloqueios dos próprios sites.
+- A v0.4.0 apresentou uma falha de verificação DNS que podia bloquear fontes legítimas. **Esse problema foi corrigido na v0.4.1.**
+- O instalador não possui assinatura digital.
