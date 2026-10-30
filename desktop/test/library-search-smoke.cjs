@@ -190,28 +190,31 @@ server.listen(0, '127.0.0.1', () => {
         await wait(
           "document.querySelectorAll('.book').length===2&&!document.querySelector('.busy')",
         );
-        // Category visibility must not require an app restart, as reported
-        // for category-based library additions in LNReader #1963.
-        await execute(
-          "Array.from(document.querySelectorAll('[role=tab]')).find(button=>button.textContent.includes('Lendo')).click()",
+        // Categories remain functional in the filter menu; redundant tabs are gone.
+        assert.equal(
+          await execute("document.querySelector('.category-tabs')===null && document.querySelectorAll('.book-select').length===0"),
+          true,
         );
+        await click('Filtrar biblioteca');
+        await select('Categoria da biblioteca', '1');
         await wait("document.querySelectorAll('.book').length===1");
         assert.equal(
           await execute("document.querySelector('.book').textContent.includes('Obra A')"),
           true,
         );
-        await execute(
-          "Array.from(document.querySelectorAll('[role=tab]')).find(button=>button.textContent.includes('Depois')).click()",
-        );
+        await select('Categoria da biblioteca', '2');
         await wait("document.querySelectorAll('.book').length===1");
         assert.equal(
           await execute("document.querySelector('.book').textContent.includes('Obra B')"),
           true,
         );
-        await execute(
-          "Array.from(document.querySelectorAll('[role=tab]')).find(button=>button.textContent.includes('Todas')).click()",
-        );
+        await select('Categoria da biblioteca', '');
         await wait("document.querySelectorAll('.book').length===2");
+        await select('Mostrar obras', 'downloaded');
+        await wait("document.querySelectorAll('.book').length===1");
+        await select('Mostrar obras', 'all');
+        await wait("document.querySelectorAll('.book').length===2");
+        await click('Filtrar biblioteca');
         await click('Histórico');
         assert.equal(
           await execute(
@@ -300,9 +303,16 @@ server.listen(0, '127.0.0.1', () => {
         let saved = await execute('window.desktop.load()');
         assert.equal(saved.novels[0].chapters[0].isDownloaded, true);
         assert.equal(saved.novels[0].chapters[0].bookmark, true);
-        await execute(
-          "document.querySelectorAll('.book-select').forEach(input=>input.click())",
-        );
+        // Right-click selection must work with no checkbox overlay.
+        assert.equal(await execute("document.querySelectorAll('.book-select').length"), 0);
+        await context();
+        await click('Selecionar obra');
+        await wait("document.querySelectorAll('.book-card.is-selected').length===1");
+        await context();
+        await click('Desmarcar obra');
+        await wait("document.querySelectorAll('.book-card.is-selected').length===0");
+        await click('Selecionar todos');
+        await wait("document.querySelectorAll('.book-card.is-selected').length===2");
         await click('Baixar selecionadas');
         await wait(
           "window.desktop.load().then(state=>state.novels[1].chapters[0].isDownloaded===true&&!document.querySelector('.busy'))",
@@ -313,9 +323,8 @@ server.listen(0, '127.0.0.1', () => {
           ),
           true,
         );
-        await execute(
-          "document.querySelectorAll('.book-select').forEach(input=>input.click())",
-        );
+        await click('Selecionar todos');
+        await wait("document.querySelectorAll('.book-card.is-selected').length===2");
         await click('Remover selecionadas');
         await wait("document.querySelectorAll('.book').length===0");
         assert.equal(
