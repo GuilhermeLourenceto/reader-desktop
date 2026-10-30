@@ -43,9 +43,9 @@ const state = {
 };
 fs.writeFileSync(path.join(directory, 'library.json'), JSON.stringify(state));
 const timer = setTimeout(() => {
-  console.error('LOCALIZATION HARD TIMEOUT: no completion in 90s');
+  console.error('LOCALIZATION HARD TIMEOUT: no completion in 180s');
   process.exit(1);
-}, 90000);
+}, 180000);
 let once = false;
 app.on('browser-window-created', (_, win) => {
   win.webContents.setBackgroundThrottling(false);
@@ -120,7 +120,57 @@ app.on('browser-window-created', (_, win) => {
         );
         await click(t('Voltar nas configurações', code));
         await click(t('Geral', code));
-        console.log('LOCALE OK:', code);
+        // Exercise the REAL library controls in EACH of the 10 languages,
+        // not only static dictionary entries or the final Chinese locale.
+        await click(t('Biblioteca', code));
+        await wait("document.querySelector('.book')");
+        await click(t('Filtrar biblioteca', code));
+        await wait("document.querySelector('#library-category') && document.querySelector('#library-sort')");
+        assert.equal(
+          await js("document.querySelector('label[for=library-category]').textContent.trim()"),
+          t('Categoria', code),
+        );
+        assert.equal(
+          await js("document.querySelector('#library-category').getAttribute('aria-label')"),
+          t('Categoria da biblioteca', code),
+        );
+        assert.equal(
+          await js("document.querySelector('#library-sort').getAttribute('aria-label')"),
+          t('Ordenar biblioteca', code),
+        );
+        assert.deepEqual(
+          await js("Array.from(document.querySelectorAll('.library-status-options button')).map(e=>e.textContent.trim())"),
+          ['Todas', 'Não lidas', 'Baixadas'].map(key => t(key, code)),
+        );
+        assert.deepEqual(
+          await js("Array.from(document.querySelector('#library-sort').options).map(e=>e.textContent.trim())"),
+          ['Ordem original', 'Nome (A–Z)', 'Nome (Z–A)', 'Mais capítulos'].map(key => t(key, code)),
+        );
+        const stockNames = await js("Array.from(document.querySelector('#library-category').options).map(e=>e.textContent.trim())");
+        assert.ok(stockNames.some(v => v.includes(t('Padrão', code))));
+        assert.ok(stockNames.some(v => v.includes(t('Localização', code))));
+        assert.ok(stockNames.some(v => v.includes('Minha categoria')));
+        await js("(()=>{const s=document.querySelector('#library-category');s.value='3';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+        await wait("document.querySelectorAll('.book').length===0");
+        await js("(()=>{const s=document.querySelector('#library-category');s.value='';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+        await wait("document.querySelectorAll('.book').length===1");
+        await click(t('Filtrar biblioteca', code));
+        await js("document.querySelector('.book-card').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,clientX:200,clientY:180}))");
+        await wait("document.querySelector('[role=menu]')");
+        const menuLabels = await js("Array.from(document.querySelector('[role=menu]').querySelectorAll('button')).map(e=>e.textContent.trim())");
+        for (const key of ['Abrir obra', 'Selecionar obra', 'Baixar capítulos pendentes', 'Resetar leitura da obra', 'Remover da biblioteca'])
+          assert.ok(menuLabels.includes(t(key, code)), 'Missing menu translation: ' + key + ' @ ' + code);
+        await click(t('Selecionar obra', code));
+        await wait("document.querySelector('.library-selection').dataset.selectedCount==='1'");
+        await js("document.querySelector('.book-card').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,clientX:200,clientY:180}))");
+        await wait("document.querySelector('[role=menu]')");
+        assert.ok((await js("document.querySelector('[role=menu]').textContent")).includes(t('Desmarcar obra', code)));
+        await click(t('Desmarcar obra', code));
+        await wait("document.querySelector('.library-selection').dataset.selectedCount==='0'");
+        await click(t('Mais', code));
+        await click(t('Configurações', code));
+        await click(t('Geral', code));
+        console.log('LOCALE LIBRARY/MENU OK:', code);
       }
       await click(t('Biblioteca', 'zh-CN'));
       await wait("document.querySelector('.book')");
