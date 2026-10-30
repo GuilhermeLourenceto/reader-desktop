@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## 0.4.1 Beta
+
+- Corrigida a falha que bloqueava as fontes na verificação DNS, mesmo quando o domínio tinha endereço público válido.
+- Verificação de DNS realizada na própria sessão usada pela fonte, sem interferir nas sessões de outras fontes.
+- Mantido o bloqueio de endereços locais e privados e a checagem de redirecionamentos.
+- Melhorada a verificação de compatibilidade de fontes.
+
+Versão experimental para Windows 10/11 x64. Algumas fontes exigem autenticação ou podem ser bloqueadas pelo site.
+
+
 ## 0.4.0 Beta
 
 - Destaque uniforme na linha inteira do capítulo ao passar o mouse, incluindo seleção e ações.

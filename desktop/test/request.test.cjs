@@ -219,3 +219,50 @@ test('redirecionamento para novo domínio valida DNS antes da próxima conexão'
   await retry;
   assert.equal(seen.includes('cdn.example.org'), true);
 });
+
+test('DNS validation uses the exact source session, never the default resolver', async () => {
+  const { net, requests, respond } = fixture();
+  const seen = [];
+  const sourceSession = {
+    resolveHost: async (host, options) => {
+      seen.push({ resolver: 'source', host, options });
+      return { resolvedAddresses: [{ address: '104.21.30.25' }] };
+    },
+  };
+  const pool = new RequestPool(net, 2, 8, {
+    requireDnsValidation: true,
+    dnsResolver: async () => {
+      seen.push({ resolver: 'default' });
+      // A default-session DNS answer must not block the per-source request.
+      return { resolvedAddresses: [{ address: '127.0.0.1' }] };
+    },
+    sessionForSource: id => id === 'src' ? sourceSession : undefined,
+  });
+  const promise = pool.run('https://novel.example.org', { sourceId: 'src' });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(requests.length, 1);
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].resolver, 'source');
+  assert.equal(seen[0].host, 'novel.example.org');
+  assert.equal(seen[0].options.cacheUsage, 'disallowed');
+  respond(0);
+  await promise;
+});
+
+test('DNS guard rejects a private address from the same source session', async () => {
+  const { net, requests } = fixture();
+  const pool = new RequestPool(net, 1, 4, {
+    requireDnsValidation: true,
+    dnsResolver: async () => ({ resolvedAddresses: [{ address: '93.184.215.14' }] }),
+    sessionForSource: () => ({
+      resolveHost: async () => ({
+        resolvedAddresses: [{ address: '192.168.0.1' }],
+      }),
+    }),
+  });
+  await assert.rejects(
+    pool.run('https://malicious.example.org', { sourceId: 'untrusted' }),
+    /DNS da fonte retornou endereço local ou privado/,
+  );
+  assert.equal(requests.length, 0, 'connection must not be opened');
+});

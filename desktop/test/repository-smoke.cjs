@@ -46,6 +46,11 @@ app.on('browser-window-created', (_event, win) => {
       await execute(
         "Array.from(document.querySelectorAll('nav button')).find(b => b.textContent === 'Fontes').click()",
       );
+      // Fontes opens the global search first since v0.4.0; visit the
+      // manager explicitly before entering a repository URL.
+      await execute(
+        "Array.from(document.querySelectorAll('.source-mode-tabs button')).find(b => b.textContent.trim() === 'Gerenciar fontes').click()",
+      );
       await execute(
         `(() => { const input = document.querySelector('input[type=url]'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, ${JSON.stringify(
           repository,

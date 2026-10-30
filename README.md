@@ -20,7 +20,7 @@ O suporte a fontes pode variar conforme autenticação e bloqueios dos sites.
 
 ## Estado do projeto
 
-**Versão 0.4.0 Beta** — [Baixar instalador](https://github.com/GuilhermeLourenceto/lnreader-desktop/releases/tag/v0.4.0) · [Novidades](desktop/docs/RELEASE_NOTES_0.4.0.md).
+**Versão 0.4.1 Beta** — [Baixar instalador](https://github.com/GuilhermeLourenceto/lnreader-desktop/releases/tag/v0.4.1) · [Novidades](desktop/docs/RELEASE_NOTES_0.4.1.md).
 O projeto ainda é experimental; algumas extensões podem exigir login, apresentar bloqueios ou falhar.
 A compilação do Desktop, seus testes e as jornadas automatizadas são verificados
 pelo [GitHub Actions](https://github.com/GuilhermeLourenceto/lnreader-desktop/actions/workflows/desktop.yml).

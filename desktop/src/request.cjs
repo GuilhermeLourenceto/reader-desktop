@@ -218,8 +218,12 @@ class RequestPool {
       Promise.resolve()
         .then(async () => {
           const requestSession = this.options.sessionForSource?.(entry.init.sourceId);
-          const resolver = this.options.dnsResolver ||
-            (requestSession?.resolveHost ? requestSession.resolveHost.bind(requestSession) : null);
+          // Resolve in the SAME Chromium session that will make the request.
+          // net.resolveHost uses the default session and may disagree with
+          // persistent per-source partitions (DNS cache, proxy and DNS policy).
+          const resolver = typeof requestSession?.resolveHost === 'function'
+            ? requestSession.resolveHost.bind(requestSession)
+            : this.options.dnsResolver;
           let url = entry.url;
           let init = entry.init;
           for (let hop = 0; hop <= 20; hop++) {

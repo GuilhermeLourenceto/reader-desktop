@@ -48,3 +48,25 @@ test('DNS público é aceito, mas respostas privadas ou mistas são bloqueadas',
     /DNS/,
   );
 });
+
+test('Electron 42 ResolvedHost.endpoints accepts public IPs and still blocks private ones', async () => {
+  const { validateResolvedAddresses, validateNetworkDns } = require('../src/networkPolicy.cjs');
+  const publicDns = {
+    endpoints: [
+      { address: '1.1.1.1', family: 'ipv4' },
+      { address: '2606:4700:4700::1111', family: 'ipv6' },
+    ],
+  };
+  assert.equal(validateResolvedAddresses(publicDns).length, 2);
+  assert.equal(
+    await validateNetworkDns('https://cdn.example.com', async () => publicDns),
+    'https://cdn.example.com/',
+  );
+  for (const bad of ['127.0.0.1', '10.0.0.25', '192.168.1.20', '::1', 'fc00::1', '::ffff:127.0.0.1']) {
+    assert.throws(() => validateResolvedAddresses({
+      endpoints: [publicDns.endpoints[0], { address: bad }],
+    }), /DNS da fonte retornou endereço local ou privado/);
+  }
+  assert.throws(() => validateResolvedAddresses({ endpoints: [] }), /Não foi possível validar o DNS/);
+  assert.throws(() => validateResolvedAddresses({ endpoints: [{ family: 'ipv4' }] }), /DNS/);
+});
