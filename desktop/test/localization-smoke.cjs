@@ -35,7 +35,10 @@ const state = {
   ],
 };
 fs.writeFileSync(path.join(directory, 'library.json'), JSON.stringify(state));
-const timer = setTimeout(() => app.exit(1), 90000);
+const timer = setTimeout(() => {
+  console.error('LOCALIZATION HARD TIMEOUT: no completion in 90s');
+  process.exit(1);
+}, 90000);
 let once = false;
 app.on('browser-window-created', (_, win) => {
   win.webContents.setBackgroundThrottling(false);
@@ -63,6 +66,7 @@ app.on('browser-window-created', (_, win) => {
       await click('Geral');
       for (let i = 0; i < languages.length; i++) {
         const [code] = languages[i];
+        console.log('LOCALE SWITCH:', code);
 
         await js(
           `(()=>{const s=Array.from(document.querySelectorAll('select')).find(s=>s.options.length===10);s.value=${JSON.stringify(code)};s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
@@ -79,6 +83,7 @@ app.on('browser-window-created', (_, win) => {
         );
         // Theme names are read from JS metadata; verify they translate live
         // rather than keeping the original Portuguese labels.
+        console.log('LOCALE APPEARANCE:', code);
         await click(t('Voltar nas configurações', code));
         await click(t('Aparência', code));
         await wait("document.querySelectorAll('.palette-swatch').length===9");
@@ -90,6 +95,7 @@ app.on('browser-window-created', (_, win) => {
           await js(`Array.from(document.querySelectorAll('.palette-swatch')).some(b=>b.textContent.trim()===${JSON.stringify(t('Morango', code))})`),
           'Palette names must be translated in ' + code,
         );
+        console.log('LOCALE READER:', code);
         await click(t('Voltar nas configurações', code));
         await click(t('Leitor', code));
         await wait("document.querySelector('.reader-theme-picker select')");
@@ -107,6 +113,7 @@ app.on('browser-window-created', (_, win) => {
         );
         await click(t('Voltar nas configurações', code));
         await click(t('Geral', code));
+        console.log('LOCALE OK:', code);
       }
       await click(t('Biblioteca', 'zh-CN'));
       await wait("document.querySelector('.book')");
