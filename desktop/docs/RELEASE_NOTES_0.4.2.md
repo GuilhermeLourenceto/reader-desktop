@@ -2,6 +2,7 @@
 
 - **Restaurar configurações padrão:** opção em Mais → Configurações para voltar aos ajustes iniciais, com confirmação. A biblioteca, fontes instaladas, downloads, histórico e progresso são preservados.
 - **Rolagem mais prática:** nas listas de obras das fontes, a roda do mouse funciona mesmo com o cursor nas laterais da janela, fora da coluna central.
+- **Idiomas da interface:** corrigida a tradução das opções de paletas de cores e temas de leitura. Os nomes e conteúdos das novels e das fontes continuam originais.
 
 ## Observações
 

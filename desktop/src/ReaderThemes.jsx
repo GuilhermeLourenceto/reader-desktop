@@ -14,7 +14,7 @@ export default function ReaderThemes({ value = 'app', onChange }) {
         >
           {readerThemes.map((theme) => (
             <option key={theme.id} value={theme.id}>
-              {theme.name}
+              {translateMessage(theme.name)}
             </option>
           ))}
         </select>
@@ -28,9 +28,9 @@ export default function ReaderThemes({ value = 'app', onChange }) {
           <button
             key={theme.id}
             type="button"
-            title={theme.name}
+            title={translateMessage(theme.name)}
             aria-label={translateMessage('Tema de leitura: {v0}', {
-              v0: theme.name,
+              v0: translateMessage(theme.name),
             })}
             aria-pressed={value === theme.id}
             style={{

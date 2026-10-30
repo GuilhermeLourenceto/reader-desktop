@@ -4,7 +4,9 @@ const fs = require('node:fs'),
   assert = require('node:assert/strict');
 const { emptyState } = require('../dist/backup.cjs');
 const { languages, t } = require('../src/i18n.cjs');
-const directory = fs.mkdtempSync(path.join(__dirname, '../.tmp/localization-'));
+const tmpDir = path.join(__dirname, '../.tmp');
+fs.mkdirSync(tmpDir, { recursive: true });
+const directory = fs.mkdtempSync(path.join(tmpDir, 'localization-'));
 app.setPath('userData', directory);
 app.commandLine.appendSwitch('disable-gpu');
 const state = {
@@ -35,7 +37,10 @@ const state = {
   ],
 };
 fs.writeFileSync(path.join(directory, 'library.json'), JSON.stringify(state));
-const timer = setTimeout(() => app.exit(1), 90000);
+const timer = setTimeout(() => {
+  console.error('LOCALIZATION HARD TIMEOUT: no completion in 90s');
+  process.exit(1);
+}, 90000);
 let once = false;
 app.on('browser-window-created', (_, win) => {
   win.webContents.setBackgroundThrottling(false);
@@ -63,6 +68,7 @@ app.on('browser-window-created', (_, win) => {
       await click('Geral');
       for (let i = 0; i < languages.length; i++) {
         const [code] = languages[i];
+        console.log('LOCALE SWITCH:', code);
 
         await js(
           `(()=>{const s=Array.from(document.querySelectorAll('select')).find(s=>s.options.length===10);s.value=${JSON.stringify(code)};s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
@@ -77,6 +83,39 @@ app.on('browser-window-created', (_, win) => {
             `document.body.innerText.includes(${JSON.stringify(t('Privacidade e navegação', code))})`,
           ),
         );
+        // Theme names are read from JS metadata; verify they translate live
+        // rather than keeping the original Portuguese labels.
+        console.log('LOCALE APPEARANCE:', code);
+        await click(t('Voltar nas configurações', code));
+        await click(t('Aparência', code));
+        await wait("document.querySelectorAll('.palette-swatch').length===9");
+        assert.equal(
+          await js("document.querySelector('.palette-swatch:nth-child(2)').getAttribute('title')"),
+          t('Crepúsculo', code),
+        );
+        assert.ok(
+          await js(`Array.from(document.querySelectorAll('.palette-swatch')).some(b=>b.textContent.trim()===${JSON.stringify(t('Morango', code))})`),
+          'Palette names must be translated in ' + code,
+        );
+        console.log('LOCALE READER:', code);
+        await click(t('Voltar nas configurações', code));
+        await click(t('Leitor', code));
+        await wait("document.querySelector('.reader-theme-picker select')");
+        assert.equal(
+          await js("document.querySelector('.reader-theme-picker option[value=app]').textContent.trim()"),
+          t('Seguir aplicativo', code),
+        );
+        assert.equal(
+          await js("document.querySelector('.reader-theme-picker option[value=original-sepia]').textContent.trim()"),
+          t('Sépia original', code),
+        );
+        assert.equal(
+          await js("document.querySelector('.reader-theme-swatches button[title]').getAttribute('title')"),
+          t('Seguir aplicativo', code),
+        );
+        await click(t('Voltar nas configurações', code));
+        await click(t('Geral', code));
+        console.log('LOCALE OK:', code);
       }
       await click(t('Biblioteca', 'zh-CN'));
       await wait("document.querySelector('.book')");

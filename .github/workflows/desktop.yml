@@ -92,6 +92,10 @@ jobs:
         run: npm run test:pagination
       - if: runner.os == 'Windows'
         run: npm run test:reader
+      - name: Verify all ten interface languages and localized option choices
+        if: runner.os == 'Windows'
+        timeout-minutes: 3
+        run: npx electron test/localization-smoke.cjs
       - name: Real public DNS and source-session HTTP probe
         if: runner.os == 'Windows'
         run: npx electron test/dns-public-smoke.cjs
@@ -272,3 +276,42 @@ jobs:
             --title "LNReader Desktop 0.4.2 Beta" \
             --notes-file desktop/docs/RELEASE_NOTES_0.4.2.md \
             --prerelease
+
+  replace-v042-translation:
+    name: Replace tested v0.4.2 installer and retarget existing tag
+    if: "github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'fix: v0.4.2 translation')"
+    needs: [quality, desktop-only, package, user-journeys, source-matrix]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: lnreader-desktop-Windows
+          path: release-artifacts
+      - name: Replace only the existing v0.4.2 release after full validation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./desktop/package.json').version")" = "0.4.2"
+          test -s desktop/docs/RELEASE_NOTES_0.4.2.md
+          installer="$(find release-artifacts -type f -name 'LNReader.Desktop.Setup.0.4.2.exe' -print -quit)"
+          test -n "$installer" && test -s "$installer"
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v0.4.2" --jq '.object.sha')"
+          test "$tag_sha" = "9072ffbf63bdbf27f8cee435f52d11793ddaece6"
+          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/v0.4.2" --jq '.id')"
+          test -n "$release_id"
+          sha256sum "$installer"
+          # User requested replacing the same version. Keep tag, source and
+          # installer in agreement rather than publishing a mismatched binary.
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/v0.4.2" \
+            -f sha="$GITHUB_SHA" -F force=true >/dev/null
+          gh release upload v0.4.2 "$installer" --clobber
+          gh release edit v0.4.2 --notes-file desktop/docs/RELEASE_NOTES_0.4.2.md
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" \
+            -f target_commitish="$GITHUB_SHA" >/dev/null
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v0.4.2" --jq '.object.sha')" = "$GITHUB_SHA"
+          gh release view v0.4.2 --json assets --jq '.assets[].name' |
+            grep -Fx 'LNReader.Desktop.Setup.0.4.2.exe'

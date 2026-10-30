@@ -227,6 +227,12 @@ rows.push(
     .map((row) => row.split('|')),
 );
 rows.push(
+  ...require('./locale-theme-labels.cjs')
+    .trim()
+    .split('\n')
+    .map((row) => row.split('|')),
+);
+rows.push(
   ...require('./locale-dialogs.cjs')
     .trim()
     .split('\n')
