@@ -4,9 +4,7 @@
 
 **Branch de trabalho:** `linux/prepare-packaging-and-tests` (base: `main`).
 
-Preparar uma primeira etapa de compatibilidade Linux **sem alterar a versão
-publicada para Windows**. Este trabalho não deve ser considerado uma release
-Linux nem mesclado automaticamente à `main`.
+A preparação inicial foi feita antes da publicação v0.4.3. A partir da integração com a `main`, a v0.4.3 é uma release **beta/experimental** para Windows e Linux. Os passos manuais abaixo continuam necessários para confirmar suporte em máquinas reais.
 
 ## Auditoria da independência Android na main
 
@@ -112,7 +110,7 @@ FUSE; isso **não** foi resolvido nem validado em todas as versões do Linux.
 Não desabilite permanentemente o sandbox do aplicativo para contornar
 erros no computador do usuário.
 
-## Testes manuais ainda necessários antes do merge
+## Testes manuais ainda necessários para validar o beta Linux
 
 - [ ] Executar AppImage como usuário comum numa sessão X11 real.
 - [ ] Executar AppImage numa sessão Wayland e conferir comportamento da janela.
@@ -130,12 +128,11 @@ erros no computador do usuário.
 - [ ] Investigar soluções seguras para o sandbox quando namespaces estiverem
       indisponíveis; não alterar a segurança global só para fazer o CI passar.
 
-## Critérios para propor merge à main
+## Critérios de estabilização após a release beta
 
 Workflow Linux executado manualmente e verde (incluindo inspeção dos pacotes), Windows não regredido,
 pelo menos uma validação real de AppImage e DEB e documentação das falhas
 restantes. A matriz de fontes externas continua **diagnóstica**: aprovar
 a auditoria não prova compatibilidade de todas as fontes.
 
-Quando chegar essa etapa, revisar as diferenças em um PR separado. Não criar
-uma release Linux antes de validar as instalações reais.
+A release beta automatizada deve deixar explícitas essas limitações. Não considerar o suporte Linux estável sem instalação real e verificação dos cenários acima.
