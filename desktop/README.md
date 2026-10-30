@@ -12,9 +12,10 @@ separado.
 
 Versão atual: **0.2.0**.
 
-A interface usa diretamente a paleta escura original de
-`src/theme/md3/defaultTheme.ts` e as fontes Noto Sans, PT Sans e PT Serif
-incluídas no projeto. A navegação inferior, abas de categorias, contadores nas
+A interface utiliza uma cópia versionada da paleta original,
+em `vendor/lnreader/src/theme/md3/defaultTheme.ts`, e as fontes
+Noto Sans, PT Sans e PT Serif armazenadas dentro de `vendor/lnreader/assets/`.
+Esse conjunto é independente da pasta Android na compilação. A navegação inferior, abas de categorias, contadores nas
 capas, ícones das fontes e leitor em tela inteira seguem o visual do Android.
 Os backups ficam em **Mais → Backups e ajustes**.
 A revisão das regras de funcionamento do Android está em
@@ -61,9 +62,11 @@ npm run setup
 npm start
 ```
 
-Não é necessário instalar o Android SDK ou as dependências React Native da raiz.
-`setup` baixa o runtime do Electron, inclusive nas versões do npm que não
-executam automaticamente scripts de instalação de dependências.
+Não é necessário ter a pasta Android, instalar o Android SDK ou as
+dependências React Native da raiz. `setup` baixa o runtime do Electron,
+inclusive nas versões do npm que não executam automaticamente scripts de
+instalação de dependências. O CI verifica isso com checkout contendo **apenas**
+a pasta `desktop/`.
 
 ## Gerar instaladores
 
@@ -90,31 +93,45 @@ continuação futura do port. Os instaladores são disponibilizados como artefat
 do GitHub Actions. A execução local no Windows não valida o funcionamento em
 Linux. Os binários locais não possuem assinatura digital de distribuição.
 
-## Código original reaproveitado
+## Estrutura independente e código original reaproveitado
 
-O build importa **diretamente**, sem copiar ou modificar:
+O **Desktop agora compila sem acessar arquivos do Android**. A pasta
+`desktop/vendor/lnreader/` contém uma cópia versionada (snapshot) dos
+módulos originais necessários ao leitor. Não é uma segunda instalação
+Android, e o código de origem permanece reconhecível:
 
-- `src/plugins/pluginManager.ts`: descoberta, instalação, atualização,
-  carregamento e execução das mesmas extensões JavaScript do Android;
-- `src/plugins/helpers/fetch.ts`: fetch de texto, API e protobuf;
-- `src/plugins/helpers/storage.ts`: armazenamento e expiração das extensões;
-- tipos de filtros, status de novels, constantes e auxiliares das fontes;
-- comparação de versões de `src/utils/compareVersion.ts`;
-- nomes de entradas ZIP e opções de `src/services/backup`.
+- `vendor/lnreader/src/plugins/`: mecanismo original de instalação,
+  carregamento, fetch, armazenamento, filtros e tipos das extensões;
+- `vendor/lnreader/src/utils/`: comparação de versões, mensagens de erro
+  e paletas originais de leitura;
+- `vendor/lnreader/src/theme/`: paleta Material 3 original;
+- `vendor/lnreader/assets/`: fontes da interface e logotipo;
+- `vendor/lnreader/LICENSE` e `vendor/lnreader/origin.json`:
+  licença, procedência e hashes de integridade.
 
-`src/adapters.js` substitui os módulos nativos exigidos por esse código:
-MMKV por armazenamento do Chromium e arquivos por uma ponte limitada com o
-processo principal. HTTP passa pela sessão do Electron para suportar cookies
-e pedidos das fontes fora das restrições de CORS do navegador.
+O código específico do Windows/Linux está em `desktop/src/`; os
+adaptadores `src/adapters.js` e `src/workerAdapters.js` conectam o SDK
+original ao Electron, sem trazer Android SDK, Expo nem React Native.
+O armazenamento continua local e os backups ZIP mantêm seu formato.
 
-A interface React Native, as consultas Drizzle/SQLite e os serviços Android
-não foram portados nesta etapa. O desktop persiste os metadados em
-um arquivo JSON com substituição por arquivo temporário e cópia de recuperação.
-Os arquivos baixados ficam separados em `content/`, referenciados por hash;
-bibliotecas anteriores são migradas automaticamente. As capas são carregadas
-sob demanda e os backups ZIP continuam incluindo o conteúdo real dos arquivos.
-Não é uma versão
-completa com todos os recursos do Android.
+**Atualizar o SDK original é uma operação explícita:** no repositório
+que contém Android e Desktop, o mantenedor pode executar
+`node desktop/scripts/sync-original-sdk.cjs` e revisar o diff de
+`desktop/vendor/lnreader/`. Esse script opcional requer a árvore
+Android e **não faz parte de `npm ci`, `npm run build` nem do instalador**.
+Ao copiar só a pasta `desktop/` para outro repositório, a compilação
+continua funcionando sem ele.
+
+A Git branch `seguranca-e-estabilidade` continua pertencendo ao
+repositório Git inteiro; não existem branches por pasta. Para ter
+branches exclusivamente do Desktop, seria necessário criar um
+repositório Git separado. Esta reorganização prepara esse caminho,
+sem mexer no Android ou migrar histórico agora.
+
+A interface React Native, consultas Drizzle/SQLite e serviços Android
+não são incluídos. Os arquivos baixados ficam em `content/`, separados
+dos metadados JSON e referenciados por hash, com recuperação e backups
+ZIP preservados.
 
 ## Fontes
 
@@ -249,6 +266,8 @@ desktop/
   docs/           documentação (compatibilidade, estabilidade, leitor, isolamento)
   docs/previews/  capturas de tela usadas na documentação
   tools/          ui-harness.cjs (renderiza a interface no Chrome) e diagnóstico de fonte
+  vendor/lnreader/  snapshot local do SDK, paletas, licença e assets originais
+  scripts/        manutenção opcional do snapshot
   build/          ícone do instalador
   dist/           saída do build (gerada)
   release/        instaladores e app descompactado (gerada)
