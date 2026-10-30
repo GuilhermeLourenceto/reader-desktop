@@ -1,4 +1,7 @@
 module.exports = `
+Categoria da biblioteca|Library category|Categoría de la biblioteca|Catégorie de la bibliothèque|Bibliothekskategorie|Categoria della biblioteca|Категория библиотеки|ライブラリのカテゴリー|서재 카테고리|书库分类
+Ordenar biblioteca|Sort library|Ordenar biblioteca|Trier la bibliothèque|Bibliothek sortieren|Ordina biblioteca|Сортировать библиотеку|ライブラリを並べ替え|서재 정렬|书库排序
+Marcador|Bookmark|Marcador|Signet|Lesezeichen|Segnalibro|Закладка|ブックマーク|북마크|书签
 Categoria|Category|Categoría|Catégorie|Kategorie|Categoria|Категория|カテゴリー|카테고리|分类
 Estado|Status|Estado|État|Status|Stato|Статус|状態|상태|状态
 Estado das obras|Novel status|Estado de las obras|État des romans|Romanstatus|Stato dei romanzi|Статус книг|作品の状態|작품 상태|作品状态
