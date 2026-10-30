@@ -277,7 +277,34 @@ server.listen(0, '127.0.0.1', () => {
         await click('Mais');
         await click('Configurações');
         await click('Aparência');
+        // Exercise each of the nine palettes. The CSS variables should
+        // update immediately and the radio-like swatch state should follow.
+        const paletteColors = [];
+        for (let i = 0; i < 9; i++) {
+          paletteColors.push(await execute(`(()=>{const items=[...document.querySelectorAll('.palette-swatch')];items[${i}].click();return getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()})()`));
+          assert.equal(await execute(`document.querySelectorAll('.palette-swatch')[${i}].getAttribute('aria-pressed')`), 'true');
+        }
+        assert.ok(new Set(paletteColors).size >= 6, 'palette colors did not respond to settings');
+        // A filter, a card selection outline and the context menu use
+        // the SAME palette-driven values as the rest of the application.
+        await click('Biblioteca');
+        await click('Filtrar biblioteca');
+        assert.equal(
+          await execute("(()=>{const probe=document.createElement('span');probe.style.background='var(--surfaceContainer)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('.filter-panel')).backgroundColor===expected})()"),
+          true,
+        );
+        await click('Filtrar biblioteca');
+        await context();
+        assert.equal(
+          await execute("(()=>{const probe=document.createElement('span');probe.style.background='var(--surfaceContainerHigh)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('[role=menu]')).backgroundColor===expected})()"),
+          true,
+        );
+        await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))");
+        await click('Mais');
+        await click('Configurações');
+        await click('Aparência');
         await select('Tema do aplicativo', 'light');
+        await execute("document.querySelectorAll('.palette-swatch')[0].click()");
         await click('Biblioteca');
         await click('Mais');
         await click('Configurações');
