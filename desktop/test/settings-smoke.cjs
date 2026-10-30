@@ -122,6 +122,11 @@ app.on('browser-window-created', (_event, win) => {
         'light',
       );
       await select('Tema do aplicativo', 'dark');
+      // Custom application palette is applied live and persisted across reloads.
+      await execute("document.querySelectorAll('.palette-swatch')[4].click()");
+      await wait("document.querySelectorAll('.palette-swatch')[4].getAttribute('aria-pressed')==='true'");
+      const palettePrimary = await execute("getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()");
+      assert.ok(palettePrimary && palettePrimary !== 'transparent');
       await click('Voltar nas configurações');
       await execute(
         "document.querySelector('.setting-link[aria-label=Biblioteca]').click()",
@@ -179,6 +184,14 @@ app.on('browser-window-created', (_event, win) => {
       });
       await wait(
         "document.querySelectorAll('.book').length===1 && !document.body.innerText.includes('Processando…')",
+      );
+      assert.equal(
+        await execute("window.desktop.load().then(s=>s.settings.desktopPalette)"),
+        'lavender',
+      );
+      assert.equal(
+        await execute("getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()"),
+        palettePrimary,
       );
       assert.equal(
         await execute("document.querySelectorAll('.badges').length"),
@@ -249,6 +262,7 @@ app.on('browser-window-created', (_event, win) => {
       assert.equal(afterReset.progress, 40);
       assert.equal(afterReset.settings.desktopReaderWidth, 820);
       assert.equal(afterReset.settings.desktopShowBadges, true);
+      assert.equal(afterReset.settings.desktopPalette, 'default');
       await new Promise(resolve => {
         win.webContents.once('did-finish-load', resolve);
         win.webContents.reload();
