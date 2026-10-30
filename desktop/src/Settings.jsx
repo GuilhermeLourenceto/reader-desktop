@@ -130,6 +130,7 @@ export default function Settings({
   onBackup,
   onRestore,
   onSources,
+  onReset,
   busy,
   version,
 }) {
@@ -231,6 +232,32 @@ export default function Settings({
             'Gerenciar os repositórios de fontes',
             onSources,
           )}
+        </div>
+        <div className="settings-group">
+          <button
+            type="button"
+            className="setting-row setting-link"
+            aria-label="Restaurar configurações padrão"
+            disabled={busy}
+            onClick={() => {
+              if (
+                window.confirm(
+                  translateMessage(
+                    'Restaurar as configurações do aplicativo? Sua biblioteca, fontes, downloads, histórico e progresso serão mantidos.',
+                  ),
+                )
+              )
+                onReset();
+            }}
+          >
+            <SettingIcon name="settings" />
+            <span className="setting-copy">
+              <strong>Restaurar configurações padrão</strong>
+              <small>
+                Voltar às preferências iniciais sem apagar suas obras ou fontes.
+              </small>
+            </span>
+          </button>
         </div>
       )}
       {page === 'general' && (
