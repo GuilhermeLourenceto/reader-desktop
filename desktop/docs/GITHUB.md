@@ -36,21 +36,27 @@ distribuídos por artefatos ou releases, não por commits.
 
 ## Atualizar os módulos do LNReader
 
-Obtenha um checkout **separado** do LNReader Android. A partir de
-`desktop/` execute:
+Os módulos originais necessários já estão versionados em
+`desktop/vendor/lnreader/`. Para atualizá-los manualmente, coloque os
+arquivos originais correspondentes em `desktop/.tmp/lnreader-original/`
+(dentro da própria pasta Desktop, que é ignorada pelo Git). Só depois,
+a partir de `desktop/`, execute:
 
 ```sh
-node scripts/sync-original-sdk.cjs --from=/caminho/para/clone-android
+node scripts/sync-original-sdk.cjs
 ```
 
-Revise o diff em `vendor/lnreader/`, a licença e `origin.json` e
-execute toda a suíte. A sincronização não ocorre durante o build.
+O importador recusa caminhos externos, links simbólicos e snapshots
+incompletos antes de copiar qualquer arquivo. Ele **não apaga** módulos
+originais. Revise o diff em `vendor/lnreader/`, a licença e
+`origin.json` e execute toda a suíte. Esse procedimento opcional
+não faz parte do build nem busca arquivos fora de `desktop/`.
 O Desktop não é uma distribuição oficial do LNReader Android.
 
 ## Colaboração
 
-Envie pull requests para `main`. A branch `seguranca-e-estabilidade`
-continua disponível como referência do processo de desenvolvimento.
-Leia [CONTRIBUTING.md](../../../CONTRIBUTING.md) e
+Envie pull requests para `main`. A branch experimental `linux/prepare-packaging-and-tests` mantém
+as mudanças Linux separadas até uma revisão futura.
+Leia [CONTRIBUTING.md](../../CONTRIBUTING.md) e
 [ARCHITECTURE.md](ARCHITECTURE.md) antes de alterar o motor de plugins.
 A `main` segue sendo a branch padrão do GitHub e contém o Desktop a partir da v0.3.0.
