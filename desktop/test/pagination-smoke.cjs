@@ -112,6 +112,9 @@ server.listen(0, '127.0.0.1', () => {
           "Array.from(document.querySelectorAll('nav button')).find(button => button.textContent === 'Fontes').click()",
         );
         await execute(
+          "Array.from(document.querySelectorAll('.source-mode-tabs button')).find(button => button.textContent.trim() === 'Gerenciar fontes').click()",
+        );
+        await execute(
           "Array.from(document.querySelectorAll('button')).find(button => button.textContent === 'Abrir').click()",
         );
         await wait("document.querySelectorAll('.book').length === 30");
