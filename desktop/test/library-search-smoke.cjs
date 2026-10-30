@@ -210,10 +210,14 @@ server.listen(0, '127.0.0.1', () => {
         );
         await select('Categoria da biblioteca', '');
         await wait("document.querySelectorAll('.book').length===2");
-        await select('Mostrar obras', 'downloaded');
+        await click('Baixadas');
         await wait("document.querySelectorAll('.book').length===1");
-        await select('Mostrar obras', 'all');
+        await click('Todas');
         await wait("document.querySelectorAll('.book').length===2");
+        await select('Ordenar biblioteca', 'name-desc');
+        await wait("document.querySelector('.book strong').textContent.includes('Obra B')");
+        await select('Ordenar biblioteca', 'original');
+        await wait("document.querySelector('.book strong').textContent.includes('Obra A')");
         await click('Filtrar biblioteca');
         await click('Histórico');
         assert.equal(
@@ -303,6 +307,11 @@ server.listen(0, '127.0.0.1', () => {
         let saved = await execute('window.desktop.load()');
         assert.equal(saved.novels[0].chapters[0].isDownloaded, true);
         assert.equal(saved.novels[0].chapters[0].bookmark, true);
+        // Standard desktop selection also works with Ctrl and Escape.
+        await execute("document.querySelector('.book').dispatchEvent(new MouseEvent('click',{bubbles:true,ctrlKey:true}))");
+        await wait("document.querySelectorAll('.book-card.is-selected').length===1");
+        await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
+        await wait("document.querySelectorAll('.book-card.is-selected').length===0");
         // Right-click selection must work with no checkbox overlay.
         assert.equal(await execute("document.querySelectorAll('.book-select').length"), 0);
         await context();
