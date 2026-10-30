@@ -208,6 +208,16 @@ select option {
 .reader-preview-dialog .reader-view {
   width: 100%;
 }
+.source-language-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 0 18px;
+}
+.source-language-row input { flex: 1 1 230px; }
+.source-language-row label { margin: 0; }
+.source-language-row select { min-width: 175px; }
 .source-mode-tabs {
   display: flex;
   gap: 12px;
