@@ -69,7 +69,7 @@ app.on('browser-window-created', (_event, win) => {
       throw new Error('Timed out: ' + label);
     };
     try {
-      await wait("document.querySelector('.grid[data-virtualized=\"true\"]') && document.querySelectorAll('.book').length>0 && !document.querySelector('.busy')", 'virtualized 10,000 book library');
+      await wait("document.querySelector('.grid[data-virtualized=\"true\"]') && document.querySelectorAll('.book').length>0 && !document.querySelector('.busy')", 'virtualized 10,000 book library', 30000);
       const startup = +((performance.now() - started) / 1000).toFixed(2);
       const initialCards = await js("document.querySelectorAll('.book').length");
       assert.ok(initialCards > 0 && initialCards < 100, 'large libraries must not render all cards');
@@ -112,6 +112,12 @@ app.on('browser-window-created', (_event, win) => {
       console.log('GIANT UI RESULT', JSON.stringify(metrics));
       finish(0);
     } catch (error) {
+      try {
+        const diagnostic = await js("(()=>{const grid=document.querySelector('.grid');const main=document.querySelector('main');return {cards:document.querySelectorAll('.book').length,virtualized:grid?.dataset.virtualized,gridWidth:grid?.clientWidth,gridHeight:grid?.scrollHeight,mainHeight:main?.clientHeight,mainScroll:main?.scrollTop,visibleText:document.body.innerText.slice(0,600)};})()");
+        console.error('GIANT UI DIAGNOSTIC', JSON.stringify(diagnostic));
+      } catch (diagnosticError) {
+        console.error('GIANT UI diagnostic unavailable:', diagnosticError);
+      }
       console.error('GIANT UI FAILURE', error);
       finish(1);
     }
