@@ -25,7 +25,7 @@ Na interface com 7.000 obras, o processo da página atingiu aproximadamente
 1.000 MiB de working set e 943 MiB de memória privada. Esses números têm métodos
 de medição diferentes e não devem ser comparados diretamente.
 
-A interface atualmente monta todos os cartões da biblioteca. O consumo com
+Na versão 0.4.3 medida nesta seção, a interface montava todos os cartões da biblioteca. O consumo com
 milhares de obras merece otimização, por exemplo limitando os cartões montados
 simultaneamente. O teste não demonstra vazamento de memória, nem o descarta em
 sessões longas.
@@ -132,9 +132,7 @@ sistemas.
 | Navegação e validações completas | 10,83 s | 12,31 s |
 | Working set aproximado do renderer | 1.514 MiB | 1.657 MiB |
 
-O renderer ainda monta todos os cartões da biblioteca, o que explica o
-alto consumo. **Virtualização/paginação de cartões é uma otimização
-recomendada antes de garantir desempenho em computadores com pouca RAM.**
+Estes resultados são da **v0.4.3, antes da virtualização** e descrevem o alto consumo anterior. A v0.4.4 limita os cartões montados, mas ainda mantém os metadados na memória; comparar picos exige uma execução controlada no mesmo ambiente.
 Os testes gráficos Linux foram executados com Xvfb e
 `--no-sandbox` no runner; isso não certifica abertura normal sob
 X11/Wayland, nem login/cookies de fontes reais.
@@ -159,3 +157,14 @@ Workflows: `.github/workflows/giant-library-stress.yml` e
 código de teste transitório em `dist/`; **não produzem EXE, AppImage,
 DEB ou releases**. O diretório de dados do aplicativo real não é
 acessado pelos testes.
+
+---
+
+## Regressão de virtualização — v0.4.4 beta
+
+O teste `test/huge-library-ui-smoke.cjs` foi atualizado para exigir que
+10.000 obras/200.000 capítulos **não** gerem 10.000 cartões HTML. Percorre
+até a última obra, retorna ao topo, muda de aba e busca a última obra.
+O CI Windows e Ubuntu executa esse teste dentro do job de empacotamento.
+Não confundir limite de cartões DOM com limite total de uso de RAM:
+metadados JSON, imagens/caches, Electron e outros processos continuam consumindo memória.
