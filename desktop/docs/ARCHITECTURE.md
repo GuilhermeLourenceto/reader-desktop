@@ -35,7 +35,8 @@ A compilação usa Node.js 24, esbuild e Electron sem React Native/Expo.
 - Não importar `../src`, `../assets` ou arquivos Android externos:
   `scripts/check-standalone.cjs` protege o isolamento.
 - Alterações no snapshot `vendor/` são revisadas separadamente;
-  `scripts/sync-original-sdk.cjs` não participa do build.
+  `scripts/sync-original-sdk.cjs` usa staging exclusivamente em
+  `desktop/.tmp/lnreader-original/` e não participa do build.
 - Evitar expandir o `renderer.jsx`: extrair módulos com responsabilidades
   claras e manter comportamento comprovado pelos testes.
 - Antes de liberar alterações, rodar `npm run check`, os testes Electron
