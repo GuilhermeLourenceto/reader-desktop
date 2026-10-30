@@ -26,8 +26,7 @@ test('deep scrolling keeps a small bounded DOM window and exact spacer height', 
   assert.equal(last.bottom, 0);
   assert.equal(last.totalRows, totalRows);
   const visibleRows = (deep.end - deep.start) / layout.columns;
-  const measuredTotal = deep.top + deep.bottom +
-    (visibleRows + Number(deep.top > 0) + Number(deep.bottom > 0)) * layout.rowHeight +
+  const measuredTotal = deep.top + deep.bottom + visibleRows * layout.rowHeight +
     (visibleRows + Number(deep.top > 0) + Number(deep.bottom > 0) - 1) * layout.rowGap;
   assert.equal(measuredTotal, totalRows * layout.rowHeight + (totalRows - 1) * layout.rowGap);
 });
