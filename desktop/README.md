@@ -306,3 +306,11 @@ recuperação de erros, melhorias de backups, refatoração inicial da interface
 automatizada de 45 testes unitários e 10 jornadas de usuário. A compilação e o instalador
 Windows passaram no CI; Linux e o comportamento de todas as fontes ainda não estão
 validados. Veja [RELEASE_NOTES_0.3.0.md](docs/RELEASE_NOTES_0.3.0.md).
+
+
+### Atalhos e busca (em desenvolvimento)
+
+- **F11** alterna a tela cheia em qualquer tela principal do aplicativo.
+- **Fontes** abre inicialmente **Buscar obras em todas as fontes**; a aba Gerenciar fontes continua disponível.
+- A busca global prioriza fontes com resultados, sem descartar as demais fontes ainda sendo consultadas.
+- **Avanço por página** tem escala de 0 a 100%, com valor inicial de 50%. Configurações anteriormente salvas são mantidas.
