@@ -1,7 +1,7 @@
 // Electron net.fetch does not consistently populate Response.url. Source
 // plugins use the final URL to detect login/captcha redirects, so track it
 // through ClientRequest rather than pretending it is the original URL.
-const { validateNetworkUrl } = require('./networkPolicy.cjs');
+const { validateNetworkUrl, validateNetworkDns } = require('./networkPolicy.cjs');
 
 // Only used by the isolated CI source-matrix runs. Never log URLs (which can
 // contain tokens), cookies or response bodies.
@@ -216,13 +216,23 @@ class RequestPool {
       // exception must reject this request and free the queue slot instead
       // of leaving every subsequent source request stuck forever.
       Promise.resolve()
-        .then(() =>
-          requestHTTP(this.net, entry.url, entry.init, {
+        .then(async () => {
+          const requestSession = this.options.sessionForSource?.(entry.init.sourceId);
+          const resolver = this.options.dnsResolver ||
+            (requestSession?.resolveHost ? requestSession.resolveHost.bind(requestSession) : null);
+          if (resolver) await validateNetworkDns(entry.url, resolver, {
+            allowPrivate: this.options.allowPrivate,
+          });
+          else if (this.options.requireDnsValidation)
+            throw new Error('Não foi possível validar o DNS da fonte.');
+          if (entry.controller.signal.aborted)
+            throw new Error('Conexão com a fonte cancelada.');
+          return requestHTTP(this.net, entry.url, entry.init, {
             signal: entry.controller.signal,
             ...this.options,
-            requestSession: this.options.sessionForSource?.(entry.init.sourceId),
-          }),
-        )
+            requestSession,
+          });
+        })
         .then(entry.resolve, entry.reject)
         .finally(() => {
           this.active--;
