@@ -86,7 +86,7 @@ export default function ReaderControls({
           ['scroll', 'Rolagem contínua'],
           ['pages', 'Páginas horizontais'],
         ])}
-        {slider('desktopPageStep', 'Avanço por página', 85, 30, 100, 5, '%')}
+        {slider('desktopPageStep', 'Avanço por página', 50, 0, 100, 5, '%')}
         <label className="reader-toggle">
           <input
             type="checkbox"
