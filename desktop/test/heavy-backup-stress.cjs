@@ -6,8 +6,30 @@ const os = require('node:os');
 const path = require('node:path');
 const { randomBytes, createHash } = require('node:crypto');
 const { performance } = require('node:perf_hooks');
-const { backupJob } = require('../src/backupJobs.cjs');
-const { emptyState, parseBackup } = require('../dist/backup.cjs');
+const { Worker } = require('node:worker_threads');
+const { emptyState } = require('../dist/backup.cjs');
+const backupJob = input => new Promise((resolve, reject) => {
+  // The real compiled worker; source worker cannot import bundled TS contracts.
+  const worker = new Worker(path.join(__dirname, '../dist/backup-worker.cjs'), {
+    workerData: input,
+    resourceLimits: { maxOldGenerationSizeMb: 1024 },
+  });
+  let settled = false;
+  const finish = (error, value) => {
+    if (settled) return;
+    settled = true;
+    if (error) reject(error);
+    else resolve(value);
+  };
+  worker.once('message', value => {
+    if (value.ok) finish(null, value.restored ?? value.result);
+    else finish(new Error(value.message));
+  });
+  worker.once('error', error => finish(error));
+  worker.once('exit', code => {
+    if (code !== 0) finish(new Error('Backup worker exited with code ' + code));
+  });
+});
 const { DiskFiles, readState, writeState, validateState } = require('../src/storage.cjs');
 
 const profile = process.argv.includes('--profile=extreme') ? 'extreme' : 'large';
@@ -139,6 +161,7 @@ function assertIntegrity(state, expected, sourceFiles, contentStore) {
     const roundTrip = path.join(root, 'roundtrip-' + cycle + '.json');
     await step('persist_and_reload_cycle_' + cycle, () => {
       writeState(roundTrip, restored.state);
+      writeState(roundTrip, restored.state); // preserve a valid .bak for recovery
       assert.equal(readState(roundTrip, emptyState).state.novels.length, config.books);
     });
     // Mutate only synthetic files, never the real application userData.
