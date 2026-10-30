@@ -36,7 +36,9 @@ function validateNetworkUrl(value, { allowPrivate = false } = {}) {
 // Validate every address returned by Chromium's resolver, not just the hostname.
 // A mixed public/private answer is rejected in its entirety.
 function validateResolvedAddresses(result) {
-  const addresses = result?.resolvedAddresses;
+  // Electron 42 returns ResolvedHost.endpoints (ResolvedEndpoint[]).
+  // Accept the older resolvedAddresses representation for compatibility.
+  const addresses = result?.endpoints ?? result?.resolvedAddresses;
   if (!Array.isArray(addresses) || addresses.length === 0)
     throw new Error('Não foi possível validar o DNS da fonte.');
   for (const entry of addresses) {
