@@ -51,7 +51,8 @@ em máquinas variadas ainda precisam de validação.
 
 ## Política de branches
 
-A branch `seguranca-e-estabilidade` concentra o trabalho Desktop;
-`main` permanece como referência anterior com Android. Git não admite
-branches dentro de uma pasta. Alterar a branch padrão ou migrar para um
-repositório exclusivo exige decisão separada e não é efeito desta organização.
+A partir da v0.3.0, a branch `main` concentra o Desktop;
+`seguranca-e-estabilidade` continua como referência histórica desta etapa.
+O código Android anterior permanece acessível no histórico Git. Git não
+admite branches dentro de uma pasta. Uma futura migração para outro repositório
+exigiria decisão e trabalho separados.

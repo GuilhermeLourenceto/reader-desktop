@@ -7,9 +7,9 @@ seções ficam empilhadas. Em telas largas, a lista de capítulos permanece fixa
 à direita e rola independentemente. A lista mantém a ordem da fonte por padrão;
 o painel de filtros oferece ordem inversa e ordenação por nome/número.
 As opções para definir a direção
-da fonte e ler desde o início também ficam nesse painel. O Android original permanece preservado na branch `main`; esta branch contém somente o Desktop.
+da fonte e ler desde o início também ficam nesse painel. O código Android antigo continua acessível no histórico Git; a `main` agora contém somente o projeto Desktop.
 
-Versão atual: **0.2.0**.
+Versão atual: **0.3.0 Beta**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.3.0.md).
 
 A interface utiliza uma cópia versionada da paleta original,
 em `vendor/lnreader/src/theme/md3/defaultTheme.ts`, e as fontes
@@ -121,7 +121,7 @@ Android e **não faz parte de `npm ci`, `npm run build` nem do instalador**.
 Ao copiar só a pasta `desktop/` para outro repositório, a compilação
 continua funcionando sem ele.
 
-A branch Git pertence ao repositório, não à pasta. Nesta branch ficam só o Desktop, seu workflow, o README e a licença. A `main` conserva o Android.
+A branch Git pertence ao repositório, não à pasta. A `main` contém o Desktop a partir da v0.3.0; a `seguranca-e-estabilidade` foi preservada como referência. O código Android anterior permanece no histórico Git.
 
 A interface React Native, consultas Drizzle/SQLite e serviços Android
 não são incluídos. Os arquivos baixados ficam em `content/`, separados
@@ -297,3 +297,12 @@ npm run test:all      # Suíte local completa do Desktop
 
 O código original em `vendor/lnreader/` é versionado separadamente e não deve
 ser reformatado automaticamente ao modificar módulos próprios do Desktop.
+
+## Versão 0.3.0 Beta
+
+A branch principal passou a conter o Desktop independente. Esta versão reúne o isolamento do SDK
+original em `vendor/lnreader/`, atualizações da biblioteca, login individual por fonte,
+recuperação de erros, melhorias de backups, refatoração inicial da interface e suíte
+automatizada de 45 testes unitários e 10 jornadas de usuário. A compilação e o instalador
+Windows passaram no CI; Linux e o comportamento de todas as fontes ainda não estão
+validados. Veja [RELEASE_NOTES_0.3.0.md](docs/RELEASE_NOTES_0.3.0.md).

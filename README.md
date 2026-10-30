@@ -16,9 +16,10 @@ O suporte a fontes pode variar conforme autenticação e bloqueios dos sites.
 
 ## Estado do projeto
 
-**Versão experimental 0.2.0.** O desenvolvimento do Desktop acontece na
-branch [`seguranca-e-estabilidade`](https://github.com/GuilhermeLourenceto/lnreader-desktop/tree/seguranca-e-estabilidade).
-A `main` continua preservada como referência anterior; não foi substituída.
+**Versão 0.3.0 Beta** — o Desktop é agora o projeto principal na branch `main`.
+A branch [`seguranca-e-estabilidade`](https://github.com/GuilhermeLourenceto/lnreader-desktop/tree/seguranca-e-estabilidade)
+continua disponível como referência de desenvolvimento. [Notas da v0.3.0](desktop/docs/RELEASE_NOTES_0.3.0.md).
+O projeto ainda é experimental; algumas extensões podem exigir login, apresentar bloqueios ou falhar.
 A compilação do Desktop, seus testes e as jornadas automatizadas são verificados
 pelo [GitHub Actions](https://github.com/GuilhermeLourenceto/lnreader-desktop/actions/workflows/desktop.yml).
 O funcionamento de fontes externas e do Linux ainda depende de validação.
@@ -34,6 +35,7 @@ npm run setup
 npm start
 ```
 
+Para baixar a versão de teste, consulte as [Releases](https://github.com/GuilhermeLourenceto/lnreader-desktop/releases).
 Para gerar instalador Windows, use `npm run dist:win`.
 O Linux permanece experimental (`npm run dist:linux` no Linux).
 
@@ -46,7 +48,9 @@ e [as orientações de GitHub](desktop/docs/GITHUB.md).
 O SDK de plugins, formatos de backup, temas e fontes originais está
 copiado com sua procedência em [`desktop/vendor/lnreader/`](desktop/vendor/lnreader/).
 A [licença MIT](LICENSE) foi preservada. Este port não é oficial do
-LNReader Android; a versão Android e seu histórico continuam na branch `main`.
+LNReader Android; o código Android anterior permanece acessível no
+[histórico Git](https://github.com/GuilhermeLourenceto/lnreader-desktop/tree/418dc37be052eb941b3f6ee73042cefb8d207bc8),
+mas não faz parte da árvore atual da `main`.
 
 ## Contribuir e comunicar problemas
 

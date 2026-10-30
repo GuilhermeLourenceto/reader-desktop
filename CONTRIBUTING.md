@@ -8,9 +8,9 @@ testada; o suporte Linux continua em desenvolvimento.
 
 1. Abra uma issue para bugs reproduzíveis ou mudanças maiores, evitando
    duplicações. Para correções pequenas, descreva o problema no pull request.
-2. Use `seguranca-e-estabilidade` como branch de referência do Desktop.
-   A `main` preserva o histórico Android e **não deve ser alterada** por
-   contribuições destinadas ao Desktop.
+2. Crie uma branch de trabalho a partir da `main` e envie pull requests
+   para ela. A branch `seguranca-e-estabilidade` é uma referência anterior;
+   o Android original continua disponível no histórico Git.
 3. Leia [a arquitetura](desktop/docs/ARCHITECTURE.md) e
    [os testes conhecidos](desktop/docs/COMPATIBILIDADE-SEGURANCA.md).
 4. Não adicione dados pessoais, backups reais, cookies, credenciais, tokens,
@@ -54,7 +54,7 @@ pelo [CI](.github/workflows/desktop.yml).
 Explique o problema resolvido, os arquivos afetados, como testou, riscos de
 compatibilidade, capturas de tela (se houver mudança visual) e eventuais
 limitações. Não marque testes como concluídos se não foram executados.
-Não altere a `main` nem a branch padrão do GitHub.
+Não altere diretamente a branch padrão sem revisão; prefira pull requests.
 
 ## Questões de segurança
 

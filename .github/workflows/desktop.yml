@@ -42,7 +42,7 @@ jobs:
 
   desktop-only:
     name: Standalone Desktop build (no Android files)
-    if: github.ref_name == 'seguranca-e-estabilidade'
+    if: github.ref_name == 'seguranca-e-estabilidade' || github.ref_name == 'main' || github.event_name == 'pull_request'
     runs-on: windows-latest
     defaults:
       run:
@@ -112,7 +112,7 @@ jobs:
 
   user-journeys:
     name: Everyday reading scenarios (10 Electron journeys)
-    if: github.ref_name == 'seguranca-e-estabilidade'
+    if: github.ref_name == 'seguranca-e-estabilidade' || github.ref_name == 'main' || github.event_name == 'pull_request'
     runs-on: windows-latest
     permissions:
       contents: read
@@ -140,7 +140,7 @@ jobs:
 
   source-matrix:
     name: Real plugin sources (diagnostic only)
-    if: github.ref_name == 'seguranca-e-estabilidade'
+    if: github.ref_name == 'seguranca-e-estabilidade' || github.ref_name == 'main' || github.event_name == 'pull_request'
     runs-on: windows-latest
     permissions:
       contents: read
@@ -173,3 +173,35 @@ jobs:
         with:
           name: lnreader-source-matrix
           path: desktop/.tmp/source-matrix/
+
+  publish-v030:
+    name: Publish LNReader Desktop v0.3.0 Beta
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'release: v0.3.0')
+    needs: [quality, desktop-only, package, user-journeys, source-matrix]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: lnreader-desktop-Windows
+          path: release-artifacts
+      - name: Publish tested Windows installer and create v0.3.0 tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./desktop/package.json').version")" = "0.3.0"
+          installer="$(find release-artifacts -type f -name '*.exe' -print -quit)"
+          test -n "$installer" && test -s "$installer"
+          if gh release view v0.3.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "v0.3.0 release already exists; refusing to overwrite"
+            exit 0
+          fi
+          gh release create v0.3.0 "$installer" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "LNReader Desktop v0.3.0 (Beta)" \
+            --notes-file desktop/docs/RELEASE_NOTES_0.3.0.md \
+            --prerelease

@@ -1,5 +1,16 @@
 # Histórico de versões
 
+## 0.3.0 Beta — 29/10/2026
+
+- O LNReader Desktop passa a ser o conteúdo principal da branch `main`; a versão Android anterior permanece no histórico Git.
+- Projeto Desktop independente dentro de `desktop/`, com cópia versionada do motor de extensões, temas, arquivos de backup e recursos necessários.
+- Melhoria de segurança e estabilidade das fontes: sessões/cookies isolados, autenticação interativa e recuperação de erros de rede.
+- Melhorias na biblioteca, atualizações, leitor, downloads offline, progresso e backups compatíveis com LNReader.
+- Interface dividida em módulos menores, documentação de contribuição, configurações de formatação e novos testes automatizados.
+- Windows: compilação e instalador verificados em GitHub Actions (45 testes unitários e 10 jornadas de usuário aprovadas).
+
+**Limitações:** algumas fontes ainda falham ou exigem desafios de autenticação; Linux não foi validado em uso real. Instalador sem assinatura digital. Há uma vulnerabilidade alta reportada pelo `npm audit` e a proteção contra DNS rebinding ainda precisa ser reforçada. Lançamento experimental, não estável.
+
 ## 0.2.0 — 29/10/2026
 
 - Backup ZIP mais rápido: arquivos binários são processados diretamente, sem conversões intermediárias para base64; ZIPs internos e capas não são recomprimidos.
