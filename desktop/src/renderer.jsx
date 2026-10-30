@@ -8,6 +8,7 @@ import React, {
 import { createRoot } from 'react-dom/client';
 import Icon from './Icon';
 import SourceFilters from './SourceFilters';
+import { sourceLanguageOptions, matchesSourceLanguage, matchesSourceSearch } from './sourceLanguages.cjs';
 import DesktopErrorBoundary from './DesktopErrorBoundary';
 import { hydrate, snapshot, nextId, fileKey, loadedPages, nextNovelPage } from './libraryState';
 import { errorText, fetchSourcePage } from './sourceRuntime';
@@ -121,6 +122,7 @@ function App() {
   const [notice, setNotice] = useState('');
   const [available, setAvailable] = useState([]);
   const [sourceQuery, setSourceQuery] = useState('');
+  const [sourceLanguage, setSourceLanguage] = useState('all');
   const [novelQuery, setNovelQuery] = useState('');
   const [sourceMode, setSourceMode] = useState('sources');
   const [repo, setRepo] = useState('');
@@ -1450,6 +1452,9 @@ function App() {
   const installed = JSON.parse(
     localStorage.getItem(INSTALLED_PLUGINS_KEY) || '[]',
   );
+  const languages = sourceLanguageOptions(installed, available);
+  const visibleSource = plugin =>
+    matchesSourceLanguage(plugin, sourceLanguage) && matchesSourceSearch(plugin, sourceQuery);
   const cover = item => {
     const name = [
       `Covers/${item.id}`,
@@ -1660,11 +1665,25 @@ function App() {
               />
             ) : (
               <>
-                <input
-                  placeholder="Filtrar fontes por nome ou idioma"
-                  value={sourceQuery}
-                  onChange={e => setSourceQuery(e.target.value)}
-                />
+                <div className="source-language-row">
+                  <input
+                    aria-label="Pesquisar fontes"
+                    placeholder="Pesquisar fontes por nome ou idioma"
+                    value={sourceQuery}
+                    onChange={e => setSourceQuery(e.target.value)}
+                  />
+                  <label htmlFor="source-language">Idioma</label>
+                  <select
+                    id="source-language"
+                    value={sourceLanguage}
+                    onChange={e => setSourceLanguage(e.target.value)}
+                  >
+                    <option value="all">Todos os idiomas</option>
+                    {languages.map(item => (
+                      <option key={item.code} value={item.code}>{item.label}</option>
+                    ))}
+                  </select>
+                </div>
                 <form
                   onSubmit={event => {
                     event.preventDefault();
@@ -1722,11 +1741,7 @@ function App() {
                 </h3>
                 {installed.length === 0 && <p>Nenhuma fonte instalada.</p>}
                 {installed
-                  .filter(plugin =>
-                    `${plugin.name} ${plugin.lang}`
-                      .toLowerCase()
-                      .includes(sourceQuery.toLowerCase()),
-                  )
+                  .filter(visibleSource)
                   .map(plugin => (
                     <div className="source" key={plugin.id}>
                       <div className="source-icon">
@@ -1787,11 +1802,7 @@ function App() {
                   Disponíveis <span>{available.length}</span>
                 </h3>
                 {available
-                  .filter(p =>
-                    `${p.name} ${p.lang}`
-                      .toLowerCase()
-                      .includes(sourceQuery.toLowerCase()),
-                  )
+                  .filter(visibleSource)
                   .map(plugin => (
                     <div className="source" key={plugin.id}>
                       <div className="source-icon">
