@@ -124,7 +124,7 @@ function App() {
   const [sourceQuery, setSourceQuery] = useState('');
   const [sourceLanguage, setSourceLanguage] = useState('all');
   const [novelQuery, setNovelQuery] = useState('');
-  const [sourceMode, setSourceMode] = useState('sources');
+  const [sourceMode, setSourceMode] = useState('search');
   const [repo, setRepo] = useState('');
   const [source, setSource] = useState(null);
   const [results, setResults] = useState([]);
@@ -1645,16 +1645,16 @@ function App() {
             </header>
             <div className="source-mode-tabs">
               <button
-                aria-pressed={sourceMode === 'sources'}
-                onClick={() => setSourceMode('sources')}
-              >
-                Gerenciar fontes
-              </button>
-              <button
                 aria-pressed={sourceMode === 'search'}
                 onClick={() => setSourceMode('search')}
               >
                 Buscar obras em todas as fontes
+              </button>
+              <button
+                aria-pressed={sourceMode === 'sources'}
+                onClick={() => setSourceMode('sources')}
+              >
+                Gerenciar fontes
               </button>
             </div>
             {sourceMode === 'search' ? (
