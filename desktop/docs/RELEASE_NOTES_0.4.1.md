@@ -1,9 +1,11 @@
-# LNReader Desktop 0.4.1 Beta
+## Correções
 
-- Corrigido o bloqueio indevido de fontes pela verificação DNS. Agora domínios públicos válidos podem carregar normalmente.
-- Verificação DNS feita na mesma sessão de rede utilizada por cada fonte, preservando seus dados de login.
-- Mantida a proteção contra endereços locais e privados e contra redirecionamentos inseguros.
+- Corrigido o erro de verificação DNS da v0.4.0 que bloqueava indevidamente fontes com endereços públicos válidos.
+- Cada fonte passa a verificar o DNS na própria sessão de rede, mantendo o isolamento das conexões e dos dados de login.
+- Mantida a proteção contra endereços locais, privados e redirecionamentos inseguros.
 
-Atualização recomendada para quem instalou a versão 0.4.0 e não consegue abrir ou instalar fontes.
+## Atualização recomendada
 
-**Windows 10/11 x64.** O aplicativo continua em beta; algumas fontes podem exigir login ou apresentar proteção contra acesso automatizado. O instalador não possui assinatura digital.
+Se você utiliza a **v0.4.0** e não consegue abrir ou instalar fontes, instale esta atualização.
+
+**Compatibilidade:** Windows 10/11 x64. O aplicativo continua em beta; alguns sites podem exigir login ou bloquear acessos automatizados. O instalador não possui assinatura digital.
