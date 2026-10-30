@@ -307,9 +307,13 @@ jobs:
           fi
           installer="$target"
           tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v0.4.2" --jq '.object.sha')"
-          test "$tag_sha" = "9072ffbf63bdbf27f8cee435f52d11793ddaece6"
+          test "$tag_sha" = "74baeb5fa67364b107d97e4eb0b4b2204d5b3225"
           release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/v0.4.2" --jq '.id')"
           test -n "$release_id"
+          release_target="$(gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" --jq '.target_commitish')"
+          test "$release_target" = "$tag_sha"
+          # Moving the tag also refreshes GitHub's automatic source-code
+          # ZIP and tar.gz links. No manual source archives are necessary.
           sha256sum "$installer"
           # User requested replacing the same version. Keep tag, source and
           # installer in agreement rather than publishing a mismatched binary.
