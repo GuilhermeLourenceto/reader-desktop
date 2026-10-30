@@ -1,1 +1,0 @@
-ALTER TABLE `Repository` ADD `enabled` integer DEFAULT true NOT NULL;

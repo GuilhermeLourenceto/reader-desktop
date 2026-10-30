@@ -9,16 +9,10 @@ on:
   push:
     paths:
       - 'desktop/**'
-      - 'src/plugins/**'
-      - 'src/services/backup/types.ts'
-      - 'src/services/backup/options.ts'
       - '.github/workflows/desktop.yml'
   pull_request:
     paths:
       - 'desktop/**'
-      - 'src/plugins/**'
-      - 'src/services/backup/types.ts'
-      - 'src/services/backup/options.ts'
       - '.github/workflows/desktop.yml'
 concurrency:
   group: desktop-${{ github.workflow }}-${{ github.ref }}

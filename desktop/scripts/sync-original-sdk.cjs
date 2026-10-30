@@ -4,7 +4,12 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const android = path.resolve(__dirname, '../..');
+const upstream = process.argv.find(arg => arg.startsWith('--from='));
+if (!upstream || !upstream.slice('--from='.length)) {
+  console.error('Uso: node scripts/sync-original-sdk.cjs --from=/caminho/para/clone-android');
+  process.exit(2);
+}
+const android = path.resolve(upstream.slice('--from='.length));
 const dest = path.resolve(__dirname, '../vendor/lnreader');
 const sources = [
   ['src/plugins', 'src/plugins'],
@@ -35,7 +40,7 @@ for (const [source, target] of sources) {
 fs.rmSync(path.join(dest, 'src/plugins/__tests__'), { recursive: true, force: true });
 const manifest = {
   origin: 'LNReader Android files, copied without behavior changes',
-  source: 'repository-root (not a build dependency)',
+  source: 'separate Android checkout (not a build dependency)',
   revision: process.env.GITHUB_SHA || 'manual-sync',
   paths: sources.map(([_, target]) => target),
   fileSHA256: hashes,

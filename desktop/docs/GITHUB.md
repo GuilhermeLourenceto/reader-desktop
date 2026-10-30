@@ -1,37 +1,20 @@
-# Publicar o código no GitHub
+# Repositório LNReader Desktop
 
-## Pasta correta
+Nesta branch existe apenas o código necessário ao Desktop; a `main`
+preserva o Android original.
 
-Use a raiz que contém `README.md`, `package.json`, `assets/`, `src/` e `desktop/`.
-Não publique apenas `desktop/`: o build reutiliza o código e os recursos do
-LNReader Android nas pastas vizinhas. Preserve `LICENSE` e a atribuição ao projeto
-original. Este é um port independente, experimental, versão 0.1.0.
+- `desktop/src/`: interface Electron, rede, leitor e backups.
+- `desktop/vendor/lnreader/`: módulos originais versionados para plugins,
+  temas e formato de backups. Licença e procedência em `origin.json`.
+- `desktop/test/`: testes e simuladores de utilização.
+- `desktop/scripts/`: verificação de isolamento e sincronização opcional.
+- `desktop/docs/`: documentação e capturas.
+- `desktop/build/`: recursos do instalador.
+- `.github/workflows/desktop.yml`: testes e compilação do Desktop.
 
-## Estrutura do desktop
+## Compilar
 
-- `src/`: aplicativo, ponte Electron, fontes e persistência.
-- `build/`: ícone oficial convertido e configuração do instalador; deve entrar no Git.
-- `test/`: testes automatizados e verificações Electron.
-- `tools/`: ferramentas de diagnóstico para desenvolvimento.
-- `docs/`: decisões, compatibilidade e limitações conhecidas.
-- `package-lock.json`: dependências reproduzíveis; deve entrar no Git.
-- `dist/`, `release/`, `.tmp/`, `node_modules/`: arquivos gerados e locais; ignorados.
-
-## O que não enviar
-
-Use Git, respeitando os arquivos `.gitignore`, em vez de arrastar a pasta inteira
-para o navegador. Não envie `.env`, perfis do Electron, bibliotecas pessoais,
-backups ZIP, logs ou capturas de testes. O `.gitignore` protege arquivos novos;
-arquivos que já tenham sido adicionados ao Git precisam ser retirados do índice
-antes do envio. Confira a lista de arquivos preparados para o commit.
-
-Instaladores `.exe` devem ser anexados a uma Release, e não incluídos no histórico
-do código. O instalador atual solicita administrador automaticamente. Não há
-certificado de assinatura digital de distribuição.
-
-## Compilação e testes
-
-Com Node.js 24, execute dentro de `desktop/`:
+Com Node.js 24, dentro de `desktop/`:
 
 ```sh
 npm ci
@@ -39,14 +22,27 @@ npm run setup
 npm run build
 npm test
 npm run test:smoke
+npm run test:reader
 npm run dist:win
 ```
 
-O instalador fica em `desktop/release/`. O workflow
-`.github/workflows/desktop.yml` faz o build do Windows e disponibiliza artefatos.
-Os testes de aplicativo e o harness NSIS não substituem uma instalação,
-atualização e desinstalação reais numa máquina Windows de teste.
+O Linux utiliza `npm run dist:linux` no Linux e ainda requer
+validação em computador real. O CI verifica a compilação com apenas
+`desktop/` presente no checkout.
 
-Antes de publicar, confira as alterações e mantenha os recursos originais sob a
-licença MIT. Esta preparação não cria repositório, commit, Release nem envia
-arquivos automaticamente.
+Não envie diretórios `node_modules`, `dist`, `release`, `.tmp`,
+dados pessoais, cookies, backups ou credenciais. Instaladores são
+distribuídos por artefatos ou releases, não por commits.
+
+## Atualizar os módulos do LNReader
+
+Obtenha um checkout **separado** do LNReader Android. A partir de
+`desktop/` execute:
+
+```sh
+node scripts/sync-original-sdk.cjs --from=/caminho/para/clone-android
+```
+
+Revise o diff em `vendor/lnreader/`, a licença e `origin.json` e
+execute toda a suíte. A sincronização não ocorre durante o build.
+O Desktop não é uma distribuição oficial do LNReader Android.

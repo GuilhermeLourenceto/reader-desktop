@@ -7,8 +7,7 @@ seções ficam empilhadas. Em telas largas, a lista de capítulos permanece fixa
 à direita e rola independentemente. A lista mantém a ordem da fonte por padrão;
 o painel de filtros oferece ordem inversa e ordenação por nome/número.
 As opções para definir a direção
-da fonte e ler desde o início também ficam nesse painel. O app Android continua
-separado.
+da fonte e ler desde o início também ficam nesse painel. O Android original permanece preservado na branch `main`; esta branch contém somente o Desktop.
 
 Versão atual: **0.2.0**.
 
@@ -115,19 +114,14 @@ adaptadores `src/adapters.js` e `src/workerAdapters.js` conectam o SDK
 original ao Electron, sem trazer Android SDK, Expo nem React Native.
 O armazenamento continua local e os backups ZIP mantêm seu formato.
 
-**Atualizar o SDK original é uma operação explícita:** no repositório
-que contém Android e Desktop, o mantenedor pode executar
-`node desktop/scripts/sync-original-sdk.cjs` e revisar o diff de
+**Atualizar o SDK original é uma operação explícita:** com um checkout Android separado, o mantenedor pode executar
+`node scripts/sync-original-sdk.cjs --from=/caminho/para/clone-android` e revisar o diff de
 `desktop/vendor/lnreader/`. Esse script opcional requer a árvore
 Android e **não faz parte de `npm ci`, `npm run build` nem do instalador**.
 Ao copiar só a pasta `desktop/` para outro repositório, a compilação
 continua funcionando sem ele.
 
-A Git branch `seguranca-e-estabilidade` continua pertencendo ao
-repositório Git inteiro; não existem branches por pasta. Para ter
-branches exclusivamente do Desktop, seria necessário criar um
-repositório Git separado. Esta reorganização prepara esse caminho,
-sem mexer no Android ou migrar histórico agora.
+A branch Git pertence ao repositório, não à pasta. Nesta branch ficam só o Desktop, seu workflow, o README e a licença. A `main` conserva o Android.
 
 A interface React Native, consultas Drizzle/SQLite e serviços Android
 não são incluídos. Os arquivos baixados ficam em `content/`, separados
@@ -246,13 +240,8 @@ páginas horizontais alinhadas, posição ao redimensionar a janela, nove paleta
 carregamento automático e nova tentativa de páginas sem repetir chamadas.
 Uma fonte de teste com `while(true)` foi interrompida com a interface respondendo.
 A Central Novel passou por instalação, listagem, detalhes e leitura no worker.
-Capturas reais ficam em `docs/previews/version01-*.png`.
-Lint da raiz passou com avisos existentes e a checagem TypeScript passou após
-gerar os metadados com
-`node scripts/generate-env-file.cjs --build-type Debug --git-hash source-archive`.
-O comando geral `pnpm run check` permanece bloqueado por problemas de
-formatação já existentes em 20 arquivos Android. A formatação dos arquivos
-desktop foi verificada separadamente e passou. Um ZIP real do LNReader foi
+Capturas de apresentação estão em `docs/screenshots/`.
+O CI do Desktop valida as compilações sem Expo ou React Native, incluindo checkout isolado da pasta `desktop/`. Um ZIP real do LNReader foi
 restaurado e reexportado com todos os arquivos conferidos. A aba Atualizações
 passou por download, exclusão, nova tentativa, leitura offline e falhas parciais.
 Veja os [testes de volume](docs/STRESS-TESTS.md) e as [mudanças da versão](CHANGELOG.md).
@@ -265,7 +254,7 @@ desktop/
   src/            código da interface, processo principal, backup e leitor
   test/           testes node e testes Electron de interface
   docs/           documentação (compatibilidade, estabilidade, leitor, isolamento)
-  docs/previews/  capturas de tela usadas na documentação
+  docs/screenshots/ capturas de apresentação do Desktop
   tools/          ui-harness.cjs (renderiza a interface no Chrome) e diagnóstico de fonte
   vendor/lnreader/  snapshot local do SDK, paletas, licença e assets originais
   scripts/        manutenção opcional do snapshot
