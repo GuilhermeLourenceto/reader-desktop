@@ -184,7 +184,7 @@ export default function Library({
                 scrollToStart();
               }}
             >
-              <option value="">Todas ({books.length})</option>
+              <option value="">{translateMessage('Todas')} ({books.length})</option>
               {categories.map((item) => (
                 <option key={item.id} value={String(item.id)}>
                   {categoryDisplayName(item.name)} ({categoryCounts.get(String(item.id)) || 0})
