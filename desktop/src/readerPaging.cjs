@@ -35,8 +35,8 @@ function readerProgress({
 function pageAmplitude(percent) {
   const value = Number(percent);
   const clamped = Number.isFinite(value)
-    ? Math.min(100, Math.max(20, value))
-    : 85;
+    ? Math.min(100, Math.max(0, value))
+    : 50;
   return clamped / 100;
 }
 
