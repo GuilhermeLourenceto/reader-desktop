@@ -202,7 +202,7 @@ function validateState(input) {
     ['desktopFontSize', 14, 40],
     ['desktopLineHeight', 1.2, 2.6],
     ['desktopReaderWidth', 500, 1200],
-    ['desktopPageStep', 30, 100],
+    ['desktopPageStep', 0, 100],
   ]) {
     const value = state.settings[key];
     if (
