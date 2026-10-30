@@ -12,6 +12,7 @@ export default function BookGrid({
   selected = [],
   onToggle,
   onContext,
+  hideSelectionCheckbox = false,
   gridRef,
   virtualized = false,
   rowHeight,
@@ -55,11 +56,16 @@ export default function BookGrid({
             className="book"
             disabled={busy}
             aria-pressed={onToggle ? selectedSet.has(item.id) : undefined}
-            onClick={() =>
-              selected.length && onToggle
-                ? onToggle(item.id)
-                : onOpen(item, item.pluginId || pluginId)
-            }
+            onClick={(event) => {
+              if (
+                onToggle &&
+                (selected.length > 0 || event.ctrlKey || event.metaKey || event.shiftKey)
+              ) {
+                onToggle(item.id, event);
+              } else {
+                onOpen(item, item.pluginId || pluginId);
+              }
+            }}
             onKeyDown={
               onContext
                 ? (event) => {
@@ -119,7 +125,7 @@ export default function BookGrid({
               </small>
             )}
           </button>
-          {onToggle && (
+          {onToggle && !hideSelectionCheckbox && (
             <input
               className="book-select"
               type="checkbox"
