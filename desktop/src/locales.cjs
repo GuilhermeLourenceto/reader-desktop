@@ -157,6 +157,10 @@ Exibição|Display|Visualización|Affichage|Anzeige|Visualizzazione|Отобра
 Tamanho das capas|Cover size|Tamaño de las portadas|Taille des couvertures|Covergröße|Dimensione delle copertine|Размер обложек|表紙のサイズ|표지 크기|封面大小
 Compacto|Compact|Compacto|Compact|Kompakt|Compatto|Компактный|小|작게|紧凑
 Padrão|Default|Predeterminado|Par défaut|Standard|Predefinito|По умолчанию|標準|기본|默认
+Localização|Localization|Localización|Localisation|Lokalisierung|Localizzazione|Локализация|ローカライズ|현지화|本地化
+{count} obra(s) selecionada(s)|{count} novel(s) selected|{count} obra(s) seleccionada(s)|{count} roman(s) sélectionné(s)|{count} Romane ausgewählt|{count} opera/e selezionata/e|Выбрано книг: {count}|{count}作品を選択中|작품 {count}개 선택됨|已选择{count}部作品
+Carregando…|Loading…|Cargando…|Chargement…|Wird geladen…|Caricamento…|Загрузка…|読み込み中…|불러오는 중…|加载中…
+Carregando|Loading|Cargando|Chargement|Laden|Caricamento|Загрузка|読み込み中|불러오는 중|加载中
 Grande|Large|Grande|Grand|Groß|Grande|Большой|大|크게|大
 Mostrar contadores nas capas|Show badges on covers|Mostrar contadores en portadas|Afficher les compteurs sur les couvertures|Zähler auf Covern anzeigen|Mostra contatori sulle copertine|Показывать счётчики на обложках|表紙にカウンターを表示|표지에 배지 표시|在封面上显示计数
 Mostrar quantidade de capítulos|Show chapter count|Mostrar cantidad de capítulos|Afficher le nombre de chapitres|Kapitelanzahl anzeigen|Mostra numero di capitoli|Показывать число глав|章数を表示|장 수 표시|显示章节数量
