@@ -52,8 +52,10 @@ async function step(label, task) {
   console.log('STRESS', JSON.stringify({ step: label, seconds: report.timings[label] }));
   return result;
 }
-function assertIntegrity(state, expected, sourceFiles, contentStore) {
+function assertIntegrity(state, expected, contentStore) {
   assert.equal(state.novels.length, config.books);
+  for (let i = 0; i < state.novels.length; i++)
+    assert.equal(state.novels[i].id, expected.books[i].id, 'Original book order changed at index ' + i);
   assert.equal(state.novels.reduce((n, novel) => n + novel.chapters.length, 0), expected.chapterCount);
   assert.equal(state.categories.length, 16);
   assert.equal(Object.keys(state.files).length, Object.keys(sourceFiles).length);
@@ -72,7 +74,7 @@ function assertIntegrity(state, expected, sourceFiles, contentStore) {
     assert.match(state.files[name], /^@file:[a-f0-9]{64}$/);
     assert.equal(digest(contentStore.read(state.files[name])), expectedHash, name);
   }
-  report.checks.push('all book/chapter counts and sampled progress/bookmarks verified');
+  report.checks.push('exact order, counts, sampled progress/bookmarks and categories verified');
   report.checks.push('sha256 checked for every imported binary blob');
 }
 (async () => {
@@ -152,7 +154,7 @@ function assertIntegrity(state, expected, sourceFiles, contentStore) {
     }));
     assert.ok(restored.sections.library);
     await step('verify_import_integrity_cycle_' + cycle, () => {
-      assertIntegrity(restored.state, expected, state.files, restoredStore);
+      assertIntegrity(restored.state, expected, restoredStore);
       for (let i = 0; i < config.smallFiles; i++) {
         const chapter = restored.state.novels[i + 1].chapters[0];
         assert.equal(chapter.isDownloaded, true);
