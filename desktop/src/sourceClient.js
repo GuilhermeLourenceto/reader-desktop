@@ -1,4 +1,4 @@
-import { INSTALLED_PLUGINS_KEY } from '../../src/plugins/constants';
+import { INSTALLED_PLUGINS_KEY } from '../vendor/lnreader/src/plugins/constants';
 const entries = new Map();
 let callId = 0;
 const activity = () =>
