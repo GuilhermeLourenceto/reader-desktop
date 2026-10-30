@@ -1,6 +1,7 @@
 import { t as translateMessage } from './i18n.cjs';
 import React, { useEffect, useRef, useState } from 'react';
 import BookGrid from './BookGrid';
+import { categoryDisplayName } from './libraryCategoryLabels.cjs';
 export default function Library({
   novels,
   categories,
@@ -122,7 +123,7 @@ export default function Library({
             className={category === String(item.id) ? 'selected' : ''}
             onClick={() => setCategory(String(item.id))}
           >
-            {item.name}{' '}
+            {categoryDisplayName(item.name)}{' '}
             <span>
               {books.filter((book) => item.novelIds.includes(book.id)).length}
             </span>
@@ -132,7 +133,9 @@ export default function Library({
       <div className="library-selection">
         <span>
           {selected.length
-            ? `${selected.length} obra(s) selecionada(s)`
+            ? translateMessage('{count} obra(s) selecionada(s)', {
+                count: selected.length,
+              })
             : 'Selecione pelas caixas nas capas ou use o botão direito para ver ações.'}
         </span>
         {selected.length > 0 && (
