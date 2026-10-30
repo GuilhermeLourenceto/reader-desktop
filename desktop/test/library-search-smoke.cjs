@@ -281,8 +281,9 @@ server.listen(0, '127.0.0.1', () => {
         // update immediately and the radio-like swatch state should follow.
         const paletteColors = [];
         for (let i = 0; i < 9; i++) {
-          paletteColors.push(await execute(`(()=>{const items=[...document.querySelectorAll('.palette-swatch')];items[${i}].click();return getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()})()`));
-          assert.equal(await execute(`document.querySelectorAll('.palette-swatch')[${i}].getAttribute('aria-pressed')`), 'true');
+          await execute(`document.querySelectorAll('.palette-swatch')[${i}].click()`);
+          await wait(`document.querySelectorAll('.palette-swatch')[${i}].getAttribute('aria-pressed')==='true'`);
+          paletteColors.push(await execute("getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()"));
         }
         assert.ok(new Set(paletteColors).size >= 6, 'palette colors did not respond to settings');
         // A filter, a card selection outline and the context menu use
