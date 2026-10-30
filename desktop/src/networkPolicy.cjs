@@ -11,7 +11,7 @@ for (const [address, bits] of [
 ]) denied.addSubnet(address, bits, 'ipv4');
 for (const [address, bits] of [
   ['::', 128], ['::1', 128], ['fc00::', 7],
-  ['fe80::', 10], ['ff00::', 8], ['::ffff:0:0', 96],
+  ['fe80::', 10], ['ff00::', 8],
 ]) denied.addSubnet(address, bits, 'ipv6');
 
 function validateNetworkUrl(value, { allowPrivate = false } = {}) {
@@ -50,7 +50,7 @@ function validateResolvedAddresses(result) {
 async function validateNetworkDns(url, resolver, { allowPrivate = false } = {}) {
   const href = validateNetworkUrl(url, { allowPrivate });
   if (allowPrivate) return href;
-  const hostname = new URL(href).hostname.replace(/^\\[|\\]$/g, '');
+  const hostname = new URL(href).hostname.replace(/^\[|\]$/g, '');
   if (isIP(hostname)) return href;
   if (typeof resolver !== 'function')
     throw new Error('Não foi possível validar o DNS da fonte.');
