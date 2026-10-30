@@ -176,7 +176,7 @@ jobs:
 
   publish-v030:
     name: Publish LNReader Desktop v0.3.0 Beta
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'release: v0.3.0')
+    if: "github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'release: v0.3.0')"
     needs: [quality, desktop-only, package, user-journeys, source-matrix]
     runs-on: ubuntu-latest
     permissions:
