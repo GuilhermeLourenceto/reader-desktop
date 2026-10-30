@@ -8,6 +8,35 @@ Preparar uma primeira etapa de compatibilidade Linux **sem alterar a versão
 publicada para Windows**. Este trabalho não deve ser considerado uma release
 Linux nem mesclado automaticamente à `main`.
 
+## Auditoria da independência Android na main
+
+Auditoria da `main` (commit `86e1350`):
+
+- `desktop/build.mjs`, `desktop/src` e os scripts normais de `npm run
+  build` carregam apenas fontes locais de `desktop/` e
+  `desktop/vendor/lnreader/`. O checkout isolado `desktop/` já é testado
+  pelo CI.
+- Há **uma referência residual fora do Desktop** em
+  `desktop/build/make-icon.cjs`, que usava
+  `../../assets/android-icons/release/web/ic_launcher-1024.png`.
+  **Corrigida nesta branch** para
+  `../vendor/lnreader/assets/native/ic_launcher.png`.
+- `desktop/scripts/check-standalone.cjs` foi reforçado nesta branch para
+  rejeitar regressões nesse script de ícone. O gerador de ícones é
+  manutenção opcional e não roda nos builds normais.
+- `desktop/scripts/sync-original-sdk.cjs` continua existindo apenas como
+  comando **manual** (`--from=/caminho/para/clone-android`) para atualizar
+  o snapshot do SDK. Ele não é importado pelo app nem pelo instalador.
+  O snapshot local é indispensável para manter compatibilidade com plugins
+  e backups originais, **não** uma dependência da pasta Android externa.
+- Menções ao Android em README, testes de backup e documentação são
+  referências de origem/compatibilidade, não importações externas.
+
+A `main` **não foi alterada** por esta auditoria. Quando planejarmos o
+merge da branch Linux, a correção do gerador de ícones e a guarda de
+independência deverão ser incorporadas. Sem novo build solicitado, as
+alterações de hoje ainda precisam passar pelo CI na próxima validação.
+
 ## O que já é multiplataforma
 
 - UI React, renderização Electron, carregamento das fontes, leitura e biblioteca.
