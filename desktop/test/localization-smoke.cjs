@@ -21,6 +21,11 @@ const state = {
       chapters: [],
     },
   ],
+  categories: [
+    { id: 1, name: 'Padrão', novelIds: [1] },
+    { id: 2, name: 'Localização', novelIds: [] },
+    { id: 3, name: 'Minha categoria', novelIds: [] },
+  ],
   plugins: [
     {
       id: 'pt',
@@ -123,6 +128,16 @@ app.on('browser-window-created', (_, win) => {
         await js("document.querySelector('.book strong').textContent"),
         'Biblioteca',
       );
+      // Category names are stored in the original backup language. Localize
+      // only recognized stock labels, leaving user-created names untouched.
+      const categoryTabs = await js(
+        "Array.from(document.querySelectorAll('.category-tabs [role=tab]')).map(e=>e.textContent.trim())",
+      );
+      assert.ok(categoryTabs.some(x => x.includes(t('Padrão', 'zh-CN'))));
+      assert.ok(categoryTabs.some(x => x.includes(t('Localização', 'zh-CN'))));
+      assert.ok(categoryTabs.some(x => x.includes('Minha categoria')));
+      assert.ok(!categoryTabs.some(x => x.includes('Localização')));
+
       await click(t('Fontes', 'zh-CN'));
       await wait("document.querySelector('#global-source-language')");
       await js(
