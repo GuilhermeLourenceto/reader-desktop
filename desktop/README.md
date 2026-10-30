@@ -89,8 +89,9 @@ distribuições precisam do pacote de compatibilidade do FUSE.
 A automação `.github/workflows/desktop.yml` compila e testa Windows por padrão.
 Linux é opcional, habilitado por `include_linux` na execução manual. Na
 branch experimental `linux/prepare-packaging-and-tests`, há ainda o workflow
-separado `.github/workflows/linux-preparation.yml`, iniciado somente
-por `workflow_dispatch`: quando solicitado, executa testes no Ubuntu, produz
+separado `.github/workflows/linux-preparation.yml`, acionado apenas
+sob solicitação explícita (por mudança no marcador documentado no guia Linux
+ou `workflow_dispatch` via API): quando solicitado, executa testes no Ubuntu, produz
 AppImage e DEB e valida o lançador, a associação da janela e os recursos
 dos pacotes. **Pushes nesta branch não geram pacotes automaticamente.**
 Os arquivos são artefatos experimentais, não uma release Linux oficial.
