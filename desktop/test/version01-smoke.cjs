@@ -404,6 +404,7 @@ app.on('browser-window-created', (_event, win) => {
       );
       await capture('version01-palettes');
       await click('Fontes');
+      await click('Gerenciar fontes');
       await execute(
         "Array.from(document.querySelectorAll('.source')).find(row=>row.querySelector('strong').textContent==='Loop Source').querySelector('button').click()",
       );
