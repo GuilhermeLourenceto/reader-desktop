@@ -2,7 +2,7 @@ import {
   loadPlugin,
   installPlugin,
   uninstallPlugin,
-} from '../../src/plugins/pluginManager';
+} from '../vendor/lnreader/src/plugins/pluginManager';
 const pending = new Map();
 let rpcId = 0;
 let pluginId;
