@@ -9,7 +9,7 @@ o painel de filtros oferece ordem inversa e ordenação por nome/número.
 As opções para definir a direção
 da fonte e ler desde o início também ficam nesse painel. O código Android antigo continua acessível no histórico Git; a `main` agora contém somente o projeto Desktop.
 
-Versão atual: **0.4.1 Beta**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.4.1.md).
+Versão atual: **0.4.2 Beta**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.4.2.md).
 
 A interface utiliza uma cópia versionada da paleta original,
 em `vendor/lnreader/src/theme/md3/defaultTheme.ts`, e as fontes
@@ -314,3 +314,10 @@ validados. Veja [RELEASE_NOTES_0.3.0.md](docs/RELEASE_NOTES_0.3.0.md).
 - **Fontes** abre inicialmente **Buscar obras em todas as fontes**; a aba Gerenciar fontes continua disponível.
 - A busca global prioriza fontes com resultados, sem descartar as demais fontes ainda sendo consultadas.
 - **Avanço por página** tem escala de 0 a 100%, com valor inicial de 50%. Configurações anteriormente salvas são mantidas.
+
+
+## Restaurar configurações e rolar as listas
+
+Em **Mais → Configurações → Restaurar configurações padrão**, confirme para devolver as preferências de aparência, biblioteca e leitura aos valores iniciais. Essa ação **não apaga** livros, fontes instaladas, downloads, histórico ou progresso. Um backup completo continua disponível em **Mais → Backups**.
+
+Ao explorar fontes no Desktop, a roda do mouse também movimenta as listas quando o cursor está nas laterais da janela, fora da coluna central. Áreas com rolagem própria mantêm o comportamento normal.

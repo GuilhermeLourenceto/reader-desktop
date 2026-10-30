@@ -45,6 +45,7 @@ import { withSourceDeadline, validateFilters } from './sourceGuards.cjs';
 import { INSTALLED_PLUGINS_KEY } from '../vendor/lnreader/src/plugins/constants';
 import { defaultTheme } from '../vendor/lnreader/src/theme/md3/defaultTheme';
 import Settings from './Settings';
+import { restoreDesktopDefaults } from './defaultSettings.cjs';
 import Spinner from './Spinner';
 import { appTheme } from './appThemes';
 import NovelDetails from './NovelDetails';
@@ -191,6 +192,24 @@ function App() {
   const browseSession = useRef(null);
   const browseMarker = useRef(null);
   const mainRef = useRef(null);
+  // In desktop windows wider than the centered content column, scrolling at
+  // the left/right edges should still move the novels list. Native scrolling
+  // inside <main> and nested scroll containers is deliberately untouched.
+  useEffect(() => {
+    if (view !== 'browse' && view !== 'sources') return;
+    const handleOuterWheel = (event) => {
+      const main = mainRef.current;
+      if (!main || main.contains(event.target) || event.ctrlKey || !event.deltaY)
+        return;
+      if (main.scrollHeight <= main.clientHeight) return;
+      const scale = event.deltaMode === 1 ? 16 :
+        event.deltaMode === 2 ? main.clientHeight : 1;
+      event.preventDefault();
+      main.scrollTop += event.deltaY * scale;
+    };
+    window.addEventListener('wheel', handleOuterWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleOuterWheel);
+  }, [view]);
   const [novelId, setNovelId] = useState(null);
   const [chapterId, setChapterId] = useState(null);
   const [html, setHtml] = useState('');
@@ -2433,6 +2452,14 @@ function App() {
                 ...current.current,
                 settings: { ...current.current.settings, ...changes },
               });
+            }}
+            onReset={() => {
+              const nextSettings = restoreDesktopDefaults(
+                current.current.settings,
+              );
+              setLocale(nextSettings.desktopInterfaceLanguage);
+              update({ ...current.current, settings: nextSettings });
+              setNotice('Configurações padrão restauradas.');
             }}
             onSources={() => {
               setSourceQuery('');

@@ -118,6 +118,15 @@ server.listen(0, '127.0.0.1', () => {
           "Array.from(document.querySelectorAll('button')).find(button => button.textContent === 'Abrir').click()",
         );
         await wait("document.querySelectorAll('.book').length === 30");
+        const edgeWheel = await execute(
+          "(()=>{const main=document.querySelector('main');main.scrollTop=0;const e=new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:240});document.querySelector('aside').dispatchEvent(e);return {top:main.scrollTop,prevented:e.defaultPrevented}})()",
+        );
+        assert.ok(edgeWheel.top > 0, 'wheel over the side must scroll source novels');
+        assert.equal(edgeWheel.prevented, true);
+        const innerWheel = await execute(
+          "(()=>{const e=new WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:120});document.querySelector('main').dispatchEvent(e);return e.defaultPrevented})()",
+        );
+        assert.equal(innerWheel, false, 'wheel inside the list preserves native scrolling');
         await search('alpha');
         await execute('document.fonts.ready.then(() => true)');
         await scroll();

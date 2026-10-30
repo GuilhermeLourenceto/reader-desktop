@@ -227,6 +227,35 @@ app.on('browser-window-created', (_event, win) => {
       assert.equal(chapter.progress, 40);
       assert.equal(chapter.readTime, originalTime);
       assert.equal(chapter.unread, true);
+      // Restoring preferences must not erase the library or reading history.
+      await execute(
+        "Array.from(document.querySelectorAll('nav button')).find(b => b.textContent.trim() === 'Mais').click()",
+      );
+      await wait("document.querySelector('[data-settings-page=more]')!==null");
+      await click('Configurações');
+      await execute('void(window.confirm = () => false)');
+      await click('Restaurar configurações padrão');
+      assert.equal(
+        await execute('window.desktop.load().then(s=>s.settings.desktopFontSize)'),
+        28,
+      );
+      await execute('void(window.confirm = () => true)');
+      await click('Restaurar configurações padrão');
+      await wait(
+        "window.desktop.load().then(s=>s.settings.desktopFontSize===21 && s.settings.desktopPageStep===50 && s.settings.desktopIncognito===false && s.settings.desktopTheme==='dark')",
+      );
+      const afterReset = await execute("window.desktop.load().then(s=>({novelCount:s.novels.length,progress:s.novels[0].chapters[0].progress,settings:s.settings}))");
+      assert.equal(afterReset.novelCount, 2);
+      assert.equal(afterReset.progress, 40);
+      assert.equal(afterReset.settings.desktopReaderWidth, 820);
+      assert.equal(afterReset.settings.desktopShowBadges, true);
+      await new Promise(resolve => {
+        win.webContents.once('did-finish-load', resolve);
+        win.webContents.reload();
+      });
+      await wait(
+        "window.desktop.load().then(s=>s.settings.desktopFontSize===21 && s.settings.desktopPageStep===50 && s.novels.length===2)",
+      );
       console.log(
         'PASS: original-style settings navigation, light/dark themes, saved preferences after reload, library controls, reader typography/colors and incognito history/progress protection.',
       );

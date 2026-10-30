@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## 0.4.2 Beta
+
+- Nova opção para **restaurar as configurações padrão** de aparência, biblioteca e leitor, mediante confirmação. Livros, fontes, downloads, progresso e histórico são preservados.
+- A roda do mouse passa a rolar as listas de obras mesmo quando o cursor está nas laterais da janela, fora da coluna central.
+- Testes automatizados para restauração de preferências e rolagem do catálogo.
+
+Versão beta para Windows 10/11 x64. Fontes externas podem exigir login e apresentar bloqueios dos sites.
+
+
 ## 0.4.1 Beta
 
 - Corrigida a falha que bloqueava as fontes na verificação DNS, mesmo quando o domínio tinha endereço público válido.
