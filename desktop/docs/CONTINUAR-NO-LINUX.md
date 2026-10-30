@@ -22,13 +22,18 @@ Auditoria da `main` (commit `86e1350`):
   **Corrigida nesta branch** para
   `../vendor/lnreader/assets/native/ic_launcher.png`.
 - `desktop/scripts/check-standalone.cjs` foi reforçado nesta branch para
-  rejeitar regressões nesse script de ícone. O gerador de ícones é
-  manutenção opcional e não roda nos builds normais.
-- `desktop/scripts/sync-original-sdk.cjs` continua existindo apenas como
-  comando **manual** (`--from=/caminho/para/clone-android`) para atualizar
-  o snapshot do SDK. Ele não é importado pelo app nem pelo instalador.
-  O snapshot local é indispensável para manter compatibilidade com plugins
-  e backups originais, **não** uma dependência da pasta Android externa.
+  verificar também os scripts de manutenção, o gerador de ícones e o
+  importador local do SDK; ele rejeita referências diretas a arquivos
+  Android externos. O gerador de ícones é opcional e não roda nos builds
+  normais.
+- `desktop/scripts/sync-original-sdk.cjs` foi ajustado nesta branch:
+  não aceita caminhos externos e só lê um snapshot de origem colocado em
+  `desktop/.tmp/lnreader-original/`. Exige arquivos completos, recusa
+  links simbólicos e não remove arquivos já presentes em
+  `desktop/vendor/lnreader/`. O script é **manual**, nunca executado
+  pelo aplicativo ou pelo instalador. Os módulos originais versionados
+  permanecem intactos até que o mantenedor solicite explicitamente
+  uma atualização.
 - Menções ao Android em README, testes de backup e documentação são
   referências de origem/compatibilidade, não importações externas.
 
