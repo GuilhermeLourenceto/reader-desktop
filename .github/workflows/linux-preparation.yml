@@ -1,8 +1,14 @@
 name: Linux Desktop preparation (experimental)
 
-# Experimental builds are opt-in only. Changes to the Linux branch must not
-# automatically generate installers, artifacts or GitHub releases.
+# Experimental builds are opt-in only. Editing the Linux branch does NOT
+# generate packages. To request a build, explicitly change the marker file
+# desktop/.ci/REQUEST_LINUX_VALIDATION in a separate commit on this branch.
+# workflow_dispatch is kept for API/CLI dispatch when available.
 on:
+  push:
+    branches: [linux/prepare-packaging-and-tests]
+    paths:
+      - 'desktop/.ci/REQUEST_LINUX_VALIDATION'
   workflow_dispatch:
 
 permissions:
