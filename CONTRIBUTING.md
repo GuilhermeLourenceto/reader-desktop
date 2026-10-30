@@ -1,64 +1,62 @@
-# Contributing Guide
+# Como contribuir para o LNReader Desktop
 
-Contributions are welcome and are greatly appreciated!
+Obrigado pelo interesse em melhorar o leitor. Esta adaptação é **experimental**,
+não é uma distribuição oficial do LNReader Android. A versão Windows é a mais
+testada; o suporte Linux continua em desenvolvimento.
 
-## Setup Your Environment with Nix
+## Antes de alterar o código
 
-If you are on a Linux system, you can install the nix package manager and use the nix flakes to set up your development environment.
-See [CONTRIBUTING-NIX.md](CONTRIBUTING-NIX.md).
+1. Abra uma issue para bugs reproduzíveis ou mudanças maiores, evitando
+   duplicações. Para correções pequenas, descreva o problema no pull request.
+2. Crie uma branch de trabalho a partir da `main` e envie pull requests
+   para ela. A branch `seguranca-e-estabilidade` é uma referência anterior;
+   o Android original continua disponível no histórico Git.
+3. Leia [a arquitetura](desktop/docs/ARCHITECTURE.md) e
+   [os testes conhecidos](desktop/docs/COMPATIBILIDADE-SEGURANCA.md).
+4. Não adicione dados pessoais, backups reais, cookies, credenciais, tokens,
+   arquivos `.env` ou binários de compilação ao Git.
 
-## Setting Up Your Environment
+## Ambiente de desenvolvimento
 
-After forking to your own GitHub organization or account, take the following steps to get started:
+Requisitos: Node.js 24, npm e Windows 10/11 para os testes Electron do Windows.
 
-```bash
-# prerequisites
-node --version >= 20   (for version management, get nvm [recommended])
-java sdk --version >= 17    (for version management, get jenv [optional])
-android sdk                 (https://developer.android.com/studio)
-
-# clone your fork to your local machine
-git clone https://github.com/<your-account-name>/lnreader.git
-
-# step into local repo
-cd lnreader
-
-# install pnpm (if not already installed)
-npm install -g pnpm
-
-# install dependencies
-pnpm install
-
-# build the apk (the built apk will be found in ~/lnreader/android/app/build/outputs/apk/release/)
-pnpm run build:release:android
+```sh
+cd desktop
+npm ci
+npm run setup
+npm run build
+npm run check
+npm run test:smoke
+npm run test:pagination
+npm run test:reader
 ```
 
-### Developing on Android
+A compilação não depende de Android SDK, Expo ou React Native. Há testes
+específicos de integração e cenários de usuário em `desktop/test/`, executados
+pelo [CI](.github/workflows/desktop.yml).
 
-You will need an Android device or emulator connected to your computer as well as an IDE of your choice (e.g., VS Code).
+## Organização das alterações
 
-```bash
-# prerequisites
-adb                         (https://developer.android.com/studio/command-line/adb)
-IDE
+- Coloque código Electron/React em `desktop/src/`, testes em
+  `desktop/test/` e documentos em `desktop/docs/`.
+- Evite ampliar ainda mais `src/renderer.jsx`; prefira componentes e
+  funções com responsabilidade bem delimitada.
+- `desktop/vendor/lnreader/` contém código e recursos originais, com licença
+  e procedência. **Não** formate ou edite silenciosamente o snapshot:
+  alterações nessa pasta exigem justificativa, diff isolado e testes de
+  compatibilidade com plugins e backups.
+- Execute `npm run format:check` nos módulos com cobertura de formatação
+  incremental. `npm run format` formata o código próprio: revise as diferenças
+  antes de enviar commits para evitar mudanças cosméticas desnecessárias.
 
-# check if android device/emulator is connected
-adb devices
+## Pull requests
 
-# run metro for development
-pnpm run dev:start
+Explique o problema resolvido, os arquivos afetados, como testou, riscos de
+compatibilidade, capturas de tela (se houver mudança visual) e eventuais
+limitações. Não marque testes como concluídos se não foram executados.
+Não altere diretamente a branch padrão sem revisão; prefira pull requests.
 
-# then to view on your android device (new terminal)
-pnpm run dev:android
-```
+## Questões de segurança
 
-### Style & Linting
-
-This codebase's linting rules are enforced using [ESLint](http://eslint.org/).
-
-It is recommended that you install an eslint plugin for your editor of choice when working on this
-codebase, however, you can always check to see if the source code is compliant by running:
-
-```bash
-pnpm run lint
-```
+Não publique prova de conceito, tokens, cookies ou dados de sessão em uma
+issue. Leia [SECURITY.md](SECURITY.md) antes de relatar vulnerabilidades.

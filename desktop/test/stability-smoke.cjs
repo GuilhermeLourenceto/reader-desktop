@@ -193,8 +193,10 @@ server.listen(0, '127.0.0.1', () => {
           0,
         );
         await click('Fontes');
+        // The login feature added an "Entrar" button between "Abrir" and
+        // "Desinstalar". Select by the visible action, never by index.
         await execute(
-          "Array.from(document.querySelectorAll('.source')).find(row=>row.querySelector('strong').textContent==='A').querySelectorAll('button')[1].click()",
+          "(()=>{const row=Array.from(document.querySelectorAll('.source')).find(row=>row.querySelector('strong')?.textContent==='A');const button=Array.from(row?.querySelectorAll('button')||[]).find(item=>item.textContent.trim()==='Desinstalar');if(!button)throw new Error('Botão Desinstalar ausente');button.click();})()",
         );
         await wait(
           "window.desktop.load().then(state=>!state.plugins.some(plugin=>plugin.id==='a'))",

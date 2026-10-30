@@ -16,4 +16,5 @@ contextBridge.exposeInMainWorld('desktop', {
   cancelRequests: () => ipcRenderer.invoke('cancel-requests'),
   backup: state => ipcRenderer.invoke('backup', state),
   restore: () => ipcRenderer.invoke('restore'),
+  sourceLogin: id => ipcRenderer.invoke('source-login', id),
 });

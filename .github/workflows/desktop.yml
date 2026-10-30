@@ -9,20 +9,64 @@ on:
   push:
     paths:
       - 'desktop/**'
-      - 'src/plugins/**'
-      - 'src/services/backup/types.ts'
-      - 'src/services/backup/options.ts'
       - '.github/workflows/desktop.yml'
   pull_request:
     paths:
       - 'desktop/**'
-      - 'src/plugins/**'
-      - 'src/services/backup/types.ts'
-      - 'src/services/backup/options.ts'
       - '.github/workflows/desktop.yml'
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
+  quality:
+    name: Code quality and formatting (Desktop)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: desktop
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+
+  desktop-only:
+    name: Standalone Desktop build (no Android files)
+    if: github.ref_name == 'seguranca-e-estabilidade' || github.ref_name == 'main' || github.event_name == 'pull_request'
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Only desktop/ exists in this checkout. Parent Android sources,
+          # package files, fonts and license are intentionally unavailable.
+          sparse-checkout: desktop
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: node scripts/check-standalone.cjs
+      - run: npm run setup
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:smoke
+      - run: npm run test:reader
+
   package:
     strategy:
       matrix:
@@ -65,3 +109,99 @@ jobs:
             desktop/release/*.exe
             desktop/release/*.AppImage
             desktop/release/*.deb
+
+  user-journeys:
+    name: Everyday reading scenarios (10 Electron journeys)
+    if: github.ref_name == 'seguranca-e-estabilidade' || github.ref_name == 'main' || github.event_name == 'pull_request'
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run setup
+      - run: npm run build
+      - name: Test 10 everyday user journeys from real reader issues
+        run: npm run test:journeys
+        timeout-minutes: 24
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: everyday-user-journeys
+          path: desktop/.tmp/user-journeys-results.json
+
+  source-matrix:
+    name: Real plugin sources (diagnostic only)
+    if: github.ref_name == 'seguranca-e-estabilidade' || github.ref_name == 'main' || github.event_name == 'pull_request'
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run setup
+      - run: npm run build
+      - name: Test browser login cookie isolation
+        run: npx electron test/auth-cookie-smoke.cjs
+      - name: Test interactive source login and OAuth popup
+        run: npx electron test/source-login-e2e.cjs
+        timeout-minutes: 2
+      - name: Central Novel route comparison (isolated source session)
+        run: npx electron test/central-route-diagnostic.cjs --source-session
+        timeout-minutes: 3
+      - name: Test 16 independent sources
+        run: node test/source-matrix.cjs
+        timeout-minutes: 15
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lnreader-source-matrix
+          path: desktop/.tmp/source-matrix/
+
+  publish-v030:
+    name: Publish LNReader Desktop v0.3.0 Beta
+    if: "github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'release: v0.3.0')"
+    needs: [quality, desktop-only, package, user-journeys, source-matrix]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: lnreader-desktop-Windows
+          path: release-artifacts
+      - name: Publish tested Windows installer and create v0.3.0 tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./desktop/package.json').version")" = "0.3.0"
+          installer="$(find release-artifacts -type f -name '*.exe' -print -quit)"
+          test -n "$installer" && test -s "$installer"
+          if gh release view v0.3.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "v0.3.0 release already exists; refusing to overwrite"
+            exit 0
+          fi
+          gh release create v0.3.0 "$installer" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "LNReader Desktop v0.3.0 (Beta)" \
+            --notes-file desktop/docs/RELEASE_NOTES_0.3.0.md \
+            --prerelease

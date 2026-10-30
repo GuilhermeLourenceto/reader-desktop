@@ -5,6 +5,7 @@ const {
   dialog,
   protocol,
   net,
+  session,
   Menu,
 } = require('electron');
 const fs = require('node:fs');
@@ -18,6 +19,7 @@ const {
 } = require('./storage.cjs');
 const { emptyState, safePath } = require('./backup.cjs');
 const { backupJob } = require('./backupJobs.cjs');
+const { validateNetworkUrl } = require('./networkPolicy.cjs');
 const primaryInstance = !app.isPackaged || app.requestSingleInstanceLock();
 if (!primaryInstance) app.quit();
 app.on('second-instance', () => {
@@ -353,8 +355,126 @@ app
       else throw new Error('Operação inválida');
       commit({ ...state, files });
     });
-    const requests = new (require('./request.cjs').RequestPool)(net);
+    const sourceSessions = new Map();
+    const sourceSession = id => {
+      if (typeof id !== 'string' || !/^[a-zA-Z0-9_.-]+$/.test(id) ||
+          ['.', '..', '__proto__', 'constructor', 'prototype'].includes(id))
+        throw new Error('Identificador de fonte inválido.');
+      if (!sourceSessions.has(id))
+        sourceSessions.set(id, session.fromPartition('persist:lnreader-source-' + id));
+      return sourceSessions.get(id);
+    };
+    const requests = new (require('./request.cjs').RequestPool)(net, 8, 128, {
+      // Allow local fixture servers only in unpackaged test builds.
+      allowPrivate: !app.isPackaged,
+      sessionForSource: id => id ? sourceSession(id) : undefined,
+    });
     register('request', (url, init) => requests.run(url, init));
+    register('source-login', async id => {
+      const plugin = state.plugins.find(item => item.id === id);
+      if (!plugin) throw new Error('Fonte não instalada.');
+      const rawSite = String(plugin.site || '').trim();
+      if (!rawSite) throw new Error('Esta fonte não informou o endereço do site para login.');
+      const loginUrl = validateNetworkUrl(
+        /^https?:\/\//i.test(rawSite) ? rawSite : 'https://' + rawSite,
+        { allowPrivate: !app.isPackaged },
+      );
+      if (new URL(loginUrl).protocol !== 'https:' && app.isPackaged)
+        throw new Error('Login requer um site HTTPS.');
+      const loginWindow = new BrowserWindow({
+        parent: mainWindow,
+        width: 1050,
+        height: 760,
+        minWidth: 600,
+        minHeight: 480,
+        title: 'Entrar na fonte: ' + plugin.name,
+        autoHideMenuBar: true,
+        webPreferences: {
+          session: sourceSession(id),
+          contextIsolation: true,
+          nodeIntegration: false,
+          sandbox: true,
+        },
+      });
+      // Some legitimate sign-in providers open an HTTPS popup. Allow those
+      // windows only inside this source's cookie partition; no preload, Node,
+      // filesystem access or special schemes are inherited from the app UI.
+      const loginPopups = new Set();
+      const validLoginNavigation = url => {
+        try {
+          validateNetworkUrl(url, { allowPrivate: !app.isPackaged });
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      loginWindow.webContents.setWindowOpenHandler(({ url }) => {
+        const publicUrl = url !== 'about:blank' && validLoginNavigation(url)
+          ? new URL(url) : null;
+        // Public external identity providers may open HTTPS popups; legacy
+        // HTTP popups are permitted only at the original source's origin.
+        const allowed = url === 'about:blank' ||
+          (publicUrl && (
+            publicUrl.protocol === 'https:' ||
+            publicUrl.origin === new URL(loginUrl).origin
+          ));
+        if (loginPopups.size >= 3 || !allowed)
+          return { action: 'deny' };
+        return {
+          action: 'allow',
+          overrideBrowserWindowOptions: {
+            parent: loginWindow,
+            width: 780,
+            height: 680,
+            autoHideMenuBar: true,
+            webPreferences: {
+              session: sourceSession(id),
+              contextIsolation: true,
+              nodeIntegration: false,
+              sandbox: true,
+            },
+          },
+        };
+      });
+      loginWindow.webContents.on('did-create-window', popup => {
+        loginPopups.add(popup);
+        popup.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+        popup.webContents.on('will-navigate', (event, url) => {
+          if (!validLoginNavigation(url)) event.preventDefault();
+        });
+        popup.on('closed', () => loginPopups.delete(popup));
+      });
+      loginWindow.on('closed', () => {
+        for (const popup of loginPopups)
+          if (!popup.isDestroyed()) popup.close();
+        loginPopups.clear();
+      });
+      loginWindow.webContents.on('will-navigate', (event, url) => {
+        if (!validLoginNavigation(url)) event.preventDefault();
+      });
+      loginWindow.webContents.session.setPermissionRequestHandler(
+        (_contents, _permission, callback) => callback(false),
+      );
+      // Wait for the user to finish the login or browser verification.
+      // Calling code can retry the source only after the window closes,
+      // using the same persistent cookie session.
+      let navigationFailure = null;
+      const finished = new Promise((resolve, reject) => {
+        loginWindow.once('closed', () => {
+          if (navigationFailure) reject(navigationFailure);
+          else resolve(true);
+        });
+      });
+      try {
+        await loginWindow.loadURL(loginUrl);
+      } catch (error) {
+        if (!loginWindow.isDestroyed()) {
+          navigationFailure = error;
+          loginWindow.close();
+        }
+      }
+      return finished;
+    });
     register('cancel-request', id => requests.cancel(id));
     register('cancel-requests', () => requests.cancelAll());
     mainWindow.webContents.on('destroyed', () => requests.cancelAll());

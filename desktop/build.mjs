@@ -13,8 +13,8 @@ const sourceAliases = {
       resolve('node_modules', name),
     ]),
   ),
-  '@utils/compareVersion': resolve('../src/utils/compareVersion.ts'),
-  '@plugins': resolve('../src/plugins'),
+  '@utils/compareVersion': resolve('vendor/lnreader/src/utils/compareVersion.ts'),
+  '@plugins': resolve('vendor/lnreader/src/plugins'),
 };
 const workerAdapter = resolve('src/workerAdapters.js');
 await build({
@@ -65,8 +65,8 @@ await build({
     '@utils/mmkv/mmkv': adapter,
     '@i18n/translations': adapter,
     'react-native-mmkv': adapter,
-    '@utils/compareVersion': resolve('../src/utils/compareVersion.ts'),
-    '@plugins': resolve('../src/plugins'),
+    '@utils/compareVersion': resolve('vendor/lnreader/src/utils/compareVersion.ts'),
+    '@plugins': resolve('vendor/lnreader/src/plugins'),
   },
   inject: ['src/polyfills.js'],
   define: { 'process.env.NODE_ENV': '"production"' },
@@ -97,11 +97,11 @@ await build({
 for (const file of ['index.html', 'style.css', 'preload.cjs']) {
   await copyFile(`src/${file}`, `dist/${file}`);
 }
-await copyFile('../LICENSE', 'dist/LICENSE');
+await copyFile('vendor/lnreader/LICENSE', 'dist/LICENSE');
 await copyFile(
-  '../assets/reader/fonts/pt-sans-bold.ttf',
+  'vendor/lnreader/assets/reader/fonts/pt-sans-bold.ttf',
   'dist/pt-sans-bold.ttf',
 );
-await copyFile('../assets/reader/fonts/noto-sans.ttf', 'dist/noto-sans.ttf');
-await copyFile('../assets/reader/fonts/pt-serif.ttf', 'dist/pt-serif.ttf');
-await copyFile('../assets/native/ic_launcher.png', 'dist/logo.png');
+await copyFile('vendor/lnreader/assets/reader/fonts/noto-sans.ttf', 'dist/noto-sans.ttf');
+await copyFile('vendor/lnreader/assets/reader/fonts/pt-serif.ttf', 'dist/pt-serif.ttf');
+await copyFile('vendor/lnreader/assets/native/ic_launcher.png', 'dist/logo.png');

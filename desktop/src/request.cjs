@@ -1,18 +1,35 @@
 // Electron net.fetch does not consistently populate Response.url. Source
 // plugins use the final URL to detect login/captcha redirects, so track it
 // through ClientRequest rather than pretending it is the original URL.
+const { validateNetworkUrl } = require('./networkPolicy.cjs');
+
+// Only used by the isolated CI source-matrix runs. Never log URLs (which can
+// contain tokens), cookies or response bodies.
+const diagnose = (url, sourceId, status, bytes, challenge = false) => {
+  if (process.env.LNREADER_SOURCE_DIAGNOSTICS !== '1') return;
+  let host = 'invalid-host';
+  try { host = new URL(url).hostname; } catch {}
+  console.info(
+    '[source-http]',
+    JSON.stringify({
+      source: typeof sourceId === 'string' ? sourceId : 'repository',
+      host,
+      status,
+      bytes,
+      challenge,
+    }),
+  );
+};
 function requestHTTP(
   net,
   url,
   init = {},
-  { signal, timeoutMs = 30000, maxBytes = 20 * 1024 * 1024 } = {},
+  { signal, timeoutMs = 38000, maxBytes = 20 * 1024 * 1024, allowPrivate = false, requestSession } = {},
 ) {
   return new Promise((resolve, reject) => {
     let finalUrl;
     try {
-      finalUrl = new URL(url).href;
-      if (!['https:', 'http:'].includes(new URL(finalUrl).protocol))
-        throw new Error('URL inválida');
+      finalUrl = validateNetworkUrl(url, { allowPrivate });
     } catch (error) {
       reject(error);
       return;
@@ -29,6 +46,7 @@ function requestHTTP(
       signal?.removeEventListener('abort', abort);
       chunks.length = 0;
       if (error) {
+        diagnose(finalUrl || url, init.sourceId, 'ERROR:' + (error.code || error.name || 'unknown'), 0);
         reject(error);
         try {
           request?.abort();
@@ -46,12 +64,13 @@ function requestHTTP(
         url: finalUrl,
         method: init.method || 'GET',
         useSessionCookies: true,
+        ...(requestSession ? { session: requestSession } : {}),
         redirect: 'manual',
       });
       timer = setTimeout(
         () =>
           finish(
-            new Error('A fonte demorou mais de 30 segundos para responder.'),
+            new Error('A fonte demorou mais de 38 segundos para responder.'),
           ),
         timeoutMs,
       );
@@ -61,14 +80,11 @@ function requestHTTP(
         if (settled) return;
         try {
           const redirected = new URL(target, finalUrl);
-          if (
-            ++redirects > 20 ||
-            !['https:', 'http:'].includes(redirected.protocol)
-          ) {
+          if (++redirects > 20) {
             finish(new Error('Redirecionamento inválido da fonte.'));
             return;
           }
-          finalUrl = redirected.href;
+          finalUrl = validateNetworkUrl(redirected.href, { allowPrivate });
           request.followRedirect();
         } catch (error) {
           finish(error);
@@ -93,6 +109,14 @@ function requestHTTP(
         );
         response.on('end', () => {
           if (settled) return;
+          if (process.env.LNREADER_SOURCE_DIAGNOSTICS === '1') {
+            const prefix = Buffer.concat(chunks.slice(0, 2))
+              .subarray(0, 4096).toString('utf8');
+            const challenge =
+              /<title[^>]*>[^<]*(just a moment|bot verification|checking your browser|attention required)/i.test(prefix) ||
+              /cf-chl-|challenge-platform/i.test(prefix);
+            diagnose(finalUrl, init.sourceId, response.statusCode, size, challenge);
+          }
           finish(null, {
             status: response.statusCode,
             statusText: response.statusMessage || '',
@@ -108,7 +132,14 @@ function requestHTTP(
           });
         });
       });
-      for (const [name, value] of Object.entries(init.headers || {})) {
+      // Keep the same browser identity used during interactive login, unless
+      // the original extension explicitly sets its own User-Agent.
+      const headers = init.headers || {};
+      if (requestSession && !Object.keys(headers).some(name => name.toLowerCase() === 'user-agent')) {
+        const userAgent = requestSession.getUserAgent?.();
+        if (userAgent) request.setHeader('User-Agent', userAgent);
+      }
+      for (const [name, value] of Object.entries(headers)) {
         if (
           !['connection', 'host', 'content-length', 'accept-encoding'].includes(
             name.toLowerCase(),
@@ -126,8 +157,9 @@ function requestHTTP(
 }
 
 class RequestPool {
-  constructor(net, concurrency = 8, queueLimit = 128) {
+  constructor(net, concurrency = 8, queueLimit = 128, options = {}) {
     this.net = net;
+    this.options = options;
     this.concurrency = concurrency;
     this.queueLimit = queueLimit;
     this.active = 0;
@@ -154,7 +186,7 @@ class RequestPool {
         controller: new AbortController(),
         started: false,
       };
-      entry.timer = setTimeout(() => this.cancel(id), 30000);
+      entry.timer = setTimeout(() => this.cancel(id), 38000);
       this.entries.set(id, entry);
       this.queue.push(entry);
       this.drain();
@@ -180,9 +212,17 @@ class RequestPool {
       entry.started = true;
       this.active++;
       clearTimeout(entry.timer);
-      requestHTTP(this.net, entry.url, entry.init, {
-        signal: entry.controller.signal,
-      })
+      // Session resolution can fail (e.g. invalid plugin metadata). An
+      // exception must reject this request and free the queue slot instead
+      // of leaving every subsequent source request stuck forever.
+      Promise.resolve()
+        .then(() =>
+          requestHTTP(this.net, entry.url, entry.init, {
+            signal: entry.controller.signal,
+            ...this.options,
+            requestSession: this.options.sessionForSource?.(entry.init.sourceId),
+          }),
+        )
         .then(entry.resolve, entry.reject)
         .finally(() => {
           this.active--;

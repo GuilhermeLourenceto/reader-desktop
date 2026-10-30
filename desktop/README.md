@@ -7,14 +7,14 @@ seções ficam empilhadas. Em telas largas, a lista de capítulos permanece fixa
 à direita e rola independentemente. A lista mantém a ordem da fonte por padrão;
 o painel de filtros oferece ordem inversa e ordenação por nome/número.
 As opções para definir a direção
-da fonte e ler desde o início também ficam nesse painel. O app Android continua
-separado.
+da fonte e ler desde o início também ficam nesse painel. O código Android antigo continua acessível no histórico Git; a `main` agora contém somente o projeto Desktop.
 
-Versão atual: **0.2.0**.
+Versão atual: **0.3.0 Beta**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.3.0.md).
 
-A interface usa diretamente a paleta escura original de
-`src/theme/md3/defaultTheme.ts` e as fontes Noto Sans, PT Sans e PT Serif
-incluídas no projeto. A navegação inferior, abas de categorias, contadores nas
+A interface utiliza uma cópia versionada da paleta original,
+em `vendor/lnreader/src/theme/md3/defaultTheme.ts`, e as fontes
+Noto Sans, PT Sans e PT Serif armazenadas dentro de `vendor/lnreader/assets/`.
+Esse conjunto é independente da pasta Android na compilação. A navegação inferior, abas de categorias, contadores nas
 capas, ícones das fontes e leitor em tela inteira seguem o visual do Android.
 Os backups ficam em **Mais → Backups e ajustes**.
 A revisão das regras de funcionamento do Android está em
@@ -61,9 +61,11 @@ npm run setup
 npm start
 ```
 
-Não é necessário instalar o Android SDK ou as dependências React Native da raiz.
-`setup` baixa o runtime do Electron, inclusive nas versões do npm que não
-executam automaticamente scripts de instalação de dependências.
+Não é necessário ter a pasta Android, instalar o Android SDK ou as
+dependências React Native da raiz. `setup` baixa o runtime do Electron,
+inclusive nas versões do npm que não executam automaticamente scripts de
+instalação de dependências. O CI verifica isso com checkout contendo **apenas**
+a pasta `desktop/`.
 
 ## Gerar instaladores
 
@@ -90,31 +92,41 @@ continuação futura do port. Os instaladores são disponibilizados como artefat
 do GitHub Actions. A execução local no Windows não valida o funcionamento em
 Linux. Os binários locais não possuem assinatura digital de distribuição.
 
-## Código original reaproveitado
+## Estrutura independente e código original reaproveitado
 
-O build importa **diretamente**, sem copiar ou modificar:
+O **Desktop agora compila sem acessar arquivos do Android**. A pasta
+`desktop/vendor/lnreader/` contém uma cópia versionada (snapshot) dos
+módulos originais necessários ao leitor. Não é uma segunda instalação
+Android, e o código de origem permanece reconhecível:
 
-- `src/plugins/pluginManager.ts`: descoberta, instalação, atualização,
-  carregamento e execução das mesmas extensões JavaScript do Android;
-- `src/plugins/helpers/fetch.ts`: fetch de texto, API e protobuf;
-- `src/plugins/helpers/storage.ts`: armazenamento e expiração das extensões;
-- tipos de filtros, status de novels, constantes e auxiliares das fontes;
-- comparação de versões de `src/utils/compareVersion.ts`;
-- nomes de entradas ZIP e opções de `src/services/backup`.
+- `vendor/lnreader/src/plugins/`: mecanismo original de instalação,
+  carregamento, fetch, armazenamento, filtros e tipos das extensões;
+- `vendor/lnreader/src/services/backup/`: constantes e opções do formato de backup original;
+- `vendor/lnreader/src/utils/`: comparação de versões, mensagens de erro
+  e paletas originais de leitura;
+- `vendor/lnreader/src/theme/`: paleta Material 3 original;
+- `vendor/lnreader/assets/`: fontes da interface e logotipo;
+- `vendor/lnreader/LICENSE` e `vendor/lnreader/origin.json`:
+  licença, procedência e hashes de integridade.
 
-`src/adapters.js` substitui os módulos nativos exigidos por esse código:
-MMKV por armazenamento do Chromium e arquivos por uma ponte limitada com o
-processo principal. HTTP passa pela sessão do Electron para suportar cookies
-e pedidos das fontes fora das restrições de CORS do navegador.
+O código específico do Windows/Linux está em `desktop/src/`; os
+adaptadores `src/adapters.js` e `src/workerAdapters.js` conectam o SDK
+original ao Electron, sem trazer Android SDK, Expo nem React Native.
+O armazenamento continua local e os backups ZIP mantêm seu formato.
 
-A interface React Native, as consultas Drizzle/SQLite e os serviços Android
-não foram portados nesta etapa. O desktop persiste os metadados em
-um arquivo JSON com substituição por arquivo temporário e cópia de recuperação.
-Os arquivos baixados ficam separados em `content/`, referenciados por hash;
-bibliotecas anteriores são migradas automaticamente. As capas são carregadas
-sob demanda e os backups ZIP continuam incluindo o conteúdo real dos arquivos.
-Não é uma versão
-completa com todos os recursos do Android.
+**Atualizar o SDK original é uma operação explícita:** com um checkout Android separado, o mantenedor pode executar
+`node scripts/sync-original-sdk.cjs --from=/caminho/para/clone-android` e revisar o diff de
+`desktop/vendor/lnreader/`. Esse script opcional requer a árvore
+Android e **não faz parte de `npm ci`, `npm run build` nem do instalador**.
+Ao copiar só a pasta `desktop/` para outro repositório, a compilação
+continua funcionando sem ele.
+
+A branch Git pertence ao repositório, não à pasta. A `main` contém o Desktop a partir da v0.3.0; a `seguranca-e-estabilidade` foi preservada como referência. O código Android anterior permanece no histórico Git.
+
+A interface React Native, consultas Drizzle/SQLite e serviços Android
+não são incluídos. Os arquivos baixados ficam em `content/`, separados
+dos metadados JSON e referenciados por hash, com recuperação e backups
+ZIP preservados.
 
 ## Fontes
 
@@ -228,13 +240,8 @@ páginas horizontais alinhadas, posição ao redimensionar a janela, nove paleta
 carregamento automático e nova tentativa de páginas sem repetir chamadas.
 Uma fonte de teste com `while(true)` foi interrompida com a interface respondendo.
 A Central Novel passou por instalação, listagem, detalhes e leitura no worker.
-Capturas reais ficam em `docs/previews/version01-*.png`.
-Lint da raiz passou com avisos existentes e a checagem TypeScript passou após
-gerar os metadados com
-`node scripts/generate-env-file.cjs --build-type Debug --git-hash source-archive`.
-O comando geral `pnpm run check` permanece bloqueado por problemas de
-formatação já existentes em 20 arquivos Android. A formatação dos arquivos
-desktop foi verificada separadamente e passou. Um ZIP real do LNReader foi
+Capturas de apresentação estão em `docs/screenshots/`.
+O CI do Desktop valida as compilações sem Expo ou React Native, incluindo checkout isolado da pasta `desktop/`. Um ZIP real do LNReader foi
 restaurado e reexportado com todos os arquivos conferidos. A aba Atualizações
 passou por download, exclusão, nova tentativa, leitura offline e falhas parciais.
 Veja os [testes de volume](docs/STRESS-TESTS.md) e as [mudanças da versão](CHANGELOG.md).
@@ -247,8 +254,10 @@ desktop/
   src/            código da interface, processo principal, backup e leitor
   test/           testes node e testes Electron de interface
   docs/           documentação (compatibilidade, estabilidade, leitor, isolamento)
-  docs/previews/  capturas de tela usadas na documentação
+  docs/screenshots/ capturas de apresentação do Desktop
   tools/          ui-harness.cjs (renderiza a interface no Chrome) e diagnóstico de fonte
+  vendor/lnreader/  snapshot local do SDK, paletas, licença e assets originais
+  scripts/        manutenção opcional do snapshot
   build/          ícone do instalador
   dist/           saída do build (gerada)
   release/        instaladores e app descompactado (gerada)
@@ -269,3 +278,31 @@ A janela usa isolamento de contexto, sandbox e Node desabilitado. O leitor
 sanitiza HTML. `unsafe-eval` permanece necessário para o carregador original
 dentro dos workers. Eles não têm acesso ao DOM nem a Node; Web Worker não é
 equivalente a um processo do sistema com memória independente.
+
+## Organização e contribuição
+
+A estrutura de módulos e os limites entre Electron, React, armazenamento e
+código original estão descritos em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Para colaborar ou relatar problemas, consulte
+[CONTRIBUTING.md](../CONTRIBUTING.md) e [SECURITY.md](../SECURITY.md).
+
+```sh
+npm run lint          # Sintaxe Node e dependências fora de desktop/
+npm run format:check  # Formatação dos módulos novos (cobertura incremental)
+npm run format        # Formata código próprio (revise o diff antes de commitar)
+npm run check         # Lint + formatação incremental + testes unitários
+npm run test:journeys # 10 jornadas reais de interface (Electron)
+npm run test:all      # Suíte local completa do Desktop
+```
+
+O código original em `vendor/lnreader/` é versionado separadamente e não deve
+ser reformatado automaticamente ao modificar módulos próprios do Desktop.
+
+## Versão 0.3.0 Beta
+
+A branch principal passou a conter o Desktop independente. Esta versão reúne o isolamento do SDK
+original em `vendor/lnreader/`, atualizações da biblioteca, login individual por fonte,
+recuperação de erros, melhorias de backups, refatoração inicial da interface e suíte
+automatizada de 45 testes unitários e 10 jornadas de usuário. A compilação e o instalador
+Windows passaram no CI; Linux e o comportamento de todas as fontes ainda não estão
+validados. Veja [RELEASE_NOTES_0.3.0.md](docs/RELEASE_NOTES_0.3.0.md).

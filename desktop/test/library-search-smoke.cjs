@@ -66,6 +66,10 @@ server.listen(0, '127.0.0.1', () => {
   const state = {
     ...emptyState(),
     plugins,
+    categories: [
+      { id: 1, name: 'Lendo', novelIds: [1] },
+      { id: 2, name: 'Depois', novelIds: [2] },
+    ],
     novels: [
       {
         id: 1,
@@ -186,6 +190,28 @@ server.listen(0, '127.0.0.1', () => {
         await wait(
           "document.querySelectorAll('.book').length===2&&!document.querySelector('.busy')",
         );
+        // Category visibility must not require an app restart, as reported
+        // for category-based library additions in LNReader #1963.
+        await execute(
+          "Array.from(document.querySelectorAll('[role=tab]')).find(button=>button.textContent.includes('Lendo')).click()",
+        );
+        await wait("document.querySelectorAll('.book').length===1");
+        assert.equal(
+          await execute("document.querySelector('.book').textContent.includes('Obra A')"),
+          true,
+        );
+        await execute(
+          "Array.from(document.querySelectorAll('[role=tab]')).find(button=>button.textContent.includes('Depois')).click()",
+        );
+        await wait("document.querySelectorAll('.book').length===1");
+        assert.equal(
+          await execute("document.querySelector('.book').textContent.includes('Obra B')"),
+          true,
+        );
+        await execute(
+          "Array.from(document.querySelectorAll('[role=tab]')).find(button=>button.textContent.includes('Todas')).click()",
+        );
+        await wait("document.querySelectorAll('.book').length===2");
         await click('Histórico');
         assert.equal(
           await execute(

@@ -1,7 +1,7 @@
-import { darkThemes, lightThemes } from '../../src/theme/md3/index';
+import { darkThemes, lightThemes } from '../vendor/lnreader/src/theme/md3/index';
 
 // O índice do tema original não expõe nomes traduzidos para o desktop, então os
-// rótulos ficam aqui na mesma ordem de `src/theme/md3/index.ts`.
+// rótulos ficam aqui na mesma ordem de `vendor/lnreader/src/theme/md3/index.ts`.
 const palettes = [
   ['default', 'Padrão'],
   ['midnight', 'Crepúsculo'],

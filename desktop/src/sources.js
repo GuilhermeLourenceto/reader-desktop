@@ -4,7 +4,7 @@ import {
   reloadInstalledPlugins,
   uninstallSource as uninstallPlugin,
 } from './sourceClient';
-import { INSTALLED_PLUGINS_KEY } from '../../src/plugins/constants';
+import { INSTALLED_PLUGINS_KEY } from '../vendor/lnreader/src/plugins/constants';
 import { withSourceDeadline, validatePluginMetadata } from './sourceGuards.cjs';
 
 export async function installDesktopPlugin(metadata) {

@@ -1,0 +1,50 @@
+name: Relatar problema no Desktop
+description: Informe um comportamento reproduzível no LNReader Desktop.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: "Não inclua cookies, credenciais, backups pessoais ou dados privados."
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Sistema operacional
+      options:
+        - Windows 11
+        - Windows 10
+        - Linux (experimental)
+        - Outro
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versão / commit do Desktop
+      placeholder: "0.2.0 ou SHA do commit"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Como reproduzir
+      description: "Passo a passo usando apenas informações não sensíveis."
+      placeholder: "1. Abrir o leitor\n2. Selecionar..."
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Resultado observado
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Logs ou capturas (opcionais)
+      description: "Remova tokens, cookies, endereços privados e dados pessoais."
