@@ -33,4 +33,29 @@ function validateNetworkUrl(value, { allowPrivate = false } = {}) {
   }
   return url.href;
 }
-module.exports = { validateNetworkUrl };
+// Validate every address returned by Chromium's resolver, not just the hostname.
+// A mixed public/private answer is rejected in its entirety.
+function validateResolvedAddresses(result) {
+  const addresses = result?.resolvedAddresses;
+  if (!Array.isArray(addresses) || addresses.length === 0)
+    throw new Error('Não foi possível validar o DNS da fonte.');
+  for (const entry of addresses) {
+    const ip = typeof entry === 'string' ? entry : entry?.address;
+    const version = typeof ip === 'string' ? isIP(ip) : 0;
+    if (!version || denied.check(ip, version === 4 ? 'ipv4' : 'ipv6'))
+      throw new Error('O DNS da fonte retornou endereço local ou privado.');
+  }
+  return addresses;
+}
+async function validateNetworkDns(url, resolver, { allowPrivate = false } = {}) {
+  const href = validateNetworkUrl(url, { allowPrivate });
+  if (allowPrivate) return href;
+  const hostname = new URL(href).hostname.replace(/^\\[|\\]$/g, '');
+  if (isIP(hostname)) return href;
+  if (typeof resolver !== 'function')
+    throw new Error('Não foi possível validar o DNS da fonte.');
+  const result = await resolver(hostname, { cacheUsage: 'disallowed' });
+  validateResolvedAddresses(result);
+  return href;
+}
+module.exports = { validateNetworkUrl, validateResolvedAddresses, validateNetworkDns };
