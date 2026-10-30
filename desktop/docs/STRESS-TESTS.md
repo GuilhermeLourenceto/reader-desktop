@@ -65,3 +65,97 @@ node node_modules/electron/cli.js test/load-network-smoke.cjs --visual-preview -
 continua usando a proteção do Electron.
 Os testes deixam os metadados sintéticos e medições em `.tmp`, ignorada pelo Git;
 os arquivos de conteúdo e o ZIP gerados pelo benchmark são removidos ao concluir.
+
+---
+
+## Rodada multiplataforma — 30/10/2026 (branch Linux, sem instaladores)
+
+GitHub Actions, Windows `windows-latest` e Ubuntu 24.04 x64; Node.js 24.
+Todas as bibliotecas, os binários de teste e os perfis Electron foram
+sintéticos, gerados em diretórios temporários isolados. **Não foram usados
+dados pessoais, nem foram publicados instaladores ou releases.**
+
+### Cenário extremo: muitas obras + backup volumoso
+
+| Medição | Ubuntu 24.04 | Windows |
+| --- | ---: | ---: |
+| Resultado de todos os testes | **PASS** | **PASS** |
+| Obras / capítulos | 18.000 / 473.174 | 18.000 / 473.174 |
+| Arquivos binários conferidos por SHA-256 | 464 | 464 |
+| Conteúdo binário / biblioteca JSON | 323 MiB / 65,44 MiB | igual |
+| ZIP exportado | 331,06 MiB | 331,06 MiB |
+| Exportação pelo worker | 4,50 s | 13,34 s |
+| Importação 1 / importação 2 | 7,71 / 7,32 s | 12,39 / 12,18 s |
+| Pico de RSS do processo Node (incluindo workers) | 2.683,9 MiB | 1.849,8 MiB |
+
+Além das contagens, os testes verificam a ordem de **todas** as obras,
+amostras de progresso e marcadores, categorias, dados de cada arquivo
+importado e persistência da biblioteca. Também corrompem os metadados
+intencionalmente para validar a recuperação via `.bak`.
+
+**Defeito encontrado e corrigido na branch:** na primeira execução, a
+restauração alterava a ordem das obras porque os membros
+`NovelAndChapters/*.json` eram percorridos na ordem do ZIP. O backup
+v2 passou a incluir uma propriedade **opcional** `desktopNovelOrder` no
+`Version.json` já existente. Backups v2 antigos sem a propriedade
+continuam sendo aceitos, e propriedades inválidas são rejeitadas. Não
+foram alterados os arquivos do SDK original. Ainda falta conferir a
+exportação nova em uma instalação Android real, pois o teste comprova a
+compatibilidade do parser Desktop, não toda a cadeia Android.
+
+### Cenário próximo ao limite de backup
+
+| Medição | Ubuntu 24.04 | Windows |
+| --- | ---: | ---: |
+| Resultado | **PASS** | **PASS** |
+| Biblioteca | 6.000 obras / 92.985 capítulos | igual |
+| Conteúdo binário e ZIP | 474 MiB / 475,70 MiB | igual |
+| Arquivos conferidos por SHA-256 | 374 | 374 |
+| Exportação | 5,72 s | 10,53 s |
+| Importação 1 / importação 2 | 6,25 / 5,33 s | 8,99 / 8,66 s |
+| Pico de RSS do processo Node | 2.343,6 MiB | 1.732,7 MiB |
+
+Os dois sistemas recusaram um ZIP esparso de 513 MiB com a biblioteca
+original intacta. O limite atual de 512 MiB foi **mantido**: esta rodada
+não comprova suporte a arquivos de 1 GiB ou mais.
+
+### Interface Electron: biblioteca muito grande
+
+Teste real de navegação no renderer com **10.000 obras e 200.000
+capítulos**, incluindo alternância Biblioteca → Atualizações →
+Biblioteca e leitura dos metadados persistidos. **PASS** nos dois
+sistemas.
+
+| Medição | Ubuntu 24.04 + Xvfb | Windows |
+| --- | ---: | ---: |
+| Biblioteca inicial renderizada | 6,61 s | 6,62 s |
+| Navegação e validações completas | 10,83 s | 12,31 s |
+| Working set aproximado do renderer | 1.514 MiB | 1.657 MiB |
+
+O renderer ainda monta todos os cartões da biblioteca, o que explica o
+alto consumo. **Virtualização/paginação de cartões é uma otimização
+recomendada antes de garantir desempenho em computadores com pouca RAM.**
+Os testes gráficos Linux foram executados com Xvfb e
+`--no-sandbox` no runner; isso não certifica abertura normal sob
+X11/Wayland, nem login/cookies de fontes reais.
+
+### Reproduzir apenas os testes, sem empacotar
+
+```sh
+cd desktop
+npm ci
+npm run build
+node test/heavy-backup-stress.cjs --profile=extreme
+node test/heavy-backup-stress.cjs --profile=near-limit
+```
+
+Para a interface, instale o runtime do Electron com `npm run setup`,
+então execute `npx electron test/huge-library-ui-smoke.cjs
+--visual-preview` no Windows ou o comando equivalente com
+`xvfb-run -a ... --no-sandbox` em um runner Linux isolado.
+
+Workflows: `.github/workflows/giant-library-stress.yml` e
+`.github/workflows/near-limit-backup-stress.yml`. Ambos geram apenas
+código de teste transitório em `dist/`; **não produzem EXE, AppImage,
+DEB ou releases**. O diretório de dados do aplicativo real não é
+acessado pelos testes.

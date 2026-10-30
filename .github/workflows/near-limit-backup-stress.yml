@@ -1,0 +1,42 @@
+name: Near-512MiB backup stress (Windows and Linux)
+
+# Explicit backup-volume validation. No release or installer and no user data.
+on:
+  push:
+    branches: [linux/prepare-packaging-and-tests]
+    paths:
+      - '.github/workflows/near-limit-backup-stress.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  near-limit:
+    name: Near-cap export / import (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: desktop
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install desktop dependencies
+        run: npm ci
+      - name: Build temporary test code, not an installer
+        run: npm run build
+      - name: Test near-format-cap backup, 2 imports, SHA256 validation and oversize rejection
+        timeout-minutes: 19
+        run: node test/heavy-backup-stress.cjs --profile=near-limit

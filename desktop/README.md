@@ -1,4 +1,4 @@
-# LNReader Desktop — versão experimental
+# LNReader Desktop — versão beta para Windows e Linux
 
 Port para Windows 10/11 e Linux usando Electron. A interface desktop é nova,
 adaptada para mouse, teclado e telas maiores. Em janelas largas, os detalhes da
@@ -9,7 +9,7 @@ o painel de filtros oferece ordem inversa e ordenação por nome/número.
 As opções para definir a direção
 da fonte e ler desde o início também ficam nesse painel. O código Android antigo continua acessível no histórico Git; a `main` agora contém somente o projeto Desktop.
 
-Versão atual: **0.4.2 Beta**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.4.2.md).
+Versão atual: **0.4.3 Beta (Windows e Linux)**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.4.3.md).
 
 A interface utiliza uma cópia versionada da paleta original,
 em `vendor/lnreader/src/theme/md3/defaultTheme.ts`, e as fontes
@@ -86,11 +86,19 @@ produz `.AppImage` e `.deb`. Gere cada instalador no respectivo sistema.
 Para executar um AppImage, habilite a permissão de execução; algumas
 distribuições precisam do pacote de compatibilidade do FUSE.
 
-A automação `.github/workflows/desktop.yml` compila e testa Windows por padrão.
-Linux é opcional, habilitado por `include_linux` na execução manual, para
-continuação futura do port. Os instaladores são disponibilizados como artefatos
-do GitHub Actions. A execução local no Windows não valida o funcionamento em
-Linux. Os binários locais não possuem assinatura digital de distribuição.
+A automação `.github/workflows/desktop.yml` compila e testa Windows por padrão; para a release v0.4.3 e nas pull requests, também compila e testa Linux.
+Linux é opcional, habilitado por `include_linux` na execução manual. Na
+branch experimental `linux/prepare-packaging-and-tests`, há ainda o workflow
+separado `.github/workflows/linux-preparation.yml`, acionado apenas
+sob solicitação explícita (por mudança no marcador documentado no guia Linux
+ou `workflow_dispatch` via API): quando solicitado, executa testes no Ubuntu, produz
+AppImage e DEB e valida o lançador, a associação da janela e os recursos
+dos pacotes. **Pushes nesta branch não geram pacotes automaticamente.**
+Os arquivos desse workflow de preparação são artefatos de diagnóstico. A v0.4.3 passa a distribuir Linux beta pela CI da `main`, com AppImage e DEB gerados e inspecionados após a validação automatizada. A instalação em máquina Linux real ainda precisa de conferência manual.
+Acompanhe as pendências em
+[Preparação do Linux](docs/CONTINUAR-NO-LINUX.md). A execução local no Windows
+não valida o funcionamento em Linux. Os binários não possuem assinatura
+digital de distribuição.
 
 ## Estrutura independente e código original reaproveitado
 
@@ -114,10 +122,14 @@ adaptadores `src/adapters.js` e `src/workerAdapters.js` conectam o SDK
 original ao Electron, sem trazer Android SDK, Expo nem React Native.
 O armazenamento continua local e os backups ZIP mantêm seu formato.
 
-**Atualizar o SDK original é uma operação explícita:** com um checkout Android separado, o mantenedor pode executar
-`node scripts/sync-original-sdk.cjs --from=/caminho/para/clone-android` e revisar o diff de
-`desktop/vendor/lnreader/`. Esse script opcional requer a árvore
-Android e **não faz parte de `npm ci`, `npm run build` nem do instalador**.
+**Atualizar o SDK original é uma operação explícita:** mantenha os
+arquivos de origem em `desktop/.tmp/lnreader-original/` e execute
+`node scripts/sync-original-sdk.cjs` a partir de `desktop/`.
+O importador usa somente pastas dentro de `desktop/`, recusa links
+simbólicos e não remove arquivos originais. O código atual em
+`desktop/vendor/lnreader/` continua versionado e funcionando sem
+nenhuma importação. A sincronização opcional **não faz parte de
+`npm ci`, `npm run build` nem do instalador**.
 Ao copiar só a pasta `desktop/` para outro repositório, a compilação
 continua funcionando sem ele.
 

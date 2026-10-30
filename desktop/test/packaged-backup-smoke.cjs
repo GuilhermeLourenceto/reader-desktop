@@ -7,12 +7,22 @@ const root = fs.mkdtempSync(
   path.join(os.tmpdir(), 'lnreader-packaged-backup-'),
 );
 const { emptyState } = require('../dist/backup.cjs');
+// Electron's packaged ASAR worker must work on both Windows and Linux.
+const packageDirectory =
+  process.platform === 'win32'
+    ? 'win-unpacked'
+    : process.platform === 'linux'
+      ? 'linux-unpacked'
+      : null;
+if (!packageDirectory) throw new Error('Packaged backup smoke supports Windows/Linux only');
 const timeout = setTimeout(() => app.exit(1), 15000);
 app.whenReady().then(() => {
   const worker = new Worker(
     path.join(
       __dirname,
-      '../release/win-unpacked/resources/app.asar/dist/backup-worker.cjs',
+      '../release',
+      packageDirectory,
+      'resources/app.asar/dist/backup-worker.cjs',
     ),
     {
       workerData: {

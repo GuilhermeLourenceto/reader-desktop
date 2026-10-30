@@ -1,5 +1,16 @@
 # Histórico de versões
 
+## 0.4.3 Beta — Windows e Linux
+
+- Primeira distribuição experimental para Linux x64, em AppImage e DEB, junto do instalador Windows.
+- Correção do gerador de ícones e auditoria de caminhos externos: a compilação Desktop usa somente os recursos em `desktop/`, sem remover o SDK original versionado.
+- Ordem exata das obras preservada na exportação e restauração de backups v2 do Desktop (propriedade opcional `desktopNovelOrder` em `Version.json`). Backups antigos continuam compatíveis.
+- Testes automatizados Windows/Linux de bibliotecas com 18 mil obras e 473 mil capítulos, backups de até 475,70 MiB e interface com 10 mil obras.
+- Novos testes de inspeção dos pacotes Linux e de portabilidade independente do Android.
+
+**Limitações:** a versão Linux ainda carece de validação manual de AppImage e DEB em sessão gráfica real, especialmente Linux Mint/Wayland; os testes automatizados usam Ubuntu e Xvfb. O consumo de memória é alto em bibliotecas extremas. O limite de 512 MiB para backups permanece. Distribuições sem dependências FUSE podem precisar de ajustes para executar AppImage. Beta sem assinatura digital.
+
+
 ## 0.4.2 Beta
 
 - Nova opção para **restaurar as configurações padrão** de aparência, biblioteca e leitor, mediante confirmação. Livros, fontes, downloads, progresso e histórico são preservados.

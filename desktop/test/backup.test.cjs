@@ -225,3 +225,34 @@ test('rejects invalid novels before applying any data', () => {
   );
   assert.throws(() => parseBackup(zip.toBuffer()), /inválida/);
 });
+
+test('v2 backup preserves nonnumeric library ordering without changing original novel records', () => {
+  const base = fixture();
+  const books = [34, 5, 100, 8].map(id => ({
+    ...base.novels[0],
+    id,
+    name: 'Book ' + id,
+    path: '/novel/' + id,
+    chapters: [{ id: id + 500, novelId: id, name: 'Chapter', path: '/c/' + id }],
+  }));
+  const state = { ...base, novels: books, categories: [], files: {} };
+  const archive = createBackup(state);
+  const zip = new AdmZip(archive);
+  const manifest = JSON.parse(zip.readAsText('Version.json'));
+  assert.deepEqual(manifest.desktopNovelOrder, [34, 5, 100, 8]);
+  assert.deepEqual(parseBackup(archive).state.novels, books);
+  // Older LNReader v2 files do not have desktopNovelOrder and must still work.
+  const legacy = new AdmZip(archive);
+  delete manifest.desktopNovelOrder;
+  legacy.updateFile('Version.json', Buffer.from(JSON.stringify(manifest)));
+  assert.equal(parseBackup(legacy.toBuffer()).state.novels.length, books.length);
+});
+
+test('v2 backup rejects tampered novel order without silently replacing the library', () => {
+  const state = fixture();
+  const zip = new AdmZip(createBackup(state));
+  const version = JSON.parse(zip.readAsText('Version.json'));
+  version.desktopNovelOrder = [7, 7];
+  zip.updateFile('Version.json', Buffer.from(JSON.stringify(version)));
+  assert.throws(() => parseBackup(zip.toBuffer()), /Ordem de obras inválida/);
+});

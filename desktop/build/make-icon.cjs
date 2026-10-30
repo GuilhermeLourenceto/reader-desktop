@@ -8,7 +8,7 @@ app
     const original = nativeImage.createFromPath(
       path.join(
         __dirname,
-        '../../assets/android-icons/release/web/ic_launcher-1024.png',
+        '../vendor/lnreader/assets/native/ic_launcher.png',
       ),
     );
     if (original.isEmpty()) throw new Error('Original icon not found');
