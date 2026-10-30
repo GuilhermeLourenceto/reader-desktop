@@ -112,6 +112,14 @@ jobs:
         run: xvfb-run -a npx electron --no-sandbox test/pagination-smoke.cjs --visual-preview
       - if: runner.os == 'Linux'
         run: xvfb-run -a npx electron --no-sandbox test/reader-rules-smoke.cjs --visual-preview
+      - name: Ensure 10k-book library remains virtualized (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 4
+        run: npx electron test/huge-library-ui-smoke.cjs --visual-preview
+      - name: Ensure 10k-book library remains virtualized (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 4
+        run: xvfb-run -a npx electron --no-sandbox test/huge-library-ui-smoke.cjs --visual-preview
       - if: runner.os == 'Windows'
         run: npm run dist:win
       - if: runner.os == 'Linux'
