@@ -258,6 +258,27 @@ server.listen(0, '127.0.0.1', () => {
         await execute(
           "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))",
         );
+        // The context menu must follow a live theme change, not retain light colors.
+        await click('Mais');
+        await click('Configurações');
+        await click('Aparência');
+        await select('Tema do aplicativo', 'dark');
+        await click('Biblioteca');
+        await context();
+        assert.notEqual(
+          await execute("getComputedStyle(document.querySelector('[role=menu]')).backgroundColor"),
+          'rgb(231, 232, 241)',
+        );
+        assert.equal(
+          await execute("getComputedStyle(document.documentElement).colorScheme"),
+          'dark',
+        );
+        await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))");
+        await click('Mais');
+        await click('Configurações');
+        await click('Aparência');
+        await select('Tema do aplicativo', 'light');
+        await click('Biblioteca');
         await click('Mais');
         await click('Configurações');
         await click('Leitor');
