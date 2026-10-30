@@ -215,9 +215,15 @@ select option {
   flex-wrap: wrap;
   margin: 8px 0 18px;
 }
-.source-language-row input { flex: 1 1 230px; }
-.source-language-row label { margin: 0; }
-.source-language-row select { min-width: 175px; }
+.source-language-row input {
+  flex: 1 1 230px;
+}
+.source-language-row label {
+  margin: 0;
+}
+.source-language-row select {
+  min-width: 175px;
+}
 .source-mode-tabs {
   display: flex;
   gap: 12px;
@@ -755,7 +761,7 @@ section .row button:first-child {
   font-weight: 400;
 }
 .chapters .chapter-open:hover {
-  background: color-mix(in srgb, var(--onSurface) 5%, transparent);
+  background: transparent;
 }
 .chapters small {
   font-size: 12px;
@@ -2085,4 +2091,12 @@ footer {
   gap: 10px;
   color: var(--onSurfaceVariant);
   font-size: 13px;
+}
+
+.chapter-row:hover,
+.chapter-row:focus-within {
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--onSurface) 5%, transparent),
+    color-mix(in srgb, var(--onSurface) 5%, transparent)
+  );
 }

@@ -9,7 +9,7 @@ o painel de filtros oferece ordem inversa e ordenação por nome/número.
 As opções para definir a direção
 da fonte e ler desde o início também ficam nesse painel. O código Android antigo continua acessível no histórico Git; a `main` agora contém somente o projeto Desktop.
 
-Versão atual: **0.3.0 Beta**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.3.0.md).
+Versão atual: **0.4.0 Beta**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.4.0.md).
 
 A interface utiliza uma cópia versionada da paleta original,
 em `vendor/lnreader/src/theme/md3/defaultTheme.ts`, e as fontes

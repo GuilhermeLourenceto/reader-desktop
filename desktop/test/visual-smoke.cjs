@@ -93,17 +93,17 @@ server.listen(0, '127.0.0.1', () => {
   fs.writeFileSync(path.join(directory, 'library.json'), JSON.stringify(state));
   app.on('browser-window-created', (_event, win) => {
     win.webContents.on('did-finish-load', async () => {
-      const execute = code => win.webContents.executeJavaScript(code, true);
-      const wait = async code => {
+      const execute = (code) => win.webContents.executeJavaScript(code, true);
+      const wait = async (code) => {
         for (let i = 0; i < 100; i++) {
           if (await execute(code)) return;
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
         throw new Error(`Layout did not settle: ${code}`);
       };
-      const capture = async name => {
+      const capture = async (name) => {
         await execute('document.fonts.ready.then(() => true)');
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
         const bitmap = await win.webContents.capturePage();
         fs.writeFileSync(
           path.join(__dirname, '../docs/previews', `${name}.png`),
@@ -136,6 +136,37 @@ server.listen(0, '127.0.0.1', () => {
         await execute("document.querySelector('.book').click()");
         await wait("document.querySelector('.novel-hero') !== null");
         await capture('preview-novel');
+        win.webContents.debugger.attach('1.3');
+        const { root } = await win.webContents.debugger.sendCommand(
+          'DOM.getDocument',
+        );
+        const { nodeId } = await win.webContents.debugger.sendCommand(
+          'DOM.querySelector',
+          { nodeId: root.nodeId, selector: '.chapter-row' },
+        );
+        await win.webContents.debugger.sendCommand('CSS.enable');
+        await win.webContents.debugger.sendCommand('CSS.forcePseudoState', {
+          nodeId,
+          forcedPseudoClasses: ['hover'],
+        });
+        assert.notEqual(
+          await execute(
+            "getComputedStyle(document.querySelector('.chapter-row')).backgroundImage",
+          ),
+          'none',
+        );
+        assert.equal(
+          await execute(
+            "getComputedStyle(document.querySelector('.chapter-open')).backgroundColor",
+          ),
+          'rgba(0, 0, 0, 0)',
+        );
+        await capture('preview-chapter-hover');
+        await win.webContents.debugger.sendCommand('CSS.forcePseudoState', {
+          nodeId,
+          forcedPseudoClasses: [],
+        });
+        win.webContents.debugger.detach();
         await execute(
           "Array.from(document.querySelectorAll('button')).find(button => button.getAttribute('aria-label') === 'Continuar leitura').click()",
         );

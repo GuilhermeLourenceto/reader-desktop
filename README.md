@@ -6,9 +6,11 @@ do LNReader Android, com código específico para computador.
 
 ![Tela de detalhes](./desktop/docs/screenshots/desktop-novel.png)
 
+![Biblioteca](./desktop/docs/screenshots/desktop-library.png)
+
 ## Recursos
 
-Biblioteca, pesquisa por fontes, progresso de leitura, capítulos offline,
+Biblioteca, busca global de obras, filtro de fontes por idioma, tela cheia, progresso de leitura, capítulos offline,
 downloads, temas, histórico, marcadores e exportação/restauração de backups.
 O suporte a fontes pode variar conforme autenticação e bloqueios dos sites.
 
@@ -16,9 +18,7 @@ O suporte a fontes pode variar conforme autenticação e bloqueios dos sites.
 
 ## Estado do projeto
 
-**Versão 0.3.0 Beta** — o Desktop é agora o projeto principal na branch `main`.
-A branch [`seguranca-e-estabilidade`](https://github.com/GuilhermeLourenceto/lnreader-desktop/tree/seguranca-e-estabilidade)
-continua disponível como referência de desenvolvimento. [Notas da v0.3.0](desktop/docs/RELEASE_NOTES_0.3.0.md).
+**Versão 0.4.0 Beta** — [Baixar instalador](https://github.com/GuilhermeLourenceto/lnreader-desktop/releases/tag/v0.4.0) · [Novidades](desktop/docs/RELEASE_NOTES_0.4.0.md).
 O projeto ainda é experimental; algumas extensões podem exigir login, apresentar bloqueios ou falhar.
 A compilação do Desktop, seus testes e as jornadas automatizadas são verificados
 pelo [GitHub Actions](https://github.com/GuilhermeLourenceto/lnreader-desktop/actions/workflows/desktop.yml).

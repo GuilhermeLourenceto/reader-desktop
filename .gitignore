@@ -1,0 +1,8 @@
+/node_modules/
+/src/generated/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+/desktop/docs/previews/
+/desktop/build/installer-icon-check.png
