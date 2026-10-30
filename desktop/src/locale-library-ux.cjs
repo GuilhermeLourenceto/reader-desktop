@@ -1,4 +1,7 @@
 module.exports = `
+{count} selecionados|{count} selected|{count} seleccionados|{count} sélectionnés|{count} ausgewählt|{count} selezionati|Выбрано: {count}|{count}件選択中|{count}개 선택됨|已选{count}项
+{v0} de {v1}|{v0} of {v1}|{v0} de {v1}|{v0} sur {v1}|{v0} von {v1}|{v0} di {v1}|{v0} из {v1}|{v0} / {v1}|{v0} / {v1}|{v0} / {v1}
+Capítulo {v0} de {v1}|Chapter {v0} of {v1}|Capítulo {v0} de {v1}|Chapitre {v0} sur {v1}|Kapitel {v0} von {v1}|Capitolo {v0} di {v1}|Глава {v0} из {v1}|第{v0}章 / 全{v1}章|{v0}장 / 총 {v1}장|第{v0}章，共{v1}章
 Categoria da biblioteca|Library category|Categoría de la biblioteca|Catégorie de la bibliothèque|Bibliothekskategorie|Categoria della biblioteca|Категория библиотеки|ライブラリのカテゴリー|서재 카테고리|书库分类
 Ordenar biblioteca|Sort library|Ordenar biblioteca|Trier la bibliothèque|Bibliothek sortieren|Ordina biblioteca|Сортировать библиотеку|ライブラリを並べ替え|서재 정렬|书库排序
 Marcador|Bookmark|Marcador|Signet|Lesezeichen|Segnalibro|Закладка|ブックマーク|북마크|书签
