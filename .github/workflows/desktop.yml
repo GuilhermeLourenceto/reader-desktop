@@ -66,6 +66,34 @@ jobs:
             desktop/release/*.AppImage
             desktop/release/*.deb
 
+  user-journeys:
+    name: Everyday reading scenarios (10 Electron journeys)
+    if: github.ref_name == 'seguranca-e-estabilidade'
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run setup
+      - run: npm run build
+      - name: Test 10 everyday user journeys from real reader issues
+        run: node test/user-journeys.cjs
+        timeout-minutes: 24
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: everyday-user-journeys
+          path: desktop/.tmp/user-journeys-results.json
+
   source-matrix:
     name: Real plugin sources (diagnostic only)
     if: github.ref_name == 'seguranca-e-estabilidade'
