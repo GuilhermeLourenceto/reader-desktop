@@ -14,8 +14,9 @@ const sampleExemptions = {
     '— Toda jornada começa com uma primeira página — disse o viajante.',
     'Ela sorriu e continuou a leitura. Algumas histórias não precisavam de pressa; precisavam apenas de espaço para acontecer.',
   ]),
-  'Settings.jsx': new Set(['LNReader', 'LNReader Desktop']),
-  'renderer.jsx': new Set(['https://…/plugins.json']),
+  'ReaderThemes.jsx': new Set(['Aa']), // Typography specimen, not a phrase
+  'Settings.jsx': new Set(['LNReader', 'LNReader Desktop', 'Desktop ·']),
+  'renderer.jsx': new Set(['https://…/plugins.json', '×', 'A−', 'A+']),
 };
 
 function collectSourceLabels(file) {
