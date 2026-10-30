@@ -4,6 +4,8 @@
   "private": true,
   "description": "LNReader for Windows and Linux",
   "author": "LNReader contributors",
+  "homepage": "https://github.com/GuilhermeLourenceto/lnreader-desktop",
+  "desktopName": "lnreader-desktop",
   "license": "MIT",
   "main": "dist/main.cjs",
   "scripts": {
@@ -15,7 +17,7 @@
     "test:reader": "electron test/reader-rules-smoke.cjs --visual-preview",
     "test": "node --test test/*.test.cjs",
     "dist:win": "npm run build && electron-builder --win nsis",
-    "dist:linux": "npm run build && electron-builder --linux AppImage deb",
+    "dist:linux": "npm run build && electron-builder --linux AppImage deb --publish never",
     "lint": "node scripts/check-code.cjs",
     "format": "prettier --write src/ test/ scripts/ tools/",
     "format:check": "prettier --check src/Icon.jsx src/SourceFilters.jsx src/DesktopErrorBoundary.jsx src/libraryState.js src/sourceRuntime.js",
@@ -74,6 +76,8 @@
       ],
       "category": "Office",
       "icon": "build/icon-256.png",
+      "syncDesktopName": true,
+      "maintainer": "LNReader Desktop <191923327+GuilhermeLourenceto@users.noreply.github.com>",
       "synopsis": "Leitor de novels com fontes e leitura offline"
     }
   }
