@@ -23,6 +23,32 @@ on:
 permissions:
   contents: read
 jobs:
+  desktop-only:
+    name: Standalone Desktop build (no Android files)
+    if: github.ref_name == 'seguranca-e-estabilidade'
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Only desktop/ exists in this checkout. Parent Android sources,
+          # package files, fonts and license are intentionally unavailable.
+          sparse-checkout: desktop
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run setup
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:smoke
+      - run: npm run test:reader
+
   package:
     strategy:
       matrix:
