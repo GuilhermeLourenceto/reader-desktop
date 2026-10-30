@@ -1,0 +1,14 @@
+# Keep checked-out source files consistent on Windows and Linux.
+# Prettier uses LF; Git for Windows may otherwise convert files to CRLF.
+* text=auto eol=lf
+
+# Original assets are binary; never try to normalize or convert their bytes.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.zip binary
