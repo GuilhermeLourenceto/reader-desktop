@@ -52,3 +52,33 @@ test('palette and reader theme options have localized labels for all ten interfa
     assert.notEqual(t(label, {}, 'en'), label, label + ' must translate into English');
   }
 });
+
+test('saved stock category tabs are translated without rewriting names or custom categories', () => {
+  const { categoryDisplayName } = require('../src/libraryCategoryLabels.cjs');
+  const original = [
+    { id: 1, name: 'Padrão', novelIds: [123] },
+    { id: 2, name: 'Localização', novelIds: [] },
+    { id: 3, name: 'Minha categoria', novelIds: [] },
+  ];
+  for (const [language] of languages) {
+    assert.equal(
+      categoryDisplayName(original[0].name, language),
+      t('Padrão', {}, language),
+    );
+    assert.equal(
+      categoryDisplayName(original[1].name, language),
+      t('Localização', {}, language),
+    );
+    assert.equal(categoryDisplayName(original[2].name, language), 'Minha categoria');
+    assert.equal(
+      t('{count} obra(s) selecionada(s)', { count: 3 }, language)
+        .includes('3'),
+      true,
+    );
+    assert.ok(t('Carregando…', {}, language).trim());
+  }
+  assert.equal(categoryDisplayName('Padrão', 'ja'), '標準');
+  assert.equal(categoryDisplayName('Localização', 'ja'), 'ローカライズ');
+  assert.equal(original[0].name, 'Padrão');
+  assert.equal(original[0].novelIds[0], 123);
+});
