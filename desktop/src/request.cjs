@@ -75,17 +75,17 @@ function requestHTTP(
         timeoutMs,
       );
       signal?.addEventListener('abort', abort, { once: true });
-      let redirects = 0;
-      request.on('redirect', (_status, _method, target) => {
+      request.on('redirect', (status, method, target) => {
         if (settled) return;
         try {
-          const redirected = new URL(target, finalUrl);
-          if (++redirects > 20) {
-            finish(new Error('Redirecionamento inválido da fonte.'));
-            return;
-          }
-          finalUrl = validateNetworkUrl(redirected.href, { allowPrivate });
-          request.followRedirect();
+          const redirected = validateNetworkUrl(new URL(target, finalUrl).href, { allowPrivate });
+          // Electron requires followRedirect() synchronously. Instead, abort
+          // and start a new request after validating this hop's DNS answer.
+          const error = new Error('Redirecionamento da fonte.');
+          error.redirectUrl = redirected;
+          error.redirectStatus = status;
+          error.redirectMethod = method;
+          finish(error);
         } catch (error) {
           finish(error);
         }
@@ -220,18 +220,51 @@ class RequestPool {
           const requestSession = this.options.sessionForSource?.(entry.init.sourceId);
           const resolver = this.options.dnsResolver ||
             (requestSession?.resolveHost ? requestSession.resolveHost.bind(requestSession) : null);
-          if (resolver) await validateNetworkDns(entry.url, resolver, {
-            allowPrivate: this.options.allowPrivate,
-          });
-          else if (this.options.requireDnsValidation)
-            throw new Error('Não foi possível validar o DNS da fonte.');
-          if (entry.controller.signal.aborted)
-            throw new Error('Conexão com a fonte cancelada.');
-          return requestHTTP(this.net, entry.url, entry.init, {
-            signal: entry.controller.signal,
-            ...this.options,
-            requestSession,
-          });
+          let url = entry.url;
+          let init = entry.init;
+          for (let hop = 0; hop <= 20; hop++) {
+            if (resolver) await validateNetworkDns(url, resolver, {
+              allowPrivate: this.options.allowPrivate,
+            });
+            else if (this.options.requireDnsValidation)
+              throw new Error('Não foi possível validar o DNS da fonte.');
+            if (entry.controller.signal.aborted)
+              throw new Error('Conexão com a fonte cancelada.');
+            try {
+              return await requestHTTP(this.net, url, init, {
+                signal: entry.controller.signal,
+                ...this.options,
+                requestSession,
+              });
+            } catch (error) {
+              if (!error.redirectUrl) throw error;
+              if (hop === 20) throw new Error('Redirecionamentos demais da fonte.');
+              const target = error.redirectUrl;
+              const original = new URL(url);
+              const next = new URL(target);
+              const headers = { ...(init.headers || {}) };
+              if (original.origin !== next.origin)
+                for (const name of Object.keys(headers))
+                  if (['authorization', 'proxy-authorization', 'cookie'].includes(name.toLowerCase()))
+                    delete headers[name];
+              const method = String(init.method || 'GET').toUpperCase();
+              const switchToGet = error.redirectStatus === 303 ||
+                ([301, 302].includes(error.redirectStatus) && method === 'POST');
+              if (switchToGet) {
+                for (const name of Object.keys(headers))
+                  if (['content-type', 'content-length'].includes(name.toLowerCase()))
+                    delete headers[name];
+              }
+              init = {
+                ...init,
+                headers,
+                method: switchToGet ? 'GET' : method,
+                body: switchToGet ? undefined : init.body,
+              };
+              url = target;
+            }
+          }
+          throw new Error('Redirecionamentos demais da fonte.');
         })
         .then(entry.resolve, entry.reject)
         .finally(() => {
