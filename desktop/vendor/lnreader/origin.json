@@ -1,13 +1,13 @@
 {
   "origin": "LNReader Android files, copied without behavior changes",
   "source": "repository-root (not a build dependency)",
-  "revision": "a06d2cf667a443cf083da3edc8b3db24f532485a",
+  "revision": "de15565f96072657f33af331451f3382a5227b74",
   "paths": [
     "src/plugins",
     "src/utils/compareVersion.ts",
     "src/utils/error.ts",
     "src/utils/constants/readerConstants.ts",
-    "src/theme/md3/defaultTheme.ts",
+    "src/theme/md3",
     "assets/reader/fonts/pt-sans-bold.ttf",
     "assets/reader/fonts/noto-sans.ttf",
     "assets/reader/fonts/pt-serif.ttf",
@@ -18,7 +18,6 @@
     "src/utils/compareVersion.ts": "47b4af2dcc5d77ed9be31183d8f7b537dbf5429c374debdd535e0ec2ce87e775",
     "src/utils/error.ts": "b56a149e34f08e4af185a109976687c85495361a7c563fb89c93f29d7734e64c",
     "src/utils/constants/readerConstants.ts": "b2dcece86abb3850ba4a5749a03544c39831988e29bacb9d078d197bcff8b221",
-    "src/theme/md3/defaultTheme.ts": "36ec51e6614a1ffcd0819d3fac5014aef4d78b6aa060599e3823941b9cf489c9",
     "assets/reader/fonts/pt-sans-bold.ttf": "130561a9534af4d953cf51f3c360820fda2f73024441d6673a7e4fb53204cff3",
     "assets/reader/fonts/noto-sans.ttf": "2ddeaed07f6483f7831b23faa32cf85a04c3406eb4bb2925530894805a05d4fb",
     "assets/reader/fonts/pt-serif.ttf": "6da97ef6f49b174611ecce251814e89c2ca4642fd7aa2e4a68708d0f5afa2e6f",
