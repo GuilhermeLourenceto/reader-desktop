@@ -143,6 +143,24 @@ function parseBackup(
       ids.add(novel.id);
       state.novels.push(novel);
     }
+    // AdmZip lists NovelAndChapters/*.json by ZIP filename, so without an
+    // explicit order a large library can silently reorder after restoration.
+    // This optional field lives in the existing v2 manifest, not a new ZIP
+    // member, keeping original LNReader readers able to ignore the extension.
+    if (version.desktopNovelOrder !== undefined) {
+      const order = version.desktopNovelOrder;
+      if (!Array.isArray(order) || order.length !== state.novels.length)
+        throw new Error('Ordem de obras inválida no backup');
+      const ranks = new Map();
+      for (const id of order) {
+        if (!Number.isSafeInteger(id) || ranks.has(id))
+          throw new Error('Ordem de obras inválida no backup');
+        ranks.set(id, ranks.size);
+      }
+      if (state.novels.some(novel => !ranks.has(novel.id)))
+        throw new Error('Ordem de obras inválida no backup');
+      state.novels.sort((a, b) => ranks.get(a.id) - ranks.get(b.id));
+    }
     state.categories = json(BackupEntryName.CATEGORY, []);
     if (!Array.isArray(state.categories))
       throw new Error('Categorias inválidas');
@@ -219,6 +237,9 @@ function createBackup(state) {
     appVersion: require('../package.json').version,
     formatVersion: 2,
     sections: resolveBackupOptions(),
+    // Backwards-compatible, optional metadata. Preserve exactly the user's
+    // library ordering instead of relying on ZIP directory enumeration.
+    desktopNovelOrder: state.novels.map(novel => novel.id),
   });
   zip.addFile(`${BackupEntryName.NOVEL_AND_CHAPTERS}/`, Buffer.alloc(0));
   for (const novel of state.novels)
