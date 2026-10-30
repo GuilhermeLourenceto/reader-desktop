@@ -237,7 +237,8 @@ export default function Settings({
           <div className="settings-group">{quick}</div>
           <p className="settings-note">
             O modo anônimo preserva seu histórico anterior. Capítulos abertos
-            ainda podem ser salvos para leitura offline.
+            ainda podem ser salvos para leitura offline. Pressione F11 para
+            alternar a tela cheia em qualquer aba do aplicativo.
           </p>
         </>
       )}
@@ -362,8 +363,8 @@ export default function Settings({
               />
               <Slider
                 title="Avanço por página (rolagem)"
-                value={settings.desktopPageStep || 85}
-                min={30}
+                value={settings.desktopPageStep ?? 50}
+                min={0}
                 max={100}
                 step={5}
                 suffix=" %"
