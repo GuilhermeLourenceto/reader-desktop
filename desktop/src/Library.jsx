@@ -18,10 +18,15 @@ export default function Library({
   const [query, setQuery] = useState(''),
     [category, setCategory] = useState(''),
     [filter, setFilter] = useState('all'),
+    [sort, setSort] = useState('original'),
     [filters, setFilters] = useState(false),
     [selected, setSelected] = useState([]),
     [context, setContext] = useState(null);
   const menu = useRef(null);
+  const filterPanel = useRef(null);
+  const filterButton = useRef(null);
+  const searchInput = useRef(null);
+  const lastSelectedId = useRef(null);
   const books = useMemo(
     () => novels.filter((book) => book.inLibrary),
     [novels],
@@ -42,19 +47,37 @@ export default function Library({
     const term = query.toLowerCase();
     const categoryIds = categorySets.get(category);
     const downloadedOnly = !!settings.desktopDownloadedOnly || filter === 'downloaded';
-    return books.filter((book) =>
-      (!downloadedOnly || book.chapters.some((chapter) => chapter.isDownloaded)) &&
+    const matches = books.filter((book) =>
+      (!downloadedOnly || book.chapters?.some((chapter) => chapter.isDownloaded)) &&
       (filter !== 'unread' ||
-        book.chapters.some((chapter) => chapter.unread !== false)) &&
-      book.name.toLowerCase().includes(term) &&
+        book.chapters?.some((chapter) => chapter.unread !== false)) &&
+      (book.name.toLowerCase().includes(term) ||
+        (typeof book.author === 'string' ? book.author.toLowerCase() : '').includes(term)) &&
       (!category || categoryIds?.has(book.id)),
     );
-  }, [books, category, categorySets, filter, query, settings.desktopDownloadedOnly]);
+    if (sort === 'original') return matches;
+    const ordered = [...matches];
+    if (sort === 'name-asc') ordered.sort((a, b) => a.name.localeCompare(b.name));
+    if (sort === 'name-desc') ordered.sort((a, b) => b.name.localeCompare(a.name));
+    if (sort === 'chapters-desc') ordered.sort((a, b) => (b.chapters?.length || 0) - (a.chapters?.length || 0));
+    return ordered;
+  }, [books, category, categorySets, filter, query, settings.desktopDownloadedOnly, sort]);
   const scrollToStart = () => scrollContainerRef?.current?.scrollTo({ top: 0 });
-  const toggle = (id) =>
-    setSelected((ids) =>
-      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
-    );
+  const toggle = (id, event) => {
+    const startIndex = visible.findIndex((book) => book.id === lastSelectedId.current);
+    const endIndex = visible.findIndex((book) => book.id === id);
+    if (event?.shiftKey && startIndex >= 0 && endIndex >= 0) {
+      const begin = Math.min(startIndex, endIndex);
+      const end = Math.max(startIndex, endIndex);
+      const range = visible.slice(begin, end + 1).map((book) => book.id);
+      setSelected((ids) => [...new Set([...ids, ...range])]);
+    } else {
+      setSelected((ids) =>
+        ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
+      );
+    }
+    lastSelectedId.current = id;
+  };
   const act = (action, ids) => {
     setContext(null);
     onAction(action, ids);
@@ -86,6 +109,41 @@ export default function Library({
     },
     [books],
   );
+  useEffect(() => {
+    setSelected([]);
+    lastSelectedId.current = null;
+  }, [query, category, filter, sort, settings.desktopDownloadedOnly]);
+  useEffect(() => {
+    if (!filters) return;
+    const onOutsideClick = (event) => {
+      if (!filterPanel.current?.contains(event.target) &&
+          !filterButton.current?.contains(event.target)) setFilters(false);
+    };
+    document.addEventListener('pointerdown', onOutsideClick);
+    return () => document.removeEventListener('pointerdown', onOutsideClick);
+  }, [filters]);
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      const target = event.target;
+      const isEditable = target?.closest?.('input,textarea,select,[contenteditable="true"]');
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f' && !isEditable) {
+        event.preventDefault();
+        searchInput.current?.focus();
+        searchInput.current?.select();
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a' && !isEditable) {
+        event.preventDefault();
+        if (!busy) setSelected(visible.map((book) => book.id));
+      } else if (event.key === 'Escape' && !context) {
+        if (filters) setFilters(false);
+        else if (selected.length) {
+          setSelected([]);
+          lastSelectedId.current = null;
+        }
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [visible, busy, selected.length, context, filters]);
   return (
     <>
       <header className="library-toolbar">
@@ -93,6 +151,7 @@ export default function Library({
         <div className="searchbar">
           <Icon name="search" />
           <input
+            ref={searchInput}
             placeholder="Pesquisar na biblioteca"
             aria-label="Pesquisar na biblioteca"
             value={query}
@@ -102,6 +161,7 @@ export default function Library({
             }}
           />
           <button
+            ref={filterButton}
             className="icon-button"
             aria-label="Filtrar biblioteca"
             aria-expanded={filters}
@@ -112,84 +172,124 @@ export default function Library({
         </div>
       </header>
       {filters && (
-        <div className="filter-panel">
-          <label htmlFor="library-filter">Mostrar</label>
-          <select
-            id="library-filter"
-            value={filter}
-            onChange={(event) => {
-              setFilter(event.target.value);
-              scrollToStart();
-            }}
-          >
-            <option value="all">Todas as obras</option>
-            <option value="unread">Com capítulos não lidos</option>
-            <option value="downloaded">Com capítulos baixados</option>
-          </select>
+        <div ref={filterPanel} className="filter-panel" aria-label="Filtros e ordenação da biblioteca">
+          <div className="library-filter-field">
+            <label htmlFor="library-category">Categoria</label>
+            <select
+              id="library-category"
+              aria-label="Categoria da biblioteca"
+              value={category}
+              onChange={(event) => {
+                setCategory(event.target.value);
+                scrollToStart();
+              }}
+            >
+              <option value="">{translateMessage('Todas')} ({books.length})</option>
+              {categories.map((item) => (
+                <option key={item.id} value={String(item.id)}>
+                  {categoryDisplayName(item.name)} ({categoryCounts.get(String(item.id)) || 0})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="library-filter-field">
+            <span className="library-filter-label">Estado</span>
+            <div className="library-status-options" role="group" aria-label="Estado das obras">
+              {[
+                ['all', 'Todas'],
+                ['unread', 'Não lidas'],
+                ['downloaded', 'Baixadas'],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={filter === value ? 'selected' : ''}
+                  aria-pressed={filter === value}
+                  onClick={() => {
+                    setFilter(value);
+                    scrollToStart();
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="library-filter-field">
+            <label htmlFor="library-sort">Ordenar por</label>
+            <select
+              id="library-sort"
+              aria-label="Ordenar biblioteca"
+              value={sort}
+              onChange={(event) => {
+                setSort(event.target.value);
+                scrollToStart();
+              }}
+            >
+              <option value="original">Ordem original</option>
+              <option value="name-asc">Nome (A–Z)</option>
+              <option value="name-desc">Nome (Z–A)</option>
+              <option value="chapters-desc">Mais capítulos</option>
+            </select>
+          </div>
+          {(category || filter !== 'all' || sort !== 'original') && (
+            <button
+              className="library-clear-filters"
+              type="button"
+              onClick={() => {
+                setCategory('');
+                setFilter('all');
+                setSort('original');
+                scrollToStart();
+              }}
+            >
+              Limpar filtros
+            </button>
+          )}
         </div>
       )}
-      <div className="category-tabs" role="tablist" aria-label="Categorias">
-        <button
-          role="tab"
-          aria-selected={!category}
-          className={!category ? 'selected' : ''}
-          onClick={() => {
-            setCategory('');
-            scrollToStart();
-          }}
-        >
-          Todas <span>{books.length}</span>
-        </button>
-        {categories.map((item) => (
-          <button
-            key={item.id}
-            role="tab"
-            aria-selected={category === String(item.id)}
-            className={category === String(item.id) ? 'selected' : ''}
-            onClick={() => {
-              setCategory(String(item.id));
-              scrollToStart();
-            }}
-          >
-            {categoryDisplayName(item.name)}{' '}
-            <span>
-              {categoryCounts.get(String(item.id)) || 0}
-            </span>
-          </button>
-        ))}
-      </div>
-      <div className="library-selection">
-        <span>
-          {selected.length
-            ? translateMessage('{count} obra(s) selecionada(s)', {
-                count: selected.length,
-              })
-            : 'Selecione pelas caixas nas capas ou use o botão direito para ver ações.'}
-        </span>
-        {selected.length > 0 && (
-          <>
-            <button onClick={() => setSelected(visible.map((book) => book.id))}>
-              Selecionar visíveis
+      {books.length > 0 && (
+        <div className="library-selection" data-selected-count={selected.length}>
+          <span>
+            {selected.length
+              ? translateMessage('{count} obra(s) selecionada(s)', {
+                  count: selected.length,
+                })
+              : translateMessage('{count} obra(s)', { count: visible.length })}
+          </span>
+          {visible.length > 0 && (
+            <button
+              disabled={busy}
+              onClick={() => setSelected(visible.map((book) => book.id))}
+            >
+              Selecionar todos
             </button>
-            <button disabled={busy} onClick={() => act('download', selected)}>
-              <Icon name="download" />
-              Baixar selecionadas
-            </button>
-            <button disabled={busy} onClick={() => act('reset', selected)}>
-              Resetar leitura
-            </button>
-            <button disabled={busy} onClick={() => act('remove', selected)}>
-              <Icon name="trash" />
-              Remover selecionadas
-            </button>
-            <button onClick={() => setSelected([])}>Cancelar seleção</button>
-          </>
-        )}
-      </div>
+          )}
+          {selected.length > 0 && (
+            <>
+              <button disabled={busy} onClick={() => act('download', selected)}>
+                <Icon name="download" />
+                Baixar selecionadas
+              </button>
+              <button disabled={busy} onClick={() => act('reset', selected)}>
+                Resetar leitura
+              </button>
+              <button disabled={busy} onClick={() => act('remove', selected)}>
+                <Icon name="trash" />
+                Remover selecionadas
+              </button>
+              <button onClick={() => {
+                setSelected([]);
+                lastSelectedId.current = null;
+              }}>Cancelar seleção</button>
+            </>
+          )}
+        </div>
+      )}
       <VirtualBookGrid
         items={visible}
         scrollContainerRef={scrollContainerRef}
-        key={[query, category, filter, !!settings.desktopDownloadedOnly].join(':')}
+        key={[query, category, filter, sort, !!settings.desktopDownloadedOnly].join(':')}
         settings={settings}
         cover={cover}
         Icon={Icon}
@@ -197,6 +297,7 @@ export default function Library({
         onOpen={onOpen}
         selected={selected}
         onToggle={toggle}
+        hideSelectionCheckbox
         onContext={(book, x, y) =>
           setContext({
             book,
@@ -244,7 +345,7 @@ export default function Library({
               setContext(null);
             }}
           >
-            Selecionar obra
+            {selected.includes(context.book.id) ? 'Desmarcar obra' : 'Selecionar obra'}
           </button>
           <button
             role="menuitem"

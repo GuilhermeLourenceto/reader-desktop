@@ -26,6 +26,7 @@ const state = {
       progress: (i + j) % 4 === 0 ? 100 : 0,
       bookmark: j === 1,
       unread: (i + j) % 4 !== 0,
+      isDownloaded: i % 5 === 0 && j === 0,
     })),
   })),
   categories: [
@@ -90,6 +91,30 @@ app.on('browser-window-created', (_event, win) => {
       await wait("document.querySelectorAll('.book').length===1 && document.querySelector('.book strong').textContent.includes('10000')", 'filtered last book');
       await js("(()=>{const input=document.querySelector('input[aria-label=\"Pesquisar na biblioteca\"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'');input.dispatchEvent(new Event('input',{bubbles:true}));return true})()");
       await wait("document.querySelector('.grid[data-virtualized=\"true\"]') && document.querySelectorAll('.book').length>1", 'restore virtualized grid');
+      // Exercise combined filters and order on a huge library without
+      // mounting thousands of cards. Category 1 is every fourth novel;
+      // downloaded novels are every fifth => precisely 500 matches.
+      await nav('Filtrar biblioteca');
+      await js("(()=>{const field=document.querySelector('#library-category');field.value='1';field.dispatchEvent(new Event('change',{bubbles:true}));return true})()");
+      await wait("document.querySelector('.library-selection').textContent.includes('2500')", 'category covers 2500 books');
+      await js("(()=>{const button=[...document.querySelectorAll('.library-status-options button')].find(node=>node.textContent.trim()==='Baixadas');button.click();return true})()");
+      await wait("document.querySelector('.library-selection').textContent.includes('500')", 'combined category+downloads covers 500 books');
+      await js("(()=>{const field=document.querySelector('#library-sort');field.value='name-desc';field.dispatchEvent(new Event('change',{bubbles:true}));return true})()");
+      await wait("document.querySelector('.book strong')?.textContent.includes('09981')", 'descending sort on 500 filtered books');
+      await js("(()=>{const button=[...document.querySelectorAll('.library-selection button')].find(node=>node.textContent.trim()==='Selecionar todos');button.click();return true})()");
+      await wait("document.querySelector('.library-selection').dataset.selectedCount==='500'", 'select all 500 filtered books');
+      assert.ok(await js("document.querySelectorAll('.book-card').length<100"), 'virtual grid bounded after filtering');
+      await js("(()=>{const button=[...document.querySelectorAll('.library-selection button')].find(node=>node.textContent.trim()==='Cancelar seleção');button.click();return true})()");
+      await js("(()=>{const button=[...document.querySelector('.filter-panel').querySelectorAll('button')].find(node=>node.textContent.trim()==='Limpar filtros');button.click();return true})()");
+      await wait("document.querySelector('.library-selection').textContent.includes('10000')", 'clear filters restores full library');
+      await nav('Filtrar biblioteca');
+      await wait("document.querySelector('.filter-panel')===null", 'filter panel closed');
+      // Select all matching books, not just the few cards currently mounted.
+      await js("(()=>{const button=[...document.querySelectorAll('.library-selection button')].find(node=>node.textContent.trim()==='Selecionar todos');if(!button)throw Error('Select all missing');button.click();return true})()");
+      await wait("document.querySelector('.library-selection').dataset.selectedCount==='10000'", 'select all 10k books');
+      assert.equal(await js("document.querySelectorAll('.book-card.is-selected').length===document.querySelectorAll('.book-card').length"), true);
+      await js("(()=>{const button=[...document.querySelectorAll('.library-selection button')].find(node=>node.textContent.trim()==='Cancelar seleção');if(!button)throw Error('Cancel selection missing');button.click();return true})()");
+      await wait("document.querySelectorAll('.book-card.is-selected').length===0", 'clear 10k selection');
       const persisted = await js('window.desktop.load({metadataOnly:true})');
       assert.equal(persisted.novels.length, bookCount);
       assert.equal(persisted.novels[0].chapters.length, chapterCount);

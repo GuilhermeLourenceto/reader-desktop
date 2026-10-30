@@ -371,7 +371,7 @@ export default function NovelDetails({
               role="region"
               aria-label="Ações dos capítulos selecionados"
             >
-              <strong>{selected.length} selecionados</strong>
+              <strong>{translateMessage('{count} selecionados', { count: selected.length })}</strong>
               <button
                 onClick={() =>
                   setSelected(chapters.map((chapter) => chapter.id))
@@ -474,7 +474,7 @@ export default function NovelDetails({
                       className="chapter-ordinal"
                       title="Posição na sequência completa de capítulos"
                     >
-                      {ordinals.get(chapter.id)} de {novel.chapters.length}
+                      {translateMessage('{v0} de {v1}', { v0: ordinals.get(chapter.id), v1: novel.chapters.length })}
                     </span>
                     {' · '}
                     {chapterPercent(chapter) > 0

@@ -1,5 +1,16 @@
 # Histórico de versões
 
+## 0.4.5 Beta — biblioteca desktop, filtros, seleção e temas
+
+- Categorias no painel de filtro; removidas as abas redundantes da biblioteca.
+- Busca por autor/título, filtros de estado, ordenação e limpeza de filtros.
+- Seleção de livros com botão direito, Ctrl/Cmd+clique, Shift+clique, Ctrl/Cmd+A, Esc e Ctrl/Cmd+F para pesquisa, incluindo obras fora da janela virtualizada.
+- Menus e filtros seguem os dez idiomas, paletas e temas; correções em contadores traduzidos.
+- Regressões automatizadas em Windows/Linux para 10 mil livros, filtros combinados, tradução, nove paletas e layout em tamanhos diferentes, além de persistência das configurações.
+
+Consulte [as notas de v0.4.5](docs/RELEASE_NOTES_0.4.5.md). Versão beta; a 0.4.4 permanece disponível.
+
+
 ## 0.4.4 Beta — Biblioteca leve no Windows e Linux
 
 - Virtualização dos cartões da biblioteca para coleções com mais de 100 obras: mantém no DOM apenas a área visível e uma margem de três linhas.

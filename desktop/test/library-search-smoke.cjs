@@ -190,28 +190,59 @@ server.listen(0, '127.0.0.1', () => {
         await wait(
           "document.querySelectorAll('.book').length===2&&!document.querySelector('.busy')",
         );
-        // Category visibility must not require an app restart, as reported
-        // for category-based library additions in LNReader #1963.
-        await execute(
-          "Array.from(document.querySelectorAll('[role=tab]')).find(button=>button.textContent.includes('Lendo')).click()",
+        // Categories remain functional in the filter menu; redundant tabs are gone.
+        assert.equal(
+          await execute("document.querySelector('.category-tabs')===null && document.querySelectorAll('.book-select').length===0"),
+          true,
         );
+        await click('Filtrar biblioteca');
+        await select('Categoria da biblioteca', '1');
         await wait("document.querySelectorAll('.book').length===1");
         assert.equal(
           await execute("document.querySelector('.book').textContent.includes('Obra A')"),
           true,
         );
-        await execute(
-          "Array.from(document.querySelectorAll('[role=tab]')).find(button=>button.textContent.includes('Depois')).click()",
-        );
+        await select('Categoria da biblioteca', '2');
         await wait("document.querySelectorAll('.book').length===1");
         assert.equal(
           await execute("document.querySelector('.book').textContent.includes('Obra B')"),
           true,
         );
-        await execute(
-          "Array.from(document.querySelectorAll('[role=tab]')).find(button=>button.textContent.includes('Todas')).click()",
-        );
+        await select('Categoria da biblioteca', '');
         await wait("document.querySelectorAll('.book').length===2");
+        await click('Baixadas');
+        await wait("document.querySelectorAll('.book').length===1");
+        await click('Todas');
+        await wait("document.querySelectorAll('.book').length===2");
+        await select('Ordenar biblioteca', 'name-desc');
+        await wait("document.querySelector('.book strong').textContent.includes('Obra B')");
+        await select('Ordenar biblioteca', 'original');
+        await wait("document.querySelector('.book strong').textContent.includes('Obra A')");
+        // Layout regression: minimum supported window width, intermediate and wide.
+        // No horizontal overflow, controls stacked or side-by-side without overlap.
+        for (const [width, height] of [[800, 650], [1024, 768], [1440, 900]]) {
+          win.setSize(width, height);
+          await new Promise(resolve => setTimeout(resolve, 170));
+          const layout = await execute(`(()=>{const nodes=[...document.querySelectorAll('.library-filter-field')],r=nodes.map(e=>e.getBoundingClientRect()),panel=document.querySelector('.filter-panel').getBoundingClientRect();return {overflow:document.documentElement.scrollWidth-innerWidth,inside:r.every(x=>x.left>=-1&&x.right<=innerWidth+1),overlap:r.some((a,i)=>r.some((b,j)=>j>i && Math.min(a.right,b.right)-Math.max(a.left,b.left)>8 && Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>8)),panelRight:panel.right,viewport:innerWidth}})()`);
+          assert.ok(layout.overflow <= 1, 'horizontal overflow at ' + width + 'px: ' + JSON.stringify(layout));
+          assert.ok(layout.inside && !layout.overlap, 'filter field clipped/overlapping at ' + width + 'px: ' + JSON.stringify(layout));
+          assert.ok(layout.panelRight <= layout.viewport + 1, 'filter panel beyond window at ' + width + 'px');
+        }
+        win.setSize(1280, 850);
+        // Changing filters must not leave invisible books selected for bulk actions.
+        await click('Filtrar biblioteca');
+        await click('Selecionar todos');
+        await wait("document.querySelector('.library-selection').dataset.selectedCount==='2'");
+        await click('Filtrar biblioteca');
+        await select('Categoria da biblioteca', '1');
+        await wait("document.querySelector('.library-selection').dataset.selectedCount==='0'");
+        await select('Categoria da biblioteca', '');
+        await wait("document.querySelectorAll('.book').length===2");
+        // Ctrl+F focuses search rather than selecting/opening a novel.
+        await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'f',ctrlKey:true,bubbles:true}))");
+        assert.equal(await execute("document.activeElement.getAttribute('aria-label')"), 'Pesquisar na biblioteca');
+        await execute("document.activeElement.blur()");
+        await click('Filtrar biblioteca');
         await click('Histórico');
         assert.equal(
           await execute(
@@ -251,6 +282,55 @@ server.listen(0, '127.0.0.1', () => {
         await execute(
           "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))",
         );
+        // The context menu must follow a live theme change, not retain light colors.
+        await click('Mais');
+        await click('Configurações');
+        await click('Aparência');
+        await select('Tema do aplicativo', 'dark');
+        await click('Biblioteca');
+        await context();
+        assert.notEqual(
+          await execute("getComputedStyle(document.querySelector('[role=menu]')).backgroundColor"),
+          'rgb(231, 232, 241)',
+        );
+        assert.equal(
+          await execute("getComputedStyle(document.documentElement).colorScheme"),
+          'dark',
+        );
+        await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))");
+        await click('Mais');
+        await click('Configurações');
+        await click('Aparência');
+        // Exercise each of the nine palettes. The CSS variables should
+        // update immediately and the radio-like swatch state should follow.
+        const paletteColors = [];
+        for (let i = 0; i < 9; i++) {
+          await execute(`document.querySelectorAll('.palette-swatch')[${i}].click()`);
+          await wait(`document.querySelectorAll('.palette-swatch')[${i}].getAttribute('aria-pressed')==='true'`);
+          paletteColors.push(await execute("getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()"));
+        }
+        assert.ok(new Set(paletteColors).size >= 6, 'palette colors did not respond to settings');
+        // A filter, a card selection outline and the context menu use
+        // the SAME palette-driven values as the rest of the application.
+        await click('Biblioteca');
+        await click('Filtrar biblioteca');
+        assert.equal(
+          await execute("(()=>{const probe=document.createElement('span');probe.style.background='var(--surfaceContainer)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('.filter-panel')).backgroundColor===expected})()"),
+          true,
+        );
+        await click('Filtrar biblioteca');
+        await context();
+        assert.equal(
+          await execute("(()=>{const probe=document.createElement('span');probe.style.background='var(--surfaceContainerHigh)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('[role=menu]')).backgroundColor===expected})()"),
+          true,
+        );
+        await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))");
+        await click('Mais');
+        await click('Configurações');
+        await click('Aparência');
+        await select('Tema do aplicativo', 'light');
+        await execute("document.querySelectorAll('.palette-swatch')[0].click()");
+        await click('Biblioteca');
         await click('Mais');
         await click('Configurações');
         await click('Leitor');
@@ -300,9 +380,27 @@ server.listen(0, '127.0.0.1', () => {
         let saved = await execute('window.desktop.load()');
         assert.equal(saved.novels[0].chapters[0].isDownloaded, true);
         assert.equal(saved.novels[0].chapters[0].bookmark, true);
-        await execute(
-          "document.querySelectorAll('.book-select').forEach(input=>input.click())",
-        );
+        // Standard desktop selection also works with Ctrl and Escape.
+        await execute("document.querySelector('.book').dispatchEvent(new MouseEvent('click',{bubbles:true,ctrlKey:true}))");
+        await wait("document.querySelectorAll('.book-card.is-selected').length===1");
+        await execute("document.querySelectorAll('.book')[1].dispatchEvent(new MouseEvent('click',{bubbles:true,shiftKey:true}))");
+        await wait("document.querySelectorAll('.book-card.is-selected').length===2");
+        await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
+        await wait("document.querySelectorAll('.book-card.is-selected').length===0");
+        await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'a',ctrlKey:true,bubbles:true}))");
+        await wait("document.querySelectorAll('.book-card.is-selected').length===2");
+        await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
+        await wait("document.querySelectorAll('.book-card.is-selected').length===0");
+        // Right-click selection must work with no checkbox overlay.
+        assert.equal(await execute("document.querySelectorAll('.book-select').length"), 0);
+        await context();
+        await click('Selecionar obra');
+        await wait("document.querySelectorAll('.book-card.is-selected').length===1");
+        await context();
+        await click('Desmarcar obra');
+        await wait("document.querySelectorAll('.book-card.is-selected').length===0");
+        await click('Selecionar todos');
+        await wait("document.querySelectorAll('.book-card.is-selected').length===2");
         await click('Baixar selecionadas');
         await wait(
           "window.desktop.load().then(state=>state.novels[1].chapters[0].isDownloaded===true&&!document.querySelector('.busy'))",
@@ -313,9 +411,8 @@ server.listen(0, '127.0.0.1', () => {
           ),
           true,
         );
-        await execute(
-          "document.querySelectorAll('.book-select').forEach(input=>input.click())",
-        );
+        await click('Selecionar todos');
+        await wait("document.querySelectorAll('.book-card.is-selected').length===2");
         await click('Remover selecionadas');
         await wait("document.querySelectorAll('.book').length===0");
         assert.equal(
