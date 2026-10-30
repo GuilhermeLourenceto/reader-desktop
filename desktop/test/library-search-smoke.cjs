@@ -310,6 +310,12 @@ server.listen(0, '127.0.0.1', () => {
         // Standard desktop selection also works with Ctrl and Escape.
         await execute("document.querySelector('.book').dispatchEvent(new MouseEvent('click',{bubbles:true,ctrlKey:true}))");
         await wait("document.querySelectorAll('.book-card.is-selected').length===1");
+        await execute("document.querySelectorAll('.book')[1].dispatchEvent(new MouseEvent('click',{bubbles:true,shiftKey:true}))");
+        await wait("document.querySelectorAll('.book-card.is-selected').length===2");
+        await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
+        await wait("document.querySelectorAll('.book-card.is-selected').length===0");
+        await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'a',ctrlKey:true,bubbles:true}))");
+        await wait("document.querySelectorAll('.book-card.is-selected').length===2");
         await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
         await wait("document.querySelectorAll('.book-card.is-selected').length===0");
         // Right-click selection must work with no checkbox overlay.
