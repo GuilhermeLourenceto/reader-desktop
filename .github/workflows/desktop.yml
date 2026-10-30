@@ -453,3 +453,52 @@ jobs:
             --prerelease
           gh release view v0.4.4 --repo "$GITHUB_REPOSITORY" --json tagName,targetCommitish,assets \
             --jq '{tag: .tagName, target: .targetCommitish, assets: [.assets[].name]}'
+
+  publish-v045:
+    name: Publish LNReader Desktop v0.4.5 Beta (Windows + Linux)
+    if: "github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'release: v0.4.5')"
+    needs: [quality, desktop-only, package, user-journeys, source-matrix]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: lnreader-desktop-Windows
+          path: release-artifacts/windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: lnreader-desktop-Linux
+          path: release-artifacts/linux
+      - name: Publish only the fully tested matching version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./desktop/package.json').version")" = "0.4.5"
+          test -s desktop/docs/RELEASE_NOTES_0.4.5.md
+          if gh release view v0.4.5 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "v0.4.5 already published; refusing to replace it" >&2
+            exit 1
+          fi
+          mapfile -t installers < <(find release-artifacts/windows -type f -name '*.exe')
+          mapfile -t appimages < <(find release-artifacts/linux -type f -name '*.AppImage')
+          mapfile -t debs < <(find release-artifacts/linux -type f -name '*.deb')
+          test "${#installers[@]}" -eq 1
+          test "${#appimages[@]}" -eq 1
+          test "${#debs[@]}" -eq 1
+          mkdir -p publish-files
+          cp -- "${installers[0]}" publish-files/LNReader.Desktop.Setup.0.4.5.exe
+          cp -- "${appimages[0]}" publish-files/LNReader.Desktop.0.4.5.AppImage
+          cp -- "${debs[0]}" publish-files/LNReader.Desktop.0.4.5.amd64.deb
+          for asset in publish-files/*; do test -s "$asset"; done
+          sha256sum publish-files/*
+          gh release create v0.4.5 publish-files/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "LNReader Desktop 0.4.5 Beta (Windows + Linux)" \
+            --notes-file desktop/docs/RELEASE_NOTES_0.4.5.md \
+            --prerelease
+          gh release view v0.4.5 --repo "$GITHUB_REPOSITORY" --json tagName,targetCommitish,assets \
+            --jq '{tag: .tagName, target: .targetCommitish, assets: [.assets[].name]}'
