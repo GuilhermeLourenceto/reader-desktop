@@ -108,18 +108,6 @@ server.listen(0, '127.0.0.1', () => {
     ).toString('base64');
   fs.writeFileSync(path.join(directory, 'library.json'), JSON.stringify(state));
   app.on('browser-window-created', (_event, win) => {
-    // Investigate whether a fixture source/repository causes unexpected
-    // renderer navigation or process termination during startup.
-    win.webContents.on('did-navigate', (_event, url) =>
-      console.log('STABILITY_NAVIGATE', new URL(url).protocol, url.startsWith('lnreader://app/')),
-    );
-    win.webContents.on('render-process-gone', (_event, details) =>
-      console.log('STABILITY_RENDER_GONE', details.reason),
-    );
-    win.webContents.on('did-fail-load', (_event, code, message, url) =>
-      console.log('STABILITY_LOAD_FAILED', code, message, url?.startsWith('lnreader://app/')),
-    );
-    win.on('closed', () => console.log('STABILITY_WINDOW_CLOSED'));
     win.webContents.setBackgroundThrottling(false);
     win.webContents.once('did-finish-load', async () => {
       const execute = code => win.webContents.executeJavaScript(code, true);
@@ -205,8 +193,10 @@ server.listen(0, '127.0.0.1', () => {
           0,
         );
         await click('Fontes');
+        // The login feature added an "Entrar" button between "Abrir" and
+        // "Desinstalar". Select by the visible action, never by index.
         await execute(
-          "Array.from(document.querySelectorAll('.source')).find(row=>row.querySelector('strong').textContent==='A').querySelectorAll('button')[1].click()",
+          "(()=>{const row=Array.from(document.querySelectorAll('.source')).find(row=>row.querySelector('strong')?.textContent==='A');const button=Array.from(row?.querySelectorAll('button')||[]).find(item=>item.textContent.trim()==='Desinstalar');if(!button)throw new Error('Botão Desinstalar ausente');button.click();})()",
         );
         await wait(
           "window.desktop.load().then(state=>!state.plugins.some(plugin=>plugin.id==='a'))",
@@ -238,24 +228,8 @@ server.listen(0, '127.0.0.1', () => {
         win.close();
       } catch (error) {
         console.error(error);
-        try {
-          console.error('STABILITY_UI_DIAGNOSTIC', JSON.stringify({
-            url: win.webContents.getURL(),
-            state: await execute(`({
-              href: location.href,
-              title: document.title,
-              ready: document.readyState,
-              bookCount: document.querySelectorAll('.book').length,
-              busy: document.querySelector('.busy')?.textContent?.slice(0, 200),
-              navButtons: [...document.querySelectorAll('nav button')].map(b => b.textContent),
-              text: document.body.innerText.slice(-500)
-            })`),
-          }));
-        } catch (diagnosticError) {
-          console.error('STABILITY_UI_DIAGNOSTIC_FAILED', diagnosticError.message);
-        }
         clearTimeout(timeout);
-        if (!win.isDestroyed()) win.destroy();
+        win.destroy();
         server.close();
         app.exit(1);
       }
