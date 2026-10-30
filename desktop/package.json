@@ -72,7 +72,9 @@
         "AppImage",
         "deb"
       ],
-      "category": "Office"
+      "category": "Office",
+      "icon": "build/icon-256.png",
+      "synopsis": "Leitor de novels com fontes e leitura offline"
     }
   }
 }
