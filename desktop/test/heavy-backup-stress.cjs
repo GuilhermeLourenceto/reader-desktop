@@ -32,10 +32,14 @@ const backupJob = input => new Promise((resolve, reject) => {
 });
 const { DiskFiles, readState, writeState, validateState } = require('../src/storage.cjs');
 
-const profile = process.argv.includes('--profile=extreme') ? 'extreme' : 'large';
+const profile = process.argv.find(arg => arg.startsWith('--profile='))?.slice(10) || 'large';
+if (!['large', 'extreme', 'near-limit'].includes(profile))
+  throw new Error('Unknown stress profile: ' + profile);
 const config = profile === 'extreme'
   ? { books: 18000, chaptersPerBook: 26, firstBookChapters: 5200, largeFiles: 80, smallFiles: 384 }
-  : { books: 10000, chaptersPerBook: 20, firstBookChapters: 3200, largeFiles: 32, smallFiles: 192 };
+  : profile === 'near-limit'
+    ? { books: 6000, chaptersPerBook: 15, firstBookChapters: 3000, largeFiles: 118, smallFiles: 256 }
+    : { books: 10000, chaptersPerBook: 20, firstBookChapters: 3200, largeFiles: 32, smallFiles: 192 };
 const MiB = 1024 * 1024;
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'lnreader-giant-stress-'));
 const report = { profile, config, platform: process.platform, node: process.version, timings: {}, checks: [] };
@@ -134,7 +138,7 @@ function assertIntegrity(state, expected, contentStore) {
   });
   const unpacked = Object.values(state.files).reduce((n, value) => n + blobStore.size(value), 0);
   const stateBytes = Buffer.byteLength(JSON.stringify({ ...state, files: {} }));
-  assert.ok(unpacked + stateBytes < 490 * MiB, 'Synthetic fixture exceeds safe 512MiB format cap');
+  assert.ok(unpacked + stateBytes < 506 * MiB, 'Synthetic fixture exceeds the 512MiB format budget');
   report.uncompressedContentMiB = +(unpacked / MiB).toFixed(2);
   report.libraryJSONMiB = +(stateBytes / MiB).toFixed(2);
   report.fileCount = hashes.size;
