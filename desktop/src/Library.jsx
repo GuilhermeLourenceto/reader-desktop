@@ -151,7 +151,7 @@ export default function Library({
         </div>
       )}
       {books.length > 0 && (
-        <div className="library-selection">
+        <div className="library-selection" data-selected-count={selected.length}>
           <span>
             {selected.length
               ? translateMessage('{count} obra(s) selecionada(s)', {
