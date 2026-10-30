@@ -222,7 +222,8 @@ export default function Settings({
         </>
       )}{' '}
       {page === 'settings' && (
-        <div className="settings-group">
+        <>
+          <div className="settings-group">
           {entries.map(([key, title, description]) =>
             row(key, title, description),
           )}
@@ -259,6 +260,7 @@ export default function Settings({
             </span>
           </button>
         </div>
+        </>
       )}
       {page === 'general' && (
         <>
