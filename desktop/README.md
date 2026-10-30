@@ -102,6 +102,7 @@ Android, e o código de origem permanece reconhecível:
 
 - `vendor/lnreader/src/plugins/`: mecanismo original de instalação,
   carregamento, fetch, armazenamento, filtros e tipos das extensões;
+- `vendor/lnreader/src/services/backup/`: constantes e opções do formato de backup original;
 - `vendor/lnreader/src/utils/`: comparação de versões, mensagens de erro
   e paletas originais de leitura;
 - `vendor/lnreader/src/theme/`: paleta Material 3 original;
