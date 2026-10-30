@@ -23,6 +23,9 @@ export default function Library({
     [selected, setSelected] = useState([]),
     [context, setContext] = useState(null);
   const menu = useRef(null);
+  const filterPanel = useRef(null);
+  const filterButton = useRef(null);
+  const searchInput = useRef(null);
   const lastSelectedId = useRef(null);
   const books = useMemo(
     () => novels.filter((book) => book.inLibrary),
@@ -107,20 +110,40 @@ export default function Library({
     [books],
   );
   useEffect(() => {
+    setSelected([]);
+    lastSelectedId.current = null;
+  }, [query, category, filter, sort, settings.desktopDownloadedOnly]);
+  useEffect(() => {
+    if (!filters) return;
+    const onOutsideClick = (event) => {
+      if (!filterPanel.current?.contains(event.target) &&
+          !filterButton.current?.contains(event.target)) setFilters(false);
+    };
+    document.addEventListener('pointerdown', onOutsideClick);
+    return () => document.removeEventListener('pointerdown', onOutsideClick);
+  }, [filters]);
+  useEffect(() => {
     const onKeyDown = (event) => {
       const target = event.target;
       const isEditable = target?.closest?.('input,textarea,select,[contenteditable="true"]');
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a' && !isEditable) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f' && !isEditable) {
+        event.preventDefault();
+        searchInput.current?.focus();
+        searchInput.current?.select();
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a' && !isEditable) {
         event.preventDefault();
         if (!busy) setSelected(visible.map((book) => book.id));
-      } else if (event.key === 'Escape' && !context && selected.length) {
-        setSelected([]);
-        lastSelectedId.current = null;
+      } else if (event.key === 'Escape' && !context) {
+        if (filters) setFilters(false);
+        else if (selected.length) {
+          setSelected([]);
+          lastSelectedId.current = null;
+        }
       }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [visible, busy, selected.length, context]);
+  }, [visible, busy, selected.length, context, filters]);
   return (
     <>
       <header className="library-toolbar">
@@ -128,6 +151,7 @@ export default function Library({
         <div className="searchbar">
           <Icon name="search" />
           <input
+            ref={searchInput}
             placeholder="Pesquisar na biblioteca"
             aria-label="Pesquisar na biblioteca"
             value={query}
@@ -137,6 +161,7 @@ export default function Library({
             }}
           />
           <button
+            ref={filterButton}
             className="icon-button"
             aria-label="Filtrar biblioteca"
             aria-expanded={filters}
@@ -147,7 +172,7 @@ export default function Library({
         </div>
       </header>
       {filters && (
-        <div className="filter-panel" aria-label="Filtros e ordenação da biblioteca">
+        <div ref={filterPanel} className="filter-panel" aria-label="Filtros e ordenação da biblioteca">
           <div className="library-filter-field">
             <label htmlFor="library-category">Categoria</label>
             <select
@@ -253,7 +278,10 @@ export default function Library({
                 <Icon name="trash" />
                 Remover selecionadas
               </button>
-              <button onClick={() => setSelected([])}>Cancelar seleção</button>
+              <button onClick={() => {
+                setSelected([]);
+                lastSelectedId.current = null;
+              }}>Cancelar seleção</button>
             </>
           )}
         </div>
