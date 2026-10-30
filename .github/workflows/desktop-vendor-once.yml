@@ -3,7 +3,7 @@ name: One-time copy of original SDK into desktop/vendor
 on:
   push:
     branches: [seguranca-e-estabilidade]
-    paths: [.github/workflows/desktop-vendor-once.yml]
+    paths: [.github/workflows/desktop-vendor-once.yml, desktop/scripts/sync-original-sdk.cjs]
 
 permissions:
   contents: write
