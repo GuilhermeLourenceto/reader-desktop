@@ -453,6 +453,31 @@ header {
 .library-filter-field select {
   width: 100%;
 }
+.library-filter-label {
+  color: var(--onSurfaceVariant);
+  font-size: 12px;
+}
+.library-status-options {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.library-status-options button {
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+.library-status-options button.selected {
+  color: var(--onSecondaryContainer);
+  background: var(--secondaryContainer);
+  border-color: var(--primary);
+}
+.library-clear-filters {
+  padding: 10px 14px;
+  font-size: 12px;
+}
 .library-selection {
   margin: 12px 0 0;
 }
