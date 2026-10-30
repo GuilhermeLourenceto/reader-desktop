@@ -99,15 +99,23 @@ jobs:
         run: npm run test:pagination
       - if: runner.os == 'Windows'
         run: npm run test:reader
-      - name: Verify all ten interface languages and localized option choices
+      - name: Verify all ten interface languages, new library filters and context menus (Windows)
         if: runner.os == 'Windows'
-        timeout-minutes: 3
+        timeout-minutes: 5
         run: npx electron test/localization-smoke.cjs
+      - name: Verify all ten interface languages, new library filters and context menus (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 5
+        run: xvfb-run -a npx electron --no-sandbox test/localization-smoke.cjs --visual-preview
       - name: Real public DNS and source-session HTTP probe
         if: runner.os == 'Windows'
         run: npx electron test/dns-public-smoke.cjs
       - if: runner.os == 'Linux'
         run: xvfb-run -a npx electron --no-sandbox test/smoke.cjs --visual-preview
+      - name: Exercise library filters, context, selection and all theme palettes (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 3
+        run: xvfb-run -a npx electron --no-sandbox test/library-search-smoke.cjs --visual-preview
       - if: runner.os == 'Linux'
         run: xvfb-run -a npx electron --no-sandbox test/pagination-smoke.cjs --visual-preview
       - if: runner.os == 'Linux'
