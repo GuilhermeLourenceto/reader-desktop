@@ -113,79 +113,78 @@ export default function Library({
       </header>
       {filters && (
         <div className="filter-panel">
-          <label htmlFor="library-filter">Mostrar</label>
-          <select
-            id="library-filter"
-            value={filter}
-            onChange={(event) => {
-              setFilter(event.target.value);
-              scrollToStart();
-            }}
-          >
-            <option value="all">Todas as obras</option>
-            <option value="unread">Com capítulos não lidos</option>
-            <option value="downloaded">Com capítulos baixados</option>
-          </select>
+          <div className="library-filter-field">
+            <label htmlFor="library-category">Categoria</label>
+            <select
+              id="library-category"
+              aria-label="Categoria da biblioteca"
+              value={category}
+              onChange={(event) => {
+                setCategory(event.target.value);
+                scrollToStart();
+              }}
+            >
+              <option value="">Todas ({books.length})</option>
+              {categories.map((item) => (
+                <option key={item.id} value={String(item.id)}>
+                  {categoryDisplayName(item.name)} ({categoryCounts.get(String(item.id)) || 0})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="library-filter-field">
+            <label htmlFor="library-filter">Mostrar</label>
+            <select
+              id="library-filter"
+              aria-label="Mostrar obras"
+              value={filter}
+              onChange={(event) => {
+                setFilter(event.target.value);
+                scrollToStart();
+              }}
+            >
+              <option value="all">Todas as obras</option>
+              <option value="unread">Com capítulos não lidos</option>
+              <option value="downloaded">Com capítulos baixados</option>
+            </select>
+          </div>
         </div>
       )}
-      <div className="category-tabs" role="tablist" aria-label="Categorias">
-        <button
-          role="tab"
-          aria-selected={!category}
-          className={!category ? 'selected' : ''}
-          onClick={() => {
-            setCategory('');
-            scrollToStart();
-          }}
-        >
-          Todas <span>{books.length}</span>
-        </button>
-        {categories.map((item) => (
-          <button
-            key={item.id}
-            role="tab"
-            aria-selected={category === String(item.id)}
-            className={category === String(item.id) ? 'selected' : ''}
-            onClick={() => {
-              setCategory(String(item.id));
-              scrollToStart();
-            }}
-          >
-            {categoryDisplayName(item.name)}{' '}
-            <span>
-              {categoryCounts.get(String(item.id)) || 0}
-            </span>
-          </button>
-        ))}
-      </div>
-      <div className="library-selection">
-        <span>
-          {selected.length
-            ? translateMessage('{count} obra(s) selecionada(s)', {
-                count: selected.length,
-              })
-            : 'Selecione pelas caixas nas capas ou use o botão direito para ver ações.'}
-        </span>
-        {selected.length > 0 && (
-          <>
-            <button onClick={() => setSelected(visible.map((book) => book.id))}>
-              Selecionar visíveis
+      {books.length > 0 && (
+        <div className="library-selection">
+          <span>
+            {selected.length
+              ? translateMessage('{count} obra(s) selecionada(s)', {
+                  count: selected.length,
+                })
+              : translateMessage('{count} obra(s)', { count: visible.length })}
+          </span>
+          {visible.length > 0 && (
+            <button
+              disabled={busy}
+              onClick={() => setSelected(visible.map((book) => book.id))}
+            >
+              Selecionar todos
             </button>
-            <button disabled={busy} onClick={() => act('download', selected)}>
-              <Icon name="download" />
-              Baixar selecionadas
-            </button>
-            <button disabled={busy} onClick={() => act('reset', selected)}>
-              Resetar leitura
-            </button>
-            <button disabled={busy} onClick={() => act('remove', selected)}>
-              <Icon name="trash" />
-              Remover selecionadas
-            </button>
-            <button onClick={() => setSelected([])}>Cancelar seleção</button>
-          </>
-        )}
-      </div>
+          )}
+          {selected.length > 0 && (
+            <>
+              <button disabled={busy} onClick={() => act('download', selected)}>
+                <Icon name="download" />
+                Baixar selecionadas
+              </button>
+              <button disabled={busy} onClick={() => act('reset', selected)}>
+                Resetar leitura
+              </button>
+              <button disabled={busy} onClick={() => act('remove', selected)}>
+                <Icon name="trash" />
+                Remover selecionadas
+              </button>
+              <button onClick={() => setSelected([])}>Cancelar seleção</button>
+            </>
+          )}
+        </div>
+      )}
       <VirtualBookGrid
         items={visible}
         scrollContainerRef={scrollContainerRef}
@@ -196,7 +195,6 @@ export default function Library({
         busy={busy}
         onOpen={onOpen}
         selected={selected}
-        onToggle={toggle}
         onContext={(book, x, y) =>
           setContext({
             book,
@@ -244,7 +242,7 @@ export default function Library({
               setContext(null);
             }}
           >
-            Selecionar obra
+            {selected.includes(context.book.id) ? 'Desmarcar obra' : 'Selecionar obra'}
           </button>
           <button
             role="menuitem"
