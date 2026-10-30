@@ -10,7 +10,7 @@ do LNReader Android, com código específico para computador.
 
 ## Recursos
 
-Biblioteca, busca global de obras, filtro de fontes por idioma, tela cheia, progresso de leitura, capítulos offline,
+Biblioteca, busca global de obras, filtro de fontes por idioma, tela cheia, restauração das configurações padrão, rolagem das listas mesmo com o mouse nas laterais, progresso de leitura, capítulos offline,
 downloads, temas, histórico, marcadores e exportação/restauração de backups.
 A interface está disponível em português, inglês, espanhol, francês, alemão, italiano, russo, japonês, coreano e chinês simplificado. Escolha em **Mais → Configurações → Geral → Idioma da interface**. O filtro de idioma das fontes também funciona na busca global; o conteúdo das obras permanece no idioma original.
 
@@ -20,7 +20,7 @@ O suporte a fontes pode variar conforme autenticação e bloqueios dos sites.
 
 ## Estado do projeto
 
-**Versão 0.4.1 Beta** — [Baixar instalador](https://github.com/GuilhermeLourenceto/lnreader-desktop/releases/tag/v0.4.1) · [Novidades](desktop/docs/RELEASE_NOTES_0.4.1.md).
+**Versão 0.4.2 Beta** — [Baixar instalador](https://github.com/GuilhermeLourenceto/lnreader-desktop/releases/tag/v0.4.2) · [Novidades](desktop/docs/RELEASE_NOTES_0.4.2.md).
 O projeto ainda é experimental; algumas extensões podem exigir login, apresentar bloqueios ou falhar.
 A compilação do Desktop, seus testes e as jornadas automatizadas são verificados
 pelo [GitHub Actions](https://github.com/GuilhermeLourenceto/lnreader-desktop/actions/workflows/desktop.yml).
