@@ -48,6 +48,8 @@ jobs:
       - name: Validate importer and icon-script syntax
         run: node --check scripts/sync-original-sdk.cjs && node --check build/make-icon.cjs
         shell: bash
+      - name: Compile temporary test modules (no installers)
+        run: npm run build
       - name: Run isolated importer and unit regression tests
         run: npm test
       - name: Lint
