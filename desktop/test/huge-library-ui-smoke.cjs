@@ -92,7 +92,7 @@ app.on('browser-window-created', (_event, win) => {
       await wait("document.querySelector('.grid[data-virtualized=\"true\"]') && document.querySelectorAll('.book').length>1", 'restore virtualized grid');
       // Select all matching books, not just the few cards currently mounted.
       await js("(()=>{const button=[...document.querySelectorAll('.library-selection button')].find(node=>node.textContent.trim()==='Selecionar todos');if(!button)throw Error('Select all missing');button.click();return true})()");
-      await wait("document.querySelector('.library-selection').textContent.includes('10000 obra(s) selecionada(s)')", 'select all 10k books');
+      await wait("document.querySelector('.library-selection').dataset.selectedCount==='10000'", 'select all 10k books');
       assert.equal(await js("document.querySelectorAll('.book-card.is-selected').length===document.querySelectorAll('.book-card').length"), true);
       await js("(()=>{const button=[...document.querySelectorAll('.library-selection button')].find(node=>node.textContent.trim()==='Cancelar seleção');if(!button)throw Error('Cancel selection missing');button.click();return true})()");
       await wait("document.querySelectorAll('.book-card.is-selected').length===0", 'clear 10k selection');
