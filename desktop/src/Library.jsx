@@ -48,18 +48,18 @@ export default function Library({
     const categoryIds = categorySets.get(category);
     const downloadedOnly = !!settings.desktopDownloadedOnly || filter === 'downloaded';
     const matches = books.filter((book) =>
-      (!downloadedOnly || book.chapters.some((chapter) => chapter.isDownloaded)) &&
+      (!downloadedOnly || book.chapters?.some((chapter) => chapter.isDownloaded)) &&
       (filter !== 'unread' ||
-        book.chapters.some((chapter) => chapter.unread !== false)) &&
+        book.chapters?.some((chapter) => chapter.unread !== false)) &&
       (book.name.toLowerCase().includes(term) ||
-        (book.author || '').toLowerCase().includes(term)) &&
+        (typeof book.author === 'string' ? book.author.toLowerCase() : '').includes(term)) &&
       (!category || categoryIds?.has(book.id)),
     );
     if (sort === 'original') return matches;
     const ordered = [...matches];
     if (sort === 'name-asc') ordered.sort((a, b) => a.name.localeCompare(b.name));
     if (sort === 'name-desc') ordered.sort((a, b) => b.name.localeCompare(a.name));
-    if (sort === 'chapters-desc') ordered.sort((a, b) => b.chapters.length - a.chapters.length);
+    if (sort === 'chapters-desc') ordered.sort((a, b) => (b.chapters?.length || 0) - (a.chapters?.length || 0));
     return ordered;
   }, [books, category, categorySets, filter, query, settings.desktopDownloadedOnly, sort]);
   const scrollToStart = () => scrollContainerRef?.current?.scrollTo({ top: 0 });
