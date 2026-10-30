@@ -26,6 +26,8 @@ for (const file of [
   'vendor/lnreader/origin.json',
   'vendor/lnreader/LICENSE',
   'vendor/lnreader/src/plugins/pluginManager.ts',
+  'vendor/lnreader/src/services/backup/types.ts',
+  'vendor/lnreader/src/services/backup/options.ts',
   'vendor/lnreader/src/theme/md3/index.ts',
   'vendor/lnreader/assets/reader/fonts/noto-sans.ttf',
   'vendor/lnreader/assets/native/ic_launcher.png',
