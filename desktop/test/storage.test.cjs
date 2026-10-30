@@ -169,9 +169,10 @@ test('new reader options are validated before saving', () => {
     settings: { desktopPageStep: 85, desktopPagination: 'pages' },
   });
   assert.equal(valid.settings.desktopPageStep, 85);
+  assert.equal(validateState({ ...empty(), settings: { desktopPageStep: 0 } }).settings.desktopPageStep, 0);
   assert.equal(valid.settings.desktopPagination, 'pages');
   assert.throws(
-    () => validateState({ ...empty(), settings: { desktopPageStep: 5 } }),
+    () => validateState({ ...empty(), settings: { desktopPageStep: -5 } }),
     /desktopPageStep/,
   );
   assert.throws(
