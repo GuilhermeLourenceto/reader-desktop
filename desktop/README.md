@@ -278,3 +278,20 @@ A janela usa isolamento de contexto, sandbox e Node desabilitado. O leitor
 sanitiza HTML. `unsafe-eval` permanece necessário para o carregador original
 dentro dos workers. Eles não têm acesso ao DOM nem a Node; Web Worker não é
 equivalente a um processo do sistema com memória independente.
+
+## Organização e contribuição
+
+A estrutura de módulos e os limites entre Electron, React, armazenamento e
+código original estão descritos em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Para colaborar ou relatar problemas, consulte
+[CONTRIBUTING.md](../CONTRIBUTING.md) e [SECURITY.md](../SECURITY.md).
+
+```sh
+npm run lint          # Sintaxe Node e dependências fora de desktop/
+npm run format:check  # Formatação dos módulos novos (cobertura incremental)
+npm run format        # Formata código próprio (revise o diff antes de commitar)
+npm run check         # Lint + formatação incremental + testes unitários
+```
+
+O código original em `vendor/lnreader/` é versionado separadamente e não deve
+ser reformatado automaticamente ao modificar módulos próprios do Desktop.

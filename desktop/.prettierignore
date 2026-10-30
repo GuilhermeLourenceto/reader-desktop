@@ -1,0 +1,7 @@
+node_modules/
+dist/
+release/
+.tmp/
+vendor/
+package-lock.json
+docs/screenshots/

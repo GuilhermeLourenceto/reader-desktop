@@ -1,0 +1,22 @@
+name: Sugerir melhoria
+description: Proponha uma funcionalidade ou melhoria de experiência Desktop.
+title: "[Melhoria] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual problema a melhoria resolveria?
+      description: "Descreva o uso real, não apenas a solução desejada."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta de solução
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Impacto nas extensões, backups ou segurança
+      description: "Opcional; informe se conhece algum risco."

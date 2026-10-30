@@ -46,3 +46,11 @@ node scripts/sync-original-sdk.cjs --from=/caminho/para/clone-android
 Revise o diff em `vendor/lnreader/`, a licença e `origin.json` e
 execute toda a suíte. A sincronização não ocorre durante o build.
 O Desktop não é uma distribuição oficial do LNReader Android.
+
+## Colaboração
+
+Envie melhorias para `seguranca-e-estabilidade`, não para a `main`.
+Leia [CONTRIBUTING.md](../../../CONTRIBUTING.md) e
+[ARCHITECTURE.md](ARCHITECTURE.md) antes de alterar o motor de plugins.
+A branch padrão do GitHub ainda é `main`; a troca exige decisão e ajuste
+explícitos no painel do repositório, não faz parte destas alterações.
