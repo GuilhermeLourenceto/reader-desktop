@@ -69,14 +69,27 @@ app.on('browser-window-created', (_event, win) => {
       throw new Error('Timed out: ' + label);
     };
     try {
-      await wait("document.querySelectorAll('.book').length===10000 && !document.querySelector('.busy')", '10,000 book cards');
+      await wait("document.querySelector('.grid[data-virtualized=\"true\"]') && document.querySelectorAll('.book').length>0 && !document.querySelector('.busy')", 'virtualized 10,000 book library');
       const startup = +((performance.now() - started) / 1000).toFixed(2);
-      assert.equal(await js("document.querySelectorAll('.book').length"), bookCount);
+      const initialCards = await js("document.querySelectorAll('.book').length");
+      assert.ok(initialCards > 0 && initialCards < 100, 'large libraries must not render all cards');
+      // Exercise the actual scroll container and prove the LAST book is reachable.
+      await js("(()=>{const main=document.querySelector('main');main.scrollTop=main.scrollHeight;main.dispatchEvent(new Event('scroll'));return true})()");
+      await wait("Array.from(document.querySelectorAll('.book strong')).some(node=>node.textContent.includes('10000'))", 'end of 10k book library');
+      const endCards = await js("document.querySelectorAll('.book').length");
+      assert.ok(endCards > 0 && endCards < 100, 'deep scroll must remain bounded');
+      await js("(()=>{const main=document.querySelector('main');main.scrollTop=0;main.dispatchEvent(new Event('scroll'));return true})()");
+      await wait("Array.from(document.querySelectorAll('.book strong')).some(node=>node.textContent.includes('00001'))", 'top book after deep scroll');
       const nav = async label => js(`(()=>{let b=[...document.querySelectorAll('button')].find(x=>(x.getAttribute('aria-label')||x.textContent.trim())===${JSON.stringify(label)});if(!b)throw Error('Missing nav '+${JSON.stringify(label)});b.click();return true})()`);
       await nav('Atualizações');
       await wait("Boolean(document.querySelector('.updates-page'))", 'Updates');
       await nav('Biblioteca');
-      await wait("document.querySelectorAll('.book').length===10000", 'Library re-entry');
+      await wait("document.querySelector('.grid[data-virtualized=\"true\"]') && document.querySelectorAll('.book').length>0 && document.querySelectorAll('.book').length<100", 'Virtualized Library re-entry');
+      // Search must filter the full 10k metadata collection, not just DOM items.
+      await js("(()=>{const input=document.querySelector('input[aria-label=\"Pesquisar na biblioteca\"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Synthetic Library Entry 10000');input.dispatchEvent(new Event('input',{bubbles:true}));return true})()");
+      await wait("document.querySelectorAll('.book').length===1 && document.querySelector('.book strong').textContent.includes('10000')", 'filtered last book');
+      await js("(()=>{const input=document.querySelector('input[aria-label=\"Pesquisar na biblioteca\"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'');input.dispatchEvent(new Event('input',{bubbles:true}));return true})()");
+      await wait("document.querySelector('.grid[data-virtualized=\"true\"]') && document.querySelectorAll('.book').length>1", 'restore virtualized grid');
       const persisted = await js('window.desktop.load({metadataOnly:true})');
       assert.equal(persisted.novels.length, bookCount);
       assert.equal(persisted.novels[0].chapters.length, chapterCount);
@@ -85,6 +98,8 @@ app.on('browser-window-created', (_event, win) => {
         pass: true,
         os: process.platform,
         books: bookCount,
+        initialRenderedCards: initialCards,
+        endRenderedCards: endCards,
         chapters: bookCount * chapterCount,
         startupSeconds: startup,
         fullNavigationSeconds: +((performance.now() - started) / 1000).toFixed(2),
