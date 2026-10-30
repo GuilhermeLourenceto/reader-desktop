@@ -2227,12 +2227,13 @@ function App() {
                 <strong>{novel.name}</strong>
                 <small>{chapter.name}</small>
                 <small className="reader-chapter-position">
-                  Capítulo{' '}
-                  {chapterOrdinals(
-                    novel.chapters,
-                    chapterDirection(novel).direction,
-                  ).get(chapter.id)}{' '}
-                  de {novel.chapters.length}
+                  {translateMessage('Capítulo {v0} de {v1}', {
+                    v0: chapterOrdinals(
+                      novel.chapters,
+                      chapterDirection(novel).direction,
+                    ).get(chapter.id),
+                    v1: novel.chapters.length,
+                  })}
                   {chapterReleaseLabel(chapter.releaseTime) &&
                     translateMessage(' · Lançamento: {v0}', {
                       v0: chapterReleaseLabel(chapter.releaseTime),
