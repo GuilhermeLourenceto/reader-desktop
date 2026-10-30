@@ -368,6 +368,8 @@ app
       // Allow local fixture servers only in unpackaged test builds.
       allowPrivate: !app.isPackaged,
       sessionForSource: id => id ? sourceSession(id) : undefined,
+      dnsResolver: (hostname, options) => net.resolveHost(hostname, options),
+      requireDnsValidation: true,
     });
     register('request', (url, init) => requests.run(url, init));
     register('source-login', async id => {
