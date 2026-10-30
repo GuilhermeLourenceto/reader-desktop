@@ -92,6 +92,9 @@ jobs:
         run: npm run test:pagination
       - if: runner.os == 'Windows'
         run: npm run test:reader
+      - name: Real public DNS and source-session HTTP probe
+        if: runner.os == 'Windows'
+        run: npx electron test/dns-public-smoke.cjs
       - if: runner.os == 'Linux'
         run: xvfb-run -a npx electron --no-sandbox test/smoke.cjs --visual-preview
       - if: runner.os == 'Linux'
