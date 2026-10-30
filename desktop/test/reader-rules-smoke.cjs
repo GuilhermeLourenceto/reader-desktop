@@ -130,6 +130,12 @@ server.listen(0, '127.0.0.1', () => {
         await wait(
           "document.querySelector('article') && !document.body.innerText.includes('Processando…')",
         );
+        // Reader content and scroll restoration commit on separate render
+        // frames; wait for the actual 50% position before asserting it.
+        // A broken restore still times out rather than being accepted.
+        await wait(
+          "(()=>{const e=document.querySelector('.reader-scroll');if(!e)return false;const h=e.scrollHeight-e.clientHeight;const p=h>0?e.scrollTop/h*100:0;return p>45&&p<55;})()",
+        );
         const percentage = await execute(
           "(()=>{const element=document.querySelector('.reader-scroll');return element.scrollTop/(element.scrollHeight-element.clientHeight)*100;})()",
         );
