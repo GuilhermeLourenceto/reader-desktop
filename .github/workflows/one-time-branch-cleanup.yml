@@ -25,17 +25,17 @@ jobs:
               exit 1
             fi
           done <<'TARGETS'
-diagnostico-centralnovel-main|673bdf3db044e1d15f3d95f7e9f8cde53ba02403
-docs/clean-release-descriptions|56f1bad0729ba3fa2210e8d0b3d09b0c0734fdd4
-feat/reset-settings-global-scroll-v042|459ca3aece976d3b228fef7c710ea4d8ebcbd58f
-fix/dns-guard-source-language|8d7b9c3dfcf9787348602abe306989e8a91f8fb6
-fix/source-session-dns-041|02da1890625d53ab8d0027419c3417517fceb774
-fix/v042-interface-translation-options|c0c581871bde65ec3ac43ff5dd89d862245ec135
-fix/v042-release-installer-filename|8aea7b2fa289cf44157a3e76c024bae8b22c12bd
-qa/all-source-catalog-20261030|c7ce31d9b0c680b683774a9883a15fd47967c93f
-seguranca-e-estabilidade|51b5fed56c271f4caa98d6523924b0d194730b07
-teste-release-seguranca-20261029|426e9f48dd3276f011d26b0b559eb75b66ff7cbb
-TARGETS
+          diagnostico-centralnovel-main|673bdf3db044e1d15f3d95f7e9f8cde53ba02403
+          docs/clean-release-descriptions|56f1bad0729ba3fa2210e8d0b3d09b0c0734fdd4
+          feat/reset-settings-global-scroll-v042|459ca3aece976d3b228fef7c710ea4d8ebcbd58f
+          fix/dns-guard-source-language|8d7b9c3dfcf9787348602abe306989e8a91f8fb6
+          fix/source-session-dns-041|02da1890625d53ab8d0027419c3417517fceb774
+          fix/v042-interface-translation-options|c0c581871bde65ec3ac43ff5dd89d862245ec135
+          fix/v042-release-installer-filename|8aea7b2fa289cf44157a3e76c024bae8b22c12bd
+          qa/all-source-catalog-20261030|c7ce31d9b0c680b683774a9883a15fd47967c93f
+          seguranca-e-estabilidade|51b5fed56c271f4caa98d6523924b0d194730b07
+          teste-release-seguranca-20261029|426e9f48dd3276f011d26b0b559eb75b66ff7cbb
+          TARGETS
       - name: Delete the 10 verified non-main branch refs
         env:
           GH_TOKEN: ${{ github.token }}
@@ -49,17 +49,17 @@ TARGETS
             gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$name" >/dev/null
             echo "Deleted: $name"
           done <<'TARGETS'
-diagnostico-centralnovel-main|673bdf3db044e1d15f3d95f7e9f8cde53ba02403
-docs/clean-release-descriptions|56f1bad0729ba3fa2210e8d0b3d09b0c0734fdd4
-feat/reset-settings-global-scroll-v042|459ca3aece976d3b228fef7c710ea4d8ebcbd58f
-fix/dns-guard-source-language|8d7b9c3dfcf9787348602abe306989e8a91f8fb6
-fix/source-session-dns-041|02da1890625d53ab8d0027419c3417517fceb774
-fix/v042-interface-translation-options|c0c581871bde65ec3ac43ff5dd89d862245ec135
-fix/v042-release-installer-filename|8aea7b2fa289cf44157a3e76c024bae8b22c12bd
-qa/all-source-catalog-20261030|c7ce31d9b0c680b683774a9883a15fd47967c93f
-seguranca-e-estabilidade|51b5fed56c271f4caa98d6523924b0d194730b07
-teste-release-seguranca-20261029|426e9f48dd3276f011d26b0b559eb75b66ff7cbb
-TARGETS
+          diagnostico-centralnovel-main|673bdf3db044e1d15f3d95f7e9f8cde53ba02403
+          docs/clean-release-descriptions|56f1bad0729ba3fa2210e8d0b3d09b0c0734fdd4
+          feat/reset-settings-global-scroll-v042|459ca3aece976d3b228fef7c710ea4d8ebcbd58f
+          fix/dns-guard-source-language|8d7b9c3dfcf9787348602abe306989e8a91f8fb6
+          fix/source-session-dns-041|02da1890625d53ab8d0027419c3417517fceb774
+          fix/v042-interface-translation-options|c0c581871bde65ec3ac43ff5dd89d862245ec135
+          fix/v042-release-installer-filename|8aea7b2fa289cf44157a3e76c024bae8b22c12bd
+          qa/all-source-catalog-20261030|c7ce31d9b0c680b683774a9883a15fd47967c93f
+          seguranca-e-estabilidade|51b5fed56c271f4caa98d6523924b0d194730b07
+          teste-release-seguranca-20261029|426e9f48dd3276f011d26b0b559eb75b66ff7cbb
+          TARGETS
       - name: Ensure only main remains
         env:
           GH_TOKEN: ${{ github.token }}
