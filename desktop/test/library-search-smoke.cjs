@@ -218,6 +218,30 @@ server.listen(0, '127.0.0.1', () => {
         await wait("document.querySelector('.book strong').textContent.includes('Obra B')");
         await select('Ordenar biblioteca', 'original');
         await wait("document.querySelector('.book strong').textContent.includes('Obra A')");
+        // Layout regression: minimum supported window width, intermediate and wide.
+        // No horizontal overflow, controls stacked or side-by-side without overlap.
+        for (const [width, height] of [[800, 650], [1024, 768], [1440, 900]]) {
+          win.setSize(width, height);
+          await new Promise(resolve => setTimeout(resolve, 170));
+          const layout = await execute(`(()=>{const nodes=[...document.querySelectorAll('.library-filter-field')],r=nodes.map(e=>e.getBoundingClientRect()),panel=document.querySelector('.filter-panel').getBoundingClientRect();return {overflow:document.documentElement.scrollWidth-innerWidth,inside:r.every(x=>x.left>=-1&&x.right<=innerWidth+1),overlap:r.some((a,i)=>r.some((b,j)=>j>i && Math.min(a.right,b.right)-Math.max(a.left,b.left)>8 && Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>8)),panelRight:panel.right,viewport:innerWidth}})()`);
+          assert.ok(layout.overflow <= 1, 'horizontal overflow at ' + width + 'px: ' + JSON.stringify(layout));
+          assert.ok(layout.inside && !layout.overlap, 'filter field clipped/overlapping at ' + width + 'px: ' + JSON.stringify(layout));
+          assert.ok(layout.panelRight <= layout.viewport + 1, 'filter panel beyond window at ' + width + 'px');
+        }
+        win.setSize(1280, 850);
+        // Changing filters must not leave invisible books selected for bulk actions.
+        await click('Filtrar biblioteca');
+        await click('Selecionar todos');
+        await wait("document.querySelector('.library-selection').dataset.selectedCount==='2'");
+        await click('Filtrar biblioteca');
+        await select('Categoria da biblioteca', '1');
+        await wait("document.querySelector('.library-selection').dataset.selectedCount==='0'");
+        await select('Categoria da biblioteca', '');
+        await wait("document.querySelectorAll('.book').length===2");
+        // Ctrl+F focuses search rather than selecting/opening a novel.
+        await execute("document.dispatchEvent(new KeyboardEvent('keydown',{key:'f',ctrlKey:true,bubbles:true}))");
+        assert.equal(await execute("document.activeElement.getAttribute('aria-label')"), 'Pesquisar na biblioteca');
+        await execute("document.activeElement.blur()");
         await click('Filtrar biblioteca');
         await click('Histórico');
         assert.equal(
