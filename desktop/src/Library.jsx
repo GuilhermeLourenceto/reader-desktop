@@ -1,6 +1,6 @@
 import { t as translateMessage } from './i18n.cjs';
-import React, { useEffect, useRef, useState } from 'react';
-import BookGrid from './BookGrid';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import VirtualBookGrid from './VirtualBookGrid';
 import { categoryDisplayName } from './libraryCategoryLabels.cjs';
 export default function Library({
   novels,
@@ -13,6 +13,7 @@ export default function Library({
   onAction,
   onRestore,
   onSources,
+  scrollContainerRef,
 }) {
   const [query, setQuery] = useState(''),
     [category, setCategory] = useState(''),
@@ -21,21 +22,35 @@ export default function Library({
     [selected, setSelected] = useState([]),
     [context, setContext] = useState(null);
   const menu = useRef(null);
-  const books = novels.filter((book) => book.inLibrary);
-  const visible = books.filter(
-    (book) =>
-      (!settings.desktopDownloadedOnly ||
-        book.chapters.some((chapter) => chapter.isDownloaded)) &&
-      (filter !== 'downloaded' ||
-        book.chapters.some((chapter) => chapter.isDownloaded)) &&
+  const books = useMemo(
+    () => novels.filter((book) => book.inLibrary),
+    [novels],
+  );
+  const categorySets = useMemo(
+    () => new Map(categories.map((item) => [String(item.id), new Set(item.novelIds)])),
+    [categories],
+  );
+  const categoryCounts = useMemo(
+    () => new Map(categories.map((item) => [
+      String(item.id),
+      books.filter((book) => categorySets.get(String(item.id)).has(book.id)).length,
+    ])),
+    [books, categories, categorySets],
+  );
+  // Filtering thousands of chapters on every selection click is unnecessary.
+  const visible = useMemo(() => {
+    const term = query.toLowerCase();
+    const categoryIds = categorySets.get(category);
+    const downloadedOnly = !!settings.desktopDownloadedOnly || filter === 'downloaded';
+    return books.filter((book) =>
+      (!downloadedOnly || book.chapters.some((chapter) => chapter.isDownloaded)) &&
       (filter !== 'unread' ||
         book.chapters.some((chapter) => chapter.unread !== false)) &&
-      book.name.toLowerCase().includes(query.toLowerCase()) &&
-      (!category ||
-        categories
-          .find((item) => String(item.id) === category)
-          ?.novelIds.includes(book.id)),
-  );
+      book.name.toLowerCase().includes(term) &&
+      (!category || categoryIds?.has(book.id)),
+    );
+  }, [books, category, categorySets, filter, query, settings.desktopDownloadedOnly]);
+  const scrollToStart = () => scrollContainerRef?.current?.scrollTo({ top: 0 });
   const toggle = (id) =>
     setSelected((ids) =>
       ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
@@ -62,13 +77,14 @@ export default function Library({
     };
   }, [context]);
   useEffect(
-    () =>
-      setSelected((ids) =>
-        ids.filter((id) =>
-          novels.some((book) => book.id === id && book.inLibrary),
-        ),
-      ),
-    [novels],
+    () => {
+      const valid = new Set(books.map((book) => book.id));
+      setSelected((ids) => {
+        const kept = ids.filter((id) => valid.has(id));
+        return kept.length === ids.length ? ids : kept;
+      });
+    },
+    [books],
   );
   return (
     <>
@@ -80,7 +96,10 @@ export default function Library({
             placeholder="Pesquisar na biblioteca"
             aria-label="Pesquisar na biblioteca"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              scrollToStart();
+            }}
           />
           <button
             className="icon-button"
@@ -98,7 +117,10 @@ export default function Library({
           <select
             id="library-filter"
             value={filter}
-            onChange={(event) => setFilter(event.target.value)}
+            onChange={(event) => {
+              setFilter(event.target.value);
+              scrollToStart();
+            }}
           >
             <option value="all">Todas as obras</option>
             <option value="unread">Com capítulos não lidos</option>
@@ -111,7 +133,10 @@ export default function Library({
           role="tab"
           aria-selected={!category}
           className={!category ? 'selected' : ''}
-          onClick={() => setCategory('')}
+          onClick={() => {
+            setCategory('');
+            scrollToStart();
+          }}
         >
           Todas <span>{books.length}</span>
         </button>
@@ -121,11 +146,14 @@ export default function Library({
             role="tab"
             aria-selected={category === String(item.id)}
             className={category === String(item.id) ? 'selected' : ''}
-            onClick={() => setCategory(String(item.id))}
+            onClick={() => {
+              setCategory(String(item.id));
+              scrollToStart();
+            }}
           >
             {categoryDisplayName(item.name)}{' '}
             <span>
-              {books.filter((book) => item.novelIds.includes(book.id)).length}
+              {categoryCounts.get(String(item.id)) || 0}
             </span>
           </button>
         ))}
@@ -158,8 +186,10 @@ export default function Library({
           </>
         )}
       </div>
-      <BookGrid
+      <VirtualBookGrid
         items={visible}
+        scrollContainerRef={scrollContainerRef}
+        key={[query, category, filter, !!settings.desktopDownloadedOnly].join(':')}
         settings={settings}
         cover={cover}
         Icon={Icon}
