@@ -1,6 +1,6 @@
 import { t as translateMessage } from './i18n.cjs';
 import { t } from './i18n.cjs';
-import React from 'react';
+import React, { useMemo } from 'react';
 export default function BookGrid({
   items,
   pluginId,
@@ -12,11 +12,20 @@ export default function BookGrid({
   selected = [],
   onToggle,
   onContext,
+  gridRef,
+  virtualized = false,
+  rowHeight,
+  before = 0,
+  after = 0,
 }) {
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
   return (
     <div
-      className="grid"
+      ref={gridRef}
+      className={virtualized ? 'grid grid-virtualized' : 'grid'}
+      data-virtualized={virtualized ? 'true' : undefined}
       style={{
+        ...(virtualized ? { '--virtual-row-height': String(rowHeight) + 'px' } : {}),
         gridTemplateColumns: `repeat(auto-fill,minmax(${
           { compact: 116, normal: 140, large: 185 }[
             settings.desktopCoverSize
@@ -24,10 +33,13 @@ export default function BookGrid({
         }px,1fr))`,
       }}
     >
+      {virtualized && before > 0 && (
+        <div className="virtual-grid-spacer" aria-hidden="true" style={{ height: before }} />
+      )}
       {items.map((item) => (
         <div
           className={`book-card ${
-            selected.includes(item.id) ? 'is-selected' : ''
+            selectedSet.has(item.id) ? 'is-selected' : ''
           }`}
           key={`${item.pluginId || pluginId}:${item.path}`}
           onContextMenu={
@@ -42,7 +54,7 @@ export default function BookGrid({
           <button
             className="book"
             disabled={busy}
-            aria-pressed={onToggle ? selected.includes(item.id) : undefined}
+            aria-pressed={onToggle ? selectedSet.has(item.id) : undefined}
             onClick={() =>
               selected.length && onToggle
                 ? onToggle(item.id)
@@ -114,13 +126,16 @@ export default function BookGrid({
               aria-label={translateMessage('Selecionar obra: {v0}', {
                 v0: item.name,
               })}
-              checked={selected.includes(item.id)}
+              checked={selectedSet.has(item.id)}
               onChange={() => onToggle(item.id)}
               disabled={busy}
             />
           )}
         </div>
       ))}
+      {virtualized && after > 0 && (
+        <div className="virtual-grid-spacer" aria-hidden="true" style={{ height: after }} />
+      )}
     </div>
   );
 }
