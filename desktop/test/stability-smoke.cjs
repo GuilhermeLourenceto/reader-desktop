@@ -226,8 +226,24 @@ server.listen(0, '127.0.0.1', () => {
         win.close();
       } catch (error) {
         console.error(error);
+        try {
+          console.error('STABILITY_UI_DIAGNOSTIC', JSON.stringify({
+            url: win.webContents.getURL(),
+            state: await execute(`({
+              href: location.href,
+              title: document.title,
+              ready: document.readyState,
+              bookCount: document.querySelectorAll('.book').length,
+              busy: document.querySelector('.busy')?.textContent?.slice(0, 200),
+              navButtons: [...document.querySelectorAll('nav button')].map(b => b.textContent),
+              text: document.body.innerText.slice(-500)
+            })`),
+          }));
+        } catch (diagnosticError) {
+          console.error('STABILITY_UI_DIAGNOSTIC_FAILED', diagnosticError.message);
+        }
         clearTimeout(timeout);
-        win.destroy();
+        if (!win.isDestroyed()) win.destroy();
         server.close();
         app.exit(1);
       }
