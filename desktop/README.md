@@ -122,10 +122,14 @@ adaptadores `src/adapters.js` e `src/workerAdapters.js` conectam o SDK
 original ao Electron, sem trazer Android SDK, Expo nem React Native.
 O armazenamento continua local e os backups ZIP mantêm seu formato.
 
-**Atualizar o SDK original é uma operação explícita:** com um checkout Android separado, o mantenedor pode executar
-`node scripts/sync-original-sdk.cjs --from=/caminho/para/clone-android` e revisar o diff de
-`desktop/vendor/lnreader/`. Esse script opcional requer a árvore
-Android e **não faz parte de `npm ci`, `npm run build` nem do instalador**.
+**Atualizar o SDK original é uma operação explícita:** mantenha os
+arquivos de origem em `desktop/.tmp/lnreader-original/` e execute
+`node scripts/sync-original-sdk.cjs` a partir de `desktop/`.
+O importador usa somente pastas dentro de `desktop/`, recusa links
+simbólicos e não remove arquivos originais. O código atual em
+`desktop/vendor/lnreader/` continua versionado e funcionando sem
+nenhuma importação. A sincronização opcional **não faz parte de
+`npm ci`, `npm run build` nem do instalador**.
 Ao copiar só a pasta `desktop/` para outro repositório, a compilação
 continua funcionando sem ele.
 
