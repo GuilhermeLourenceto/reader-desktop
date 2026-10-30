@@ -20,6 +20,7 @@ const {
 const { emptyState, safePath } = require('./backup.cjs');
 const { backupJob } = require('./backupJobs.cjs');
 const { validateNetworkUrl } = require('./networkPolicy.cjs');
+const { installFullscreenShortcut } = require('./fullscreenShortcut.cjs');
 const primaryInstance = !app.isPackaged || app.requestSingleInstanceLock();
 if (!primaryInstance) app.quit();
 app.on('second-instance', () => {
@@ -198,6 +199,7 @@ app
       },
     });
     Menu.setApplicationMenu(null);
+    installFullscreenShortcut(mainWindow);
     mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     // A recuperação da janela cobre falhas da interface; as fontes executam
     // em workers separados e podem ser interrompidas sem recarregar a janela.
