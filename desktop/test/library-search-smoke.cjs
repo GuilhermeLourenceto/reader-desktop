@@ -220,8 +220,12 @@ server.listen(0, '127.0.0.1', () => {
         assert.equal(await execute("document.querySelector('.searchbar .icon-button').dataset.activeFilters || ''"), '');
         await click('Baixadas');
         await wait("document.querySelectorAll('.book').length===1");
+        await wait("window.desktop.load().then(s=>s.settings.desktopDownloadedOnly===true)");
+        assert.equal(await execute("document.querySelector('.library-status-options button[aria-pressed=true]').textContent.trim()"), 'Baixadas');
         await click('Todas');
         await wait("document.querySelectorAll('.book').length===2");
+        await wait("window.desktop.load().then(s=>s.settings.desktopDownloadedOnly===false)");
+        assert.equal(await execute("document.querySelector('.library-status-options button[aria-pressed=true]').textContent.trim()"), 'Todas');
         await select('Ordenar biblioteca', 'name-desc');
         await wait("document.querySelector('.book strong').textContent.includes('Obra B')");
         await select('Ordenar biblioteca', 'original');
