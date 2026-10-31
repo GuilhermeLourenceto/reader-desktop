@@ -38,7 +38,20 @@ export default function Updates({
   const [expanded, setExpanded] = useState({});
   const [limit, setLimit] = useState(30);
   const [chapterLimits, setChapterLimits] = useState({});
-  const all = useMemo(() => updateGroups(novels), [novels]);
+  const all = useMemo(() => {
+    const numberingByNovel = new Map();
+    return updateGroups(novels).map(group => {
+      let numbering = numberingByNovel.get(group.novel.id);
+      if (!numbering) {
+        numbering = chapterOrdinals(
+          group.novel.chapters,
+          chapterDirection(group.novel).direction,
+        );
+        numberingByNovel.set(group.novel.id, numbering);
+      }
+      return { ...group, numbering };
+    });
+  }, [novels]);
   const groups = useMemo(() => {
     const term = query.toLocaleLowerCase();
     return all
@@ -136,10 +149,7 @@ export default function Updates({
         const showDate = previousDay !== group.day;
         previousDay = group.day;
         const ids = group.chapters.map((chapter) => chapter.id);
-        const numbering = chapterOrdinals(
-          group.novel.chapters,
-          chapterDirection(group.novel).direction,
-        );
+        const numbering = group.numbering;
         return (
           <section
             className="update-group"
