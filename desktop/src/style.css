@@ -139,6 +139,12 @@ select option {
   background: var(--secondaryContainer);
   color: var(--onSecondaryContainer);
 }
+.book-context-menu button:focus-visible {
+  background: var(--secondaryContainer);
+  color: var(--onSecondaryContainer);
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
 .history-open {
   flex-direction: row;
   align-items: center;
@@ -421,6 +427,10 @@ header {
   display: grid;
   place-items: center;
 }
+.searchbar .icon-button[aria-expanded="true"] {
+  background: var(--secondaryContainer);
+  color: var(--onSecondaryContainer);
+}
 .section-heading span {
   font-size: 11px;
   padding: 2px 6px;
@@ -473,6 +483,11 @@ header {
   color: var(--onSecondaryContainer);
   background: var(--secondaryContainer);
   border-color: var(--primary);
+}
+.library-status-options button:focus-visible,
+.library-clear-filters:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 .library-clear-filters {
   padding: 10px 14px;
