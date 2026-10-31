@@ -483,7 +483,7 @@ export default function NovelDetails({
                         })
                       : ''}
                     {chapter.unread === false ? 'Lido' : 'Não lido'}
-                    {chapter.isDownloaded ? ' · Baixado' : ''}
+                    {chapter.isDownloaded && <> · {translateMessage('Baixado')}</>}
                   </small>
                   {chapter.id === downloadProgress?.chapterId && (
                     <span className="chapter-download-progress">
@@ -549,16 +549,14 @@ export default function NovelDetails({
                   )}
                   {chapterReleaseLabel(chapter.releaseTime) && (
                     <small className="chapter-release">
-                      Lançamento: {chapterReleaseLabel(chapter.releaseTime)}
+                      {translateMessage('Lançamento: {v0}', { v0: chapterReleaseLabel(chapter.releaseTime) })}
                     </small>
                   )}
                 </button>
                 <div className="chapter-actions">
                   <button
                     className={chapter.bookmark ? 'active' : ''}
-                    aria-label={`${
-                      chapter.bookmark ? 'Remover marcador de' : 'Marcar'
-                    } ${chapter.name}`}
+                    aria-label={translateMessage(chapter.bookmark ? 'Remover marcador de {v0}' : 'Adicionar marcador a {v0}', { v0: chapter.name })}
                     title="Marcador"
                     disabled={busy}
                     onClick={() =>
@@ -568,11 +566,7 @@ export default function NovelDetails({
                     <Icon name="bookmark" />
                   </button>
                   <button
-                    aria-label={`${
-                      chapter.unread === false
-                        ? 'Marcar não lido'
-                        : 'Marcar lido'
-                    }: ${chapter.name}`}
+                    aria-label={translateMessage(chapter.unread === false ? 'Marcar como não lido: {v0}' : 'Marcar como lido: {v0}', { v0: chapter.name })}
                     title={
                       chapter.unread === false
                         ? 'Marcar como não lido'
@@ -597,11 +591,7 @@ export default function NovelDetails({
                     />
                   </button>
                   <button
-                    aria-label={`${
-                      chapter.isDownloaded
-                        ? 'Apagar download'
-                        : 'Baixar capítulo'
-                    }: ${chapter.name}`}
+                    aria-label={translateMessage(chapter.isDownloaded ? 'Apagar download: {v0}' : 'Baixar capítulo: {v0}', { v0: chapter.name })}
                     title={
                       chapter.isDownloaded
                         ? 'Apagar download'
