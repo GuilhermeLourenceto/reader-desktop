@@ -1,6 +1,6 @@
 import { t as translateMessage } from './i18n.cjs';
 import { getLocale } from './i18n.cjs';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { chapterPercent } from './domain.cjs';
 export default function History({
   novels,
@@ -11,18 +11,25 @@ export default function History({
   cover,
 }) {
   const [query, setQuery] = useState('');
-  const entries = novels
-    .flatMap((novel) =>
-      novel.chapters
-        .filter((chapter) => chapter.readTime)
-        .map((chapter) => ({ novel, chapter })),
-    )
-    .sort(
+  const [limit, setLimit] = useState(100);
+  // Build the history only when the library changes, not on each input/hover.
+  const entries = useMemo(() => {
+    const rows = [];
+    for (const novel of novels) {
+      for (const chapter of novel.chapters || []) {
+        if (chapter.readTime) rows.push({ novel, chapter });
+      }
+    }
+    return rows.sort(
       (a, b) => Date.parse(b.chapter.readTime) - Date.parse(a.chapter.readTime),
     );
-  const filtered = entries.filter(({ novel, chapter }) =>
-    `${novel.name} ${chapter.name}`.toLowerCase().includes(query.toLowerCase()),
-  );
+  }, [novels]);
+  const filtered = useMemo(() => {
+    const term = query.toLocaleLowerCase();
+    return entries.filter(({ novel, chapter }) =>
+      `${novel.name} ${chapter.name}`.toLocaleLowerCase().includes(term),
+    );
+  }, [entries, query]);
   return (
     <div className="history-page">
       <header>
@@ -51,7 +58,10 @@ export default function History({
         aria-label="Pesquisar histórico"
         placeholder="Pesquisar obra ou capítulo"
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          setLimit(100);
+        }}
       />
       {!filtered.length && (
         <div className="empty">
@@ -60,7 +70,7 @@ export default function History({
           <p>Os capítulos abertos aparecem aqui, exceto no modo anônimo.</p>
         </div>
       )}
-      {filtered.map(({ novel, chapter }) => (
+      {filtered.slice(0, limit).map(({ novel, chapter }) => (
         <div className="history-row" key={`${novel.id}:${chapter.id}`}>
           <button
             className="history-open"
@@ -102,6 +112,11 @@ export default function History({
           </button>
         </div>
       ))}
+      {filtered.length > limit && (
+        <button className="history-more" onClick={() => setLimit(value => value + 100)}>
+          {translateMessage('Mostrar mais histórico')}
+        </button>
+      )}
     </div>
   );
 }
