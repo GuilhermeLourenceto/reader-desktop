@@ -13,6 +13,7 @@ export default function Library({
   onAction,
   onRestore,
   onSources,
+  onSettingsChange,
   scrollContainerRef,
 }) {
   const [query, setQuery] = useState(''),
@@ -36,13 +37,16 @@ export default function Library({
     () => new Map(categories.map((item) => [String(item.id), new Set(item.novelIds)])),
     [categories],
   );
-  const categoryCounts = useMemo(
-    () => new Map(categories.map((item) => [
+  const categoryCounts = useMemo(() => {
+    const libraryIds = new Set(books.map(book => book.id));
+    return new Map(categories.map(item => [
       String(item.id),
-      books.filter((book) => categorySets.get(String(item.id)).has(book.id)).length,
-    ])),
-    [books, categories, categorySets],
-  );
+      [...new Set(item.novelIds)].filter(id => libraryIds.has(id)).length,
+    ]));
+  }, [books, categories]);
+  // Keep the quick setting and the library status choices in sync.
+  const statusFilter = filter === 'unread' ? 'unread' :
+    (filter === 'downloaded' || settings.desktopDownloadedOnly) ? 'downloaded' : 'all';
   // Filtering thousands of chapters on every selection click is unnecessary.
   const visible = useMemo(() => {
     const term = query.toLowerCase();
@@ -64,6 +68,14 @@ export default function Library({
     return ordered;
   }, [books, category, categorySets, filter, query, settings.desktopDownloadedOnly, sort]);
   const scrollToStart = () => scrollContainerRef?.current?.scrollTo({ top: 0 });
+  const changeStatus = (value) => {
+    setFilter(value === 'unread' ? 'unread' : 'all');
+    if (typeof onSettingsChange === 'function' &&
+        !!settings.desktopDownloadedOnly !== (value === 'downloaded')) {
+      onSettingsChange({ desktopDownloadedOnly: value === 'downloaded' });
+    }
+    scrollToStart();
+  };
   const toggle = (id, event) => {
     const startIndex = visible.findIndex((book) => book.id === lastSelectedId.current);
     const endIndex = visible.findIndex((book) => book.id === id);
@@ -240,12 +252,9 @@ export default function Library({
                 <button
                   key={value}
                   type="button"
-                  className={filter === value ? 'selected' : ''}
-                  aria-pressed={filter === value}
-                  onClick={() => {
-                    setFilter(value);
-                    scrollToStart();
-                  }}
+                  className={statusFilter === value ? 'selected' : ''}
+                  aria-pressed={statusFilter === value}
+                  onClick={() => changeStatus(value)}
                 >
                   {label}
                 </button>
@@ -269,15 +278,14 @@ export default function Library({
               <option value="chapters-desc">Mais capítulos</option>
             </select>
           </div>
-          {(category || filter !== 'all' || sort !== 'original') && (
+          {(category || statusFilter !== 'all' || sort !== 'original') && (
             <button
               className="library-clear-filters"
               type="button"
               onClick={() => {
                 setCategory('');
-                setFilter('all');
                 setSort('original');
-                scrollToStart();
+                changeStatus('all');
               }}
             >
               Limpar filtros
