@@ -192,6 +192,16 @@ export default function Library({
             className="icon-button"
             aria-label="Filtrar biblioteca"
             aria-expanded={filters}
+            aria-description={
+              category || filter !== 'all' || sort !== 'original' || settings.desktopDownloadedOnly
+                ? translateMessage('Filtros ativos')
+                : undefined
+            }
+            data-active-filters={
+              category || filter !== 'all' || sort !== 'original' || settings.desktopDownloadedOnly
+                ? 'true'
+                : undefined
+            }
             onClick={() => setFilters(!filters)}
           >
             <Icon name="filter" />
