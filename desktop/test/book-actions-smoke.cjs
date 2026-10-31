@@ -202,7 +202,7 @@ server.listen(0, '127.0.0.1', () => {
           ),
           2,
         );
-        await click('Marcar não lido: Capítulo 1');
+        await click('Marcar como não lido: Capítulo 1');
         await wait(
           'window.desktop.load().then(state=>state.novels[0].chapters[0].unread===true && state.novels[0].chapters[0].progress===0)',
         );
@@ -230,7 +230,7 @@ server.listen(0, '127.0.0.1', () => {
         );
         await click('Marcar lidos');
         await select('Filtrar capítulos', 'all');
-        await click('Marcar Capítulo 2');
+        await click('Adicionar marcador a Capítulo 2');
         await select('Filtrar capítulos', 'bookmarked');
         assert.equal(
           await execute("document.querySelectorAll('.chapter-open').length"),
