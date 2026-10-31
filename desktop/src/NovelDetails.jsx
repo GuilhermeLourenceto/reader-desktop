@@ -556,8 +556,9 @@ export default function NovelDetails({
                 <div className="chapter-actions">
                   <button
                     className={chapter.bookmark ? 'active' : ''}
+                    aria-pressed={!!chapter.bookmark}
                     aria-label={translateMessage(chapter.bookmark ? 'Remover marcador de {v0}' : 'Adicionar marcador a {v0}', { v0: chapter.name })}
-                    title="Marcador"
+                    title={translateMessage(chapter.bookmark ? 'Remover marcador de {v0}' : 'Adicionar marcador a {v0}', { v0: chapter.name })}
                     disabled={busy}
                     onClick={() =>
                       onChange([chapter.id], { bookmark: !chapter.bookmark })
