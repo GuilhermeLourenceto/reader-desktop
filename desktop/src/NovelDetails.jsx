@@ -1,5 +1,5 @@
 import { t as translateMessage } from './i18n.cjs';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import sanitize from 'sanitize-html';
 import Spinner from './Spinner';
 import {
@@ -42,31 +42,41 @@ export default function NovelDetails({
   const alive = useRef(true);
   const sentinelRef = useRef(null);
   const autoLoading = useRef(false);
-  const resume = resumeChapter(novel);
-  const direction = chapterDirection(novel);
-  const ordinals = chapterOrdinals(novel.chapters, direction.direction);
-  const genres = (
-    Array.isArray(novel.genres)
-      ? novel.genres
-      : String(novel.genres || '').split(/[,;\n]/)
-  )
-    .map((value) => value.trim())
-    .filter(Boolean);
-  let chapters = novel.chapters.filter(
-    (chapter) =>
-      ((chapter.name || '').toLowerCase().includes(query.toLowerCase()) ||
-        String(ordinals.get(chapter.id)) === query.trim()) &&
+  const resume = useMemo(() => resumeChapter(novel), [novel]);
+  const direction = useMemo(() => chapterDirection(novel), [novel]);
+  const ordinals = useMemo(
+    () => chapterOrdinals(novel.chapters, direction.direction),
+    [novel.chapters, direction.direction],
+  );
+  const genres = useMemo(
+    () => (
+      Array.isArray(novel.genres)
+        ? novel.genres
+        : String(novel.genres || '').split(/[,;\n]/)
+    ).map(value => value.trim()).filter(Boolean),
+    [novel.genres],
+  );
+  // Keep expensive chapter scans outside renders caused by selection or loading.
+  const chapters = useMemo(() => {
+    const term = query.toLowerCase();
+    const numberQuery = query.trim();
+    const matching = novel.chapters.filter(chapter =>
+      ((chapter.name || '').toLowerCase().includes(term) ||
+        String(ordinals.get(chapter.id)) === numberQuery) &&
       (filter === 'all' ||
         (filter === 'unread' && chapter.unread !== false) ||
         (filter === 'read' && chapter.unread === false) ||
         (filter === 'downloaded' && chapter.isDownloaded) ||
         (filter === 'bookmarked' && chapter.bookmark)),
-  );
-  if (order === 'reverse') chapters = [...chapters].reverse();
-  if (order === 'name')
-    chapters = [...chapters].sort((a, b) =>
-      a.name.localeCompare(b.name, undefined, { numeric: true }),
     );
+    if (order === 'reverse') matching.reverse();
+    if (order === 'name')
+      matching.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { numeric: true }),
+      );
+    return matching;
+  }, [novel.chapters, query, filter, order, ordinals]);
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
   const pendingLoad = useRef(null);
   pendingLoad.current = {
     limit,
@@ -427,7 +437,7 @@ export default function NovelDetails({
                   aria-label={translateMessage('Selecionar {v0}', {
                     v0: chapter.name,
                   })}
-                  checked={selected.includes(chapter.id)}
+                  checked={selectedSet.has(chapter.id)}
                   onChange={() => toggle(chapter.id)}
                 />
                 <button
