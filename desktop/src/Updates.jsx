@@ -238,19 +238,15 @@ export default function Updates({
                       <span>
                         <strong>{chapter.name}</strong>
                         <small>
-                          Capítulo {numbering.get(chapter.id)} ·{' '}
+                          {translateMessage('Capítulo {v0}', { v0: numbering.get(chapter.id) })} ·{' '}
                           {chapter.unread === false ? 'Lido' : 'Não lido'}
-                          {chapter.isDownloaded ? ' · Baixado' : ''}
+                          {chapter.isDownloaded && <> · {translateMessage('Baixado')}</>}
                         </small>
                       </span>
                     </button>
                     <button
                       className="icon-button"
-                      aria-label={`${
-                        chapter.isDownloaded
-                          ? 'Apagar download da atualização'
-                          : 'Baixar atualização'
-                      }: ${chapter.name}`}
+                      aria-label={translateMessage(chapter.isDownloaded ? 'Apagar download da atualização: {v0}' : 'Baixar atualização: {v0}', { v0: chapter.name })}
                       disabled={busy}
                       onClick={() =>
                         chapter.isDownloaded
