@@ -1,4 +1,6 @@
 module.exports = `
+Hoje|Today|Hoy|Aujourd’hui|Heute|Oggi|Сегодня|今日|오늘|今天
+Ontem|Yesterday|Ayer|Hier|Gestern|Ieri|Вчера|昨日|어제|昨天
 Mostrar mais histórico|Show more history|Mostrar más historial|Afficher plus d'historique|Mehr Verlauf anzeigen|Mostra altra cronologia|Показать больше истории|履歴をさらに表示|기록 더 보기|显示更多历史记录
 Mostrar mais capítulos|Show more chapters|Mostrar más capítulos|Afficher plus de chapitres|Weitere Kapitel anzeigen|Mostra altri capitoli|Показать больше глав|章をさらに表示|챕터 더 보기|显示更多章节
 Adicionar marcador a {v0}|Bookmark {v0}|Añadir marcador a {v0}|Ajouter un signet à {v0}|Lesezeichen für {v0} setzen|Aggiungi segnalibro a {v0}|Добавить закладку: {v0}|{v0}をブックマーク|{v0} 북마크 추가|为{v0}添加书签

@@ -35,7 +35,9 @@ const labels = [
   "Lançamento: {v0}",
   "Filtros ativos",
   "Mostrar mais histórico",
-  "Mostrar mais capítulos"
+  "Mostrar mais capítulos",
+  "Hoje",
+  "Ontem"
 ];
 
 test('all ten desktop languages translate the library filter and context labels', () => {
