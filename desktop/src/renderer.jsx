@@ -1663,6 +1663,10 @@ function App() {
             onAction={(action, ids) => void libraryAction(action, ids)}
             onRestore={() => run(restore)}
             onSources={() => setView('sources')}
+            onSettingsChange={(changes) => update({
+              ...current.current,
+              settings: { ...current.current.settings, ...changes },
+            })}
           />
         )}
         {view === 'updates' && (
