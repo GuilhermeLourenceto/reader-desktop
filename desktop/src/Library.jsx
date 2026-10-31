@@ -1,5 +1,5 @@
 import { t as translateMessage } from './i18n.cjs';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import VirtualBookGrid from './VirtualBookGrid';
 import { categoryDisplayName } from './libraryCategoryLabels.cjs';
 export default function Library({
@@ -23,6 +23,7 @@ export default function Library({
     [selected, setSelected] = useState([]),
     [context, setContext] = useState(null);
   const menu = useRef(null);
+  const menuTrigger = useRef(null);
   const filterPanel = useRef(null);
   const filterButton = useRef(null);
   const searchInput = useRef(null);
@@ -86,9 +87,14 @@ export default function Library({
   useEffect(() => {
     if (!context) return;
     const close = (event) => {
-      if (event.type === 'keydown' && event.key !== 'Escape') return;
-      if (event.type === 'pointerdown' && menu.current?.contains(event.target))
+      if (event.type === 'keydown') {
+        if (event.key !== 'Escape') return;
+        event.preventDefault();
+        setContext(null);
+        if (menuTrigger.current?.isConnected) menuTrigger.current.focus();
         return;
+      }
+      if (menu.current?.contains(event.target)) return;
       setContext(null);
     };
     document.addEventListener('pointerdown', close);
@@ -97,6 +103,27 @@ export default function Library({
     return () => {
       document.removeEventListener('pointerdown', close);
       document.removeEventListener('keydown', close);
+    };
+  }, [context]);
+  // Use actual dimensions instead of fixed Portuguese-size menu estimates.
+  // This also adapts when translations, fonts or the window size change.
+  useLayoutEffect(() => {
+    if (!context || !menu.current) return;
+    const popup = menu.current;
+    const clamp = () => {
+      const rect = popup.getBoundingClientRect();
+      const left = Math.max(8, Math.min(context.x, window.innerWidth - rect.width - 8));
+      const top = Math.max(8, Math.min(context.y, window.innerHeight - rect.height - 8));
+      popup.style.left = left + 'px';
+      popup.style.top = top + 'px';
+    };
+    clamp();
+    const observer = new ResizeObserver(clamp);
+    observer.observe(popup);
+    window.addEventListener('resize', clamp);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', clamp);
     };
   }, [context]);
   useEffect(
@@ -298,13 +325,10 @@ export default function Library({
         selected={selected}
         onToggle={toggle}
         hideSelectionCheckbox
-        onContext={(book, x, y) =>
-          setContext({
-            book,
-            x: Math.max(8, Math.min(x, innerWidth - 270)),
-            y: Math.max(8, Math.min(y, innerHeight - 330)),
-          })
-        }
+        onContext={(book, x, y, trigger) => {
+          menuTrigger.current = trigger;
+          setContext({ book, x, y });
+        }}
       />
       {!books.length && (
         <div className="empty">
@@ -323,6 +347,21 @@ export default function Library({
           ref={menu}
           className="book-context-menu"
           role="menu"
+          onKeyDown={(event) => {
+            if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+            const options = [...event.currentTarget.querySelectorAll('[role="menuitem"]:not(:disabled)')];
+            if (!options.length) return;
+            event.preventDefault();
+            const current = options.indexOf(document.activeElement);
+            const next = event.key === 'Home'
+              ? 0
+              : event.key === 'End'
+                ? options.length - 1
+                : event.key === 'ArrowDown'
+                  ? (current + 1) % options.length
+                  : (current < 0 ? 0 : current + options.length - 1) % options.length;
+            options[next].focus();
+          }}
           aria-label={translateMessage('Ações de {v0}', {
             v0: context.book.name,
           })}
