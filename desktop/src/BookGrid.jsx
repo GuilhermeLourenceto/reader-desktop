@@ -47,7 +47,7 @@ export default function BookGrid({
             onContext
               ? (event) => {
                   event.preventDefault();
-                  onContext(item, event.clientX, event.clientY);
+                  onContext(item, event.clientX, event.clientY, event.currentTarget.querySelector('.book'));
                 }
               : undefined
           }
@@ -75,7 +75,7 @@ export default function BookGrid({
                     ) {
                       event.preventDefault();
                       const rect = event.currentTarget.getBoundingClientRect();
-                      onContext(item, rect.left + 20, rect.top + 30);
+                      onContext(item, rect.left + 20, rect.top + 30, event.currentTarget);
                     }
                   }
                 : undefined
