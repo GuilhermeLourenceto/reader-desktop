@@ -231,6 +231,14 @@ server.listen(0, '127.0.0.1', () => {
         await click('Marcar lidos');
         await select('Filtrar capítulos', 'all');
         await click('Adicionar marcador a Capítulo 2');
+        assert.equal(
+          await execute("document.querySelector('button[aria-label=\"Remover marcador de Capítulo 2\"]').getAttribute('aria-pressed')"),
+          'true',
+        );
+        assert.equal(
+          await execute("document.querySelector('button[aria-label=\"Remover marcador de Capítulo 2\"]').getAttribute('title')"),
+          'Remover marcador de Capítulo 2',
+        );
         await select('Filtrar capítulos', 'bookmarked');
         assert.equal(
           await execute("document.querySelectorAll('.chapter-open').length"),
