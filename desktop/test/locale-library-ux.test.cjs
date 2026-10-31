@@ -33,7 +33,9 @@ const labels = [
   "Apagar download da atualização: {v0}",
   "Capítulo {v0}",
   "Lançamento: {v0}",
-  "Filtros ativos"
+  "Filtros ativos",
+  "Mostrar mais histórico",
+  "Mostrar mais capítulos"
 ];
 
 test('all ten desktop languages translate the library filter and context labels', () => {
