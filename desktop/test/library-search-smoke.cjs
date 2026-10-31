@@ -260,6 +260,22 @@ server.listen(0, '127.0.0.1', () => {
         await select('Tema do aplicativo', 'light');
         await click('Biblioteca');
         await context();
+        await wait("document.activeElement?.getAttribute('role')==='menuitem'");
+        // Context menus must be usable entirely by keyboard and stay within
+        // the viewport even when the window is resized while they are open.
+        await execute("document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true}))");
+        assert.equal(await execute("document.activeElement.textContent.trim()"), 'Remover da biblioteca');
+        await execute("document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Home',bubbles:true}))");
+        assert.equal(await execute("document.activeElement.textContent.trim()"), 'Abrir obra');
+        win.setSize(800, 600);
+        await new Promise(resolve => setTimeout(resolve, 160));
+        const bounds = await execute("(()=>{const r=document.querySelector('[role=menu]').getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:innerWidth,height:innerHeight}})()");
+        assert.ok(bounds.left >= 7 && bounds.top >= 7 && bounds.right <= bounds.width - 7 && bounds.bottom <= bounds.height - 7, 'Context menu clipped: ' + JSON.stringify(bounds));
+        win.setSize(1280, 850);
+        await execute("document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
+        await wait("!document.querySelector('[role=menu]')");
+        assert.equal(await execute("document.activeElement?.classList.contains('book')"), true);
+        await context();
         assert.equal(
           await execute(
             "getComputedStyle(document.querySelector('[role=menu]')).backgroundColor",
@@ -316,6 +332,10 @@ server.listen(0, '127.0.0.1', () => {
         await click('Filtrar biblioteca');
         assert.equal(
           await execute("(()=>{const probe=document.createElement('span');probe.style.background='var(--surfaceContainer)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('.filter-panel')).backgroundColor===expected})()"),
+          true,
+        );
+        assert.equal(
+          await execute("(()=>{const probe=document.createElement('span');probe.style.background='var(--secondaryContainer)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('.searchbar .icon-button[aria-expanded=true]')).backgroundColor===expected})()"),
           true,
         );
         await click('Filtrar biblioteca');
