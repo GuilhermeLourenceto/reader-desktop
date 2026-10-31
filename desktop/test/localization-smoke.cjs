@@ -156,8 +156,20 @@ app.on('browser-window-created', (_, win) => {
         assert.ok(stockNames.some(v => v.includes('Minha categoria')));
         await js("(()=>{const s=document.querySelector('#library-category');s.value='3';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
         await wait("document.querySelectorAll('.book').length===0");
+        assert.equal(
+          await js("document.querySelector('.searchbar .icon-button').getAttribute('aria-description')"),
+          t('Filtros ativos', code),
+        );
+        assert.equal(
+          await js("document.querySelector('.searchbar .icon-button').dataset.activeFilters"),
+          'true',
+        );
         await js("(()=>{const s=document.querySelector('#library-category');s.value='';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
         await wait("document.querySelectorAll('.book').length===1");
+        assert.equal(
+          await js("document.querySelector('.searchbar .icon-button').dataset.activeFilters || ''"),
+          '',
+        );
         await click(t('Filtrar biblioteca', code));
         await js("document.querySelector('.book-card').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,clientX:200,clientY:180}))");
         await wait("document.querySelector('[role=menu]')");
