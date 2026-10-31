@@ -95,6 +95,10 @@ app.on('browser-window-created', (_, win) => {
         await click(t('Aparência', code));
         await wait("document.querySelectorAll('.palette-swatch').length===9");
         assert.equal(
+          await js("Array.from(document.querySelectorAll('select option[value=system]'))[0]?.textContent.trim()"),
+          t('Seguir tema do sistema', code),
+        );
+        assert.equal(
           await js("document.querySelector('.palette-swatch:nth-child(2)').getAttribute('title')"),
           t('Crepúsculo', code),
         );
