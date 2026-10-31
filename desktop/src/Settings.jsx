@@ -287,7 +287,7 @@ export default function Settings({
               title="Tema do aplicativo"
               value={settings.desktopTheme || 'dark'}
               options={[
-                ['system', 'Usar tema do Windows'],
+                ['system', 'Seguir tema do sistema'],
                 ['light', 'Claro'],
                 ['dark', 'Escuro'],
               ]}
