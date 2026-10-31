@@ -198,6 +198,14 @@ server.listen(0, '127.0.0.1', () => {
         await click('Filtrar biblioteca');
         await select('Categoria da biblioteca', '1');
         await wait("document.querySelectorAll('.book').length===1");
+        await click('Filtrar biblioteca');
+        assert.equal(await execute("document.querySelector('.searchbar .icon-button').dataset.activeFilters"), 'true');
+        assert.equal(await execute("document.querySelector('.searchbar .icon-button').getAttribute('aria-description')"), 'Filtros ativos');
+        assert.equal(
+          await execute("(()=>{const probe=document.createElement('span');probe.style.background='var(--primary)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('.searchbar .icon-button'), '::after').backgroundColor===expected})()"),
+          true,
+        );
+        await click('Filtrar biblioteca');
         assert.equal(
           await execute("document.querySelector('.book').textContent.includes('Obra A')"),
           true,
@@ -210,6 +218,7 @@ server.listen(0, '127.0.0.1', () => {
         );
         await select('Categoria da biblioteca', '');
         await wait("document.querySelectorAll('.book').length===2");
+        assert.equal(await execute("document.querySelector('.searchbar .icon-button').dataset.activeFilters || ''"), '');
         await click('Baixadas');
         await wait("document.querySelectorAll('.book').length===1");
         await click('Todas');
