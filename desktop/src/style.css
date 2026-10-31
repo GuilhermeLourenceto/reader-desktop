@@ -2166,3 +2166,23 @@ footer {
     color-mix(in srgb, var(--onSurface) 5%, transparent)
   );
 }
+
+/* Long lists load more items without flooding the DOM. Follow the active palette. */
+.history-more,
+.updates-more-chapters {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--outlineVariant);
+  border-radius: 10px;
+  background: var(--surfaceContainer);
+  color: var(--onSurface);
+  font-weight: 600;
+  text-align: center;
+}
+.history-more:not(:disabled):hover,
+.updates-more-chapters:not(:disabled):hover {
+  background: var(--secondaryContainer);
+  color: var(--onSecondaryContainer);
+}
