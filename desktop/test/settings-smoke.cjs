@@ -121,6 +121,11 @@ app.on('browser-window-created', (_event, win) => {
         await execute('document.documentElement.style.colorScheme'),
         'light',
       );
+      await select('Tema do aplicativo', 'system');
+      assert.equal(
+        await execute('document.documentElement.style.colorScheme'),
+        await execute("matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'"),
+      );
       await select('Tema do aplicativo', 'dark');
       // Custom application palette is applied live and persisted across reloads.
       await execute("document.querySelectorAll('.palette-swatch')[4].click()");
