@@ -346,10 +346,8 @@ server.listen(0, '127.0.0.1', () => {
           await execute("(()=>{const probe=document.createElement('span');probe.style.background='var(--surfaceContainer)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('.filter-panel')).backgroundColor===expected})()"),
           true,
         );
-        assert.equal(
-          await execute("(()=>{const probe=document.createElement('span');probe.style.background='var(--secondaryContainer)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('.searchbar .icon-button[aria-expanded=true]')).backgroundColor===expected})()"),
-          true,
-        );
+        // Buttons animate their background for 150 ms; wait for the final palette color.
+        await wait("(()=>{const probe=document.createElement('span');probe.style.background='var(--secondaryContainer)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('.searchbar .icon-button[aria-expanded=true]')).backgroundColor===expected})()");
         await click('Filtrar biblioteca');
         await context();
         assert.equal(
