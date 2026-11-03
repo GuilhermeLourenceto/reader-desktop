@@ -129,6 +129,9 @@ app.on('browser-window-created', (_, win) => {
             await js(`document.querySelectorAll('.palette-swatch')[${paletteIndex}].click()`);
             await wait(`document.querySelectorAll('.palette-swatch')[${paletteIndex}].getAttribute('aria-pressed')==='true'`);
             await wait(`(()=>{const button=document.querySelectorAll('.palette-swatch')[${paletteIndex}];const probe=document.createElement('span');probe.style.borderColor='var(--primary)';probe.style.backgroundColor='var(--surfaceContainerHigh)';document.body.append(probe);const ok=getComputedStyle(button).borderTopColor===getComputedStyle(probe).borderTopColor&&getComputedStyle(button).backgroundColor===getComputedStyle(probe).backgroundColor;probe.remove();return ok;})()`);
+            // Selected navigation text transitions at the same speed as palette surfaces.
+            // Wait until its actual displayed color reaches the new accent.
+            await wait("(()=>{const button=document.querySelector('nav button.active');const probe=document.createElement('span');probe.style.color='var(--primary)';document.body.append(probe);const ok=getComputedStyle(button).color===getComputedStyle(probe).color;probe.remove();return ok;})()");
             const details = await js(`(()=>{
               const root=document.documentElement;
               const button=document.querySelectorAll('.palette-swatch')[${paletteIndex}];
