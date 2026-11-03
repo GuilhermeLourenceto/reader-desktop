@@ -1,6 +1,7 @@
 import { t as translateMessage } from './i18n.cjs';
 import React, { useState } from 'react';
 import ReaderPreview from './ReaderPreview';
+import GoogleDriveSettings from './GoogleDriveSettings';
 import ReaderThemes from './ReaderThemes';
 import Spinner from './Spinner';
 import { appThemes } from './appThemes';
@@ -130,6 +131,8 @@ export default function Settings({
   onChange,
   onBackup,
   onRestore,
+  onDriveBackup,
+  onDriveRestore,
   onSources,
   onReset,
   busy,
@@ -143,6 +146,7 @@ export default function Settings({
     ['library', 'Biblioteca', 'Tamanho das capas e contadores'],
     ['reader', 'Leitor', 'Fonte, espaçamento e cores da leitura'],
     ['backup', 'Backups', 'Exportar e restaurar sua biblioteca'],
+    ['drive', 'Google Drive', 'Configurar backups no Google Drive'],
     ['about', 'Sobre', 'LNReader Desktop e informações da versão'],
   ];
   const row = (key, title, description, action) => (
@@ -194,7 +198,7 @@ export default function Settings({
           <button
             className="icon-button"
             aria-label="Voltar nas configurações"
-            onClick={() => setPage(page === 'settings' ? 'more' : 'settings')}
+            onClick={() => setPage(page === 'drive' ? 'backup' : page === 'settings' ? 'more' : 'settings')}
           >
             <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
               <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2Z" />
@@ -444,6 +448,9 @@ export default function Settings({
               onRestore,
             )}
           </div>
+          <div className="settings-group">
+            {row('drive', 'Google Drive', 'Configurar backups no Google Drive')}
+          </div>
           {busy && (
             <p className="settings-status" role="status">
               <Spinner small label="Processando backup" />
@@ -455,6 +462,13 @@ export default function Settings({
             uma cópia do estado anterior.
           </p>
         </>
+      )}
+      {page === 'drive' && (
+        <GoogleDriveSettings
+          onBackup={onDriveBackup}
+          onRestore={onDriveRestore}
+          disabled={busy}
+        />
       )}
       {page === 'about' && (
         <>

@@ -2219,3 +2219,28 @@ footer {
   background: var(--secondaryContainer);
   color: var(--onSecondaryContainer);
 }
+
+
+/* Google Drive backups inherit the current LNReader light/dark palette. */
+.cloud-settings { display: grid; gap: 14px; }
+.cloud-status, .cloud-toggle, .cloud-file {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; padding: 14px 16px;
+}
+.cloud-status, .cloud-toggle { border-radius: 12px; }
+.cloud-toggle small, .cloud-file small {
+  display: block; margin-top: 4px;
+  color: var(--onSurfaceVariant); font-size: 12px;
+}
+.cloud-buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+.cloud-buttons button { border-radius: 10px; }
+.cloud-files { display: grid; gap: 8px; }
+.cloud-file {
+  border-radius: 12px; background: var(--surfaceContainer);
+  border: 1px solid var(--outlineVariant);
+}
+.cloud-file-name { min-width: 0; overflow-wrap: anywhere; }
+.cloud-file button { flex-shrink: 0; border-radius: 9px; }
+@media (max-width: 600px) {
+  .cloud-status, .cloud-file { align-items: flex-start; flex-direction: column; }
+}
