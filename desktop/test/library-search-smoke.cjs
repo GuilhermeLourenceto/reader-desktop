@@ -338,6 +338,82 @@ server.listen(0, '127.0.0.1', () => {
           paletteColors.push(await execute("getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()"));
         }
         assert.ok(new Set(paletteColors).size >= 6, 'palette colors did not respond to settings');
+        // Switch every palette in BOTH appearance modes. Verify that small
+        // surfaces/controls and the three palette dots use live MD3 tokens.
+        // This catches light-theme regressions hidden by dark-only testing.
+        for (const mode of ['light', 'dark']) {
+          await select('Tema do aplicativo', mode);
+          await wait(`document.documentElement.dataset.appTheme===${JSON.stringify(mode)}`);
+          for (let index = 0; index < 9; index++) {
+            await execute(`document.querySelectorAll('.palette-swatch')[${index}].click()`);
+            await wait(`document.querySelectorAll('.palette-swatch')[${index}].getAttribute('aria-pressed')==='true'`);
+            // Palette buttons animate border and background for 150 ms. Wait
+            // for the final computed colors, not an intermediate frame.
+            await wait(`(()=>{const swatch=document.querySelectorAll('.palette-swatch')[${index}];const probe=document.createElement('span');probe.style.borderColor='var(--primary)';probe.style.backgroundColor='var(--surfaceContainerHigh)';document.body.append(probe);const matches=getComputedStyle(swatch).borderTopColor===getComputedStyle(probe).borderTopColor&&getComputedStyle(swatch).backgroundColor===getComputedStyle(probe).backgroundColor;probe.remove();return matches})()`);
+            const result = await execute(`(()=>{
+              const root=document.documentElement;
+              const all=document.querySelectorAll('.palette-swatch');
+              const active=all[${index}];
+              const probe=document.createElement('span');
+              probe.style.color='var(--primary)';
+              probe.style.backgroundColor='var(--background)';
+              document.body.append(probe);
+              const primary=getComputedStyle(probe).color;
+              const background=getComputedStyle(probe).backgroundColor;
+              probe.style.color='var(--secondary)';
+              const secondary=getComputedStyle(probe).color;
+              probe.style.color='var(--tertiary)';
+              const tertiary=getComputedStyle(probe).color;
+              probe.style.color='var(--onSurface)';
+              const foreground=getComputedStyle(probe).color;
+              probe.style.color='var(--surfaceContainerHigh)';
+              const surface=getComputedStyle(probe).color;
+              probe.remove();
+              const dots=active.querySelectorAll('.palette-dots i');
+              return {
+                mode: root.dataset.appTheme,
+                scheme: getComputedStyle(root).colorScheme,
+                rootBackground: getComputedStyle(root).backgroundColor===background,
+                primaryLabel: getComputedStyle(document.querySelector('.settings-section-title')).color===primary,
+                selectedBorder: getComputedStyle(active).borderTopColor===primary,
+                text: getComputedStyle(document.querySelector('.setting-row')).color===foreground,
+                surface: getComputedStyle(active).backgroundColor===surface,
+                dots: [...dots].map((dot,i)=>getComputedStyle(dot).backgroundColor===[primary,secondary,tertiary][i]),
+                selected: active.getAttribute('aria-pressed')==='true',
+              };
+            })()`);
+            assert.equal(result.mode, mode, 'Theme mode ' + mode + ' #' + index);
+            assert.equal(result.scheme, mode, 'Native color scheme ' + mode + ' #' + index);
+            for (const field of ['rootBackground', 'primaryLabel', 'selectedBorder', 'text', 'surface', 'selected'])
+              assert.equal(result[field], true, field + ': ' + mode + ' palette ' + index + ' ' + JSON.stringify(result));
+            assert.deepEqual(result.dots, [true,true,true], 'Palette dots must reflect ' + mode + ' mode #' + index);
+          }
+          console.log('THEME MATRIX OK:', mode, '9 palettes and minor controls');
+        }
+
+        // Verify selected tabs keep their own palette surface while hovered.
+        // A high-specificity global button:hover used to overwrite this
+        // with a translucent fallback, damaging light-theme readability.
+        await execute("(()=>{const group=document.createElement('div');group.className='source-mode-tabs';group.id='theme-probe-group';const button=document.createElement('button');button.setAttribute('aria-pressed','true');button.textContent='Theme test';group.append(button);document.body.append(group);})()");
+        win.webContents.debugger.attach('1.3');
+        try {
+          await win.webContents.debugger.sendCommand('DOM.enable');
+          await win.webContents.debugger.sendCommand('CSS.enable');
+          const { root } = await win.webContents.debugger.sendCommand('DOM.getDocument');
+          const { nodeId } = await win.webContents.debugger.sendCommand('DOM.querySelector', {
+            nodeId: root.nodeId, selector: '#theme-probe-group button',
+          });
+          await win.webContents.debugger.sendCommand('CSS.forcePseudoState', {
+            nodeId, forcedPseudoClasses: ['hover'],
+          });
+          await wait("(()=>{const probe=document.createElement('span');probe.style.background='var(--secondaryContainer)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('#theme-probe-group button')).backgroundColor===expected})()");
+          await win.webContents.debugger.sendCommand('CSS.forcePseudoState', {
+            nodeId, forcedPseudoClasses: [],
+          });
+        } finally {
+          win.webContents.debugger.detach();
+          await execute("document.querySelector('#theme-probe-group')?.remove()");
+        }
         // A filter, a card selection outline and the context menu use
         // the SAME palette-driven values as the rest of the application.
         await click('Biblioteca');
@@ -381,6 +457,27 @@ server.listen(0, '127.0.0.1', () => {
         await click('Fechar prévia');
         await click('Biblioteca');
         await execute("document.querySelector('.book').click()");
+        // A prominent "continue" action must retain its on-primary contrast
+        // during hover. Test an actual novel control, not a synthetic color.
+        win.webContents.debugger.attach('1.3');
+        try {
+          await win.webContents.debugger.sendCommand('DOM.enable');
+          await win.webContents.debugger.sendCommand('CSS.enable');
+          const { root } = await win.webContents.debugger.sendCommand('DOM.getDocument');
+          const { nodeId } = await win.webContents.debugger.sendCommand('DOM.querySelector', {
+            nodeId: root.nodeId, selector: 'button.continue-reading',
+          });
+          assert.ok(nodeId, 'Continue reading button not found');
+          await win.webContents.debugger.sendCommand('CSS.forcePseudoState', {
+            nodeId, forcedPseudoClasses: ['hover'],
+          });
+          await wait("(()=>{const probe=document.createElement('span');probe.style.background='color-mix(in srgb, var(--primary) 90%, var(--onSurface))';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('button.continue-reading')).backgroundColor===expected})()");
+          await win.webContents.debugger.sendCommand('CSS.forcePseudoState', {
+            nodeId, forcedPseudoClasses: [],
+          });
+        } finally {
+          win.webContents.debugger.detach();
+        }
         await click('Continuar leitura');
         await wait(
           "document.querySelector('.reader-scroll article')&&!document.querySelector('.busy')",
