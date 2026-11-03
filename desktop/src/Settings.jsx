@@ -24,9 +24,9 @@ function PalettePicker({ value = 'default', onChange }) {
           onClick={() => onChange(theme.id)}
         >
           <span className="palette-dots" aria-hidden="true">
-            <i style={{ background: theme.dark.primary }} />
-            <i style={{ background: theme.dark.secondary }} />
-            <i style={{ background: theme.dark.tertiary }} />
+            <i style={{ '--swatch-light': theme.light.primary, '--swatch-dark': theme.dark.primary }} />
+            <i style={{ '--swatch-light': theme.light.secondary, '--swatch-dark': theme.dark.secondary }} />
+            <i style={{ '--swatch-light': theme.light.tertiary, '--swatch-dark': theme.dark.tertiary }} />
           </span>
           <span>{translateMessage(theme.name)}</span>
         </button>
@@ -207,7 +207,7 @@ export default function Settings({
           <div className="settings-brand">
             <img src="logo.png" alt="" />
             <h3>LNReader</h3>
-            <span>Desktop · {version || '0.2.0'}</span>
+            <span>Desktop · {version || '…'}</span>
           </div>
           <div className="settings-group">{quick}</div>
           <div className="settings-group">
@@ -460,7 +460,7 @@ export default function Settings({
           <div className="settings-brand">
             <img src="logo.png" alt="" />
             <h3>LNReader Desktop</h3>
-            <span>{version || '0.2.0'} · Versão experimental para Windows</span>
+            <span>{version || '…'} · Versão experimental para Windows e Linux</span>
           </div>
           <div className="settings-group">
             <p>Leitor de novels com o motor original de fontes do LNReader.</p>

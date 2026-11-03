@@ -82,3 +82,17 @@ test('saved stock category tabs are translated without rewriting names or custom
   assert.equal(original[0].name, 'Padrão');
   assert.equal(original[0].novelIds[0], 123);
 });
+
+
+test('About screen labels Windows and Linux in all ten interface languages', () => {
+  const message = '· Versão experimental para Windows e Linux';
+  assert.ok(messages[message], 'Missing cross-platform label');
+  for (const [locale] of languages) {
+    const label = t(message, {}, locale);
+    assert.ok(label.trim(), 'Empty platform label in ' + locale);
+    assert.ok(label.includes('Windows'), 'Windows missing in ' + locale);
+    assert.ok(label.includes('Linux'), 'Linux missing in ' + locale);
+    assert.ok(!label.includes('para Windows|'), 'Unexpected separator in ' + locale);
+  }
+  assert.equal(messages['· Versão experimental para Windows'], undefined);
+});

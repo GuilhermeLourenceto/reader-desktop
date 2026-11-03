@@ -106,6 +106,11 @@ app.on('browser-window-created', (_event, win) => {
         true,
       );
     };
+      // Palette previews should reflect the currently applied light/dark
+      // colors, not always show the dark-mode version.
+      const previewMatchesPrimary = (index) => execute(
+        `(()=>{const root=document.documentElement;const dot=document.querySelectorAll('.palette-swatch')[${index}].querySelector('.palette-dots i');const probe=document.createElement('span');probe.style.background=getComputedStyle(root).getPropertyValue('--primary');document.body.append(probe);const same=getComputedStyle(dot).backgroundColor===getComputedStyle(probe).backgroundColor;probe.remove();return same})()`,
+      );
     try {
       await wait(
         "document.querySelectorAll('.book').length===2 && !document.body.innerText.includes('Processando…')",
@@ -121,6 +126,7 @@ app.on('browser-window-created', (_event, win) => {
         await execute('document.documentElement.style.colorScheme'),
         'light',
       );
+      assert.equal(await previewMatchesPrimary(0), true, 'Light palette preview must match selected theme');
       await select('Tema do aplicativo', 'system');
       assert.equal(
         await execute('document.documentElement.style.colorScheme'),
@@ -132,6 +138,7 @@ app.on('browser-window-created', (_event, win) => {
       await wait("document.querySelectorAll('.palette-swatch')[4].getAttribute('aria-pressed')==='true'");
       const palettePrimary = await execute("getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()");
       assert.ok(palettePrimary && palettePrimary !== 'transparent');
+      assert.equal(await previewMatchesPrimary(4), true, 'Dark palette preview must match selected theme');
       await click('Voltar nas configurações');
       await execute(
         "document.querySelector('.setting-link[aria-label=Biblioteca]').click()",
