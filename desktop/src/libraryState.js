@@ -1,3 +1,4 @@
+import { nextNovelPage, nextChapterId } from './libraryPerf.cjs';
 import { INSTALLED_PLUGINS_KEY } from '../vendor/lnreader/src/plugins/constants';
 import { setLocale } from './i18n.cjs';
 
@@ -50,8 +51,4 @@ export const loadedPages = (novel) => [
     ...novel.chapters.map((chapter) => Number(chapter.page || 1)),
   ]),
 ];
-export const nextNovelPage = (novel) =>
-  Array.from(
-    { length: Number(novel.totalPages || 1) },
-    (_, index) => index + 1,
-  ).find((page) => !loadedPages(novel).includes(page));
+export { nextNovelPage, nextChapterId };
