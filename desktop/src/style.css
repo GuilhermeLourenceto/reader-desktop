@@ -1605,9 +1605,19 @@ footer {
   margin: 16px 0;
   overflow-wrap: anywhere;
 }
-.updates-progress > span {
-  flex: 1;
-  min-width: 140px;
+/* Keep the updates status compact. Never let a flex rule stretch its spinner:
+   a very wide rotating ellipse draws the diagonal streak seen in the UI. */
+.updates-progress {
+  width: fit-content;
+  max-width: min(100%, 900px);
+}
+.updates-progress > .spinner {
+  flex: 0 0 18px;
+  min-width: 18px;
+}
+.updates-progress > .updates-progress-text {
+  flex: 1 1 260px;
+  min-width: 0;
 }
 .updates-errors summary {
   cursor: pointer;

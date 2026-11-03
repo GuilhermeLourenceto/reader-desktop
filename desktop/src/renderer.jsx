@@ -1580,7 +1580,8 @@ function App() {
             <button onClick={() => setReaderError(null)}>Fechar</button>
           </div>
         )}
-        {(busy || downloadProgress) && (
+        {(busy || downloadProgress) &&
+          !(view === 'updates' && updatesProgress && !downloadProgress) && (
           <div className="busy" role="status">
             {busy && sourceWorking && (
               <button

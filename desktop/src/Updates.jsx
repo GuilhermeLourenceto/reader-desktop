@@ -110,7 +110,7 @@ export default function Updates({
       {progress && (
         <div className="updates-progress" role="status">
           <Spinner small label="Atualizando biblioteca" />
-          <span>
+          <span className="updates-progress-text">
             {t('Verificando {current} de {total}: {name}', {
               current: progress.done + 1,
               total: progress.total,

@@ -116,6 +116,47 @@ app.on('browser-window-created', (_event, win) => {
     }
 
 
+
+    // Regression: the real Updates layout must never grow its spinner into
+    // a rotating, screen-wide ellipse when long novel titles are displayed.
+    async function verifyUpdatesProgressLayout(reducedMotion) {
+      const metrics = await js(`(() => {
+        const wrapper = document.createElement('div');
+        wrapper.id = 'updates-spinner-layout-test';
+        wrapper.className = 'updates-page history-page';
+        wrapper.innerHTML = '<div class="updates-progress" role="status"><span class="spinner spinner-small" aria-hidden="true"></span><span class="updates-progress-text">Verificando 1 de 2: A very long title for a novel being checked for new chapters</span><button>Parar após esta obra</button></div>';
+        document.body.append(wrapper);
+        const progress = wrapper.querySelector('.updates-progress');
+        const spinner = progress.querySelector('.spinner');
+        const label = progress.querySelector('.updates-progress-text');
+        const style = getComputedStyle(spinner);
+        return {
+          width: spinner.offsetWidth,
+          height: spinner.offsetHeight,
+          panelWidth: progress.offsetWidth,
+          viewportWidth: document.documentElement.clientWidth,
+          labelWidth: label.offsetWidth,
+          name: style.animationName,
+          duration: style.animationDuration,
+          transform: style.transform,
+        };
+      })()`);
+      assert.equal(metrics.width, 18, 'Updates spinner must remain 18px wide, not grow as a flex item');
+      assert.equal(metrics.height, 18, 'Updates spinner must remain circular');
+      assert.ok(metrics.panelWidth <= Math.min(metrics.viewportWidth, 900), 'Updates status should stay compact');
+      assert.ok(metrics.labelWidth > 0, 'Progress text must remain visible');
+      assert.equal(metrics.name, 'loading-spin', 'Updates must use the real animated spinner');
+      assert.equal(metrics.duration, reducedMotion ? '1.6s' : '0.8s');
+      let moved = false;
+      for (let i = 0; i < 4; i++) {
+        await sleep(140);
+        const transform = await js("getComputedStyle(document.querySelector('#updates-spinner-layout-test .spinner')).transform");
+        if (transform !== metrics.transform) moved = true;
+      }
+      assert.ok(moved, 'Circular updates spinner must rotate in real Chromium frames');
+      await js("document.getElementById('updates-spinner-layout-test').remove()");
+    }
+
     async function verifyActiveNavigation() {
       const nav = await js(`(() => {
         const button = document.querySelector('.app nav button.active');
@@ -156,6 +197,7 @@ app.on('browser-window-created', (_event, win) => {
       await probe(false, false);
       await probe(true, false);
       await verifyMotion(false);
+      await verifyUpdatesProgressLayout(false);
       await verifyActiveNavigation();
       win.webContents.debugger.attach('1.3');
       attached = true;
@@ -164,7 +206,8 @@ app.on('browser-window-created', (_event, win) => {
       });
       await probe(false, true);
       await verifyMotion(true);
-      console.log('PASS: spinner, progress bar, active navigation hover, source highlight, buttons, palette, switch track/thumb and reader chrome animations across regular and reduced motion');
+      await verifyUpdatesProgressLayout(true);
+      console.log('PASS: circular Updates spinner layout, progress bar, active navigation hover, source highlight, buttons, palette, switch track/thumb and reader chrome animations across regular and reduced motion');
       finish(0);
     } catch (error) {
       console.error('SPINNER ANIMATION FAILURE', error);
