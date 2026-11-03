@@ -23,4 +23,16 @@ function nextChapterId(novels) {
   return id;
 }
 
-module.exports = { nextNovelPage, nextChapterId };
+// Keep badge counts consistent with the existing React UI: absent "unread"
+// means unread, while downloaded requires a truthy isDownloaded flag.
+function countChapterStatuses(chapters) {
+  let downloaded = 0;
+  let unread = 0;
+  for (const chapter of chapters) {
+    if (chapter.isDownloaded) downloaded++;
+    if (chapter.unread !== false) unread++;
+  }
+  return { downloaded, unread };
+}
+
+module.exports = { nextNovelPage, nextChapterId, countChapterStatuses };

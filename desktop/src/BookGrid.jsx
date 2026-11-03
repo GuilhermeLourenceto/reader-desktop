@@ -1,6 +1,7 @@
 import { t as translateMessage } from './i18n.cjs';
 import { t } from './i18n.cjs';
 import React, { useMemo } from 'react';
+import { countChapterStatuses } from './libraryPerf.cjs';
 export default function BookGrid({
   items,
   pluginId,
@@ -20,6 +21,15 @@ export default function BookGrid({
   after = 0,
 }) {
   const selectedSet = useMemo(() => new Set(selected), [selected]);
+  // Count each card's chapter flags only once per render. The virtual grid
+  // already limits this work to the cards currently on screen.
+  const chapterCounts =
+    settings.desktopShowBadges === false &&
+    settings.desktopShowChapterCount === false
+      ? []
+      : items.map((item) =>
+          item.chapters ? countChapterStatuses(item.chapters) : null,
+        );
   return (
     <div
       ref={gridRef}
@@ -37,7 +47,7 @@ export default function BookGrid({
       {virtualized && before > 0 && (
         <div className="virtual-grid-spacer" aria-hidden="true" style={{ height: before }} />
       )}
-      {items.map((item) => (
+      {items.map((item, index) => (
         <div
           className={`book-card ${
             selectedSet.has(item.id) ? 'is-selected' : ''
@@ -91,23 +101,14 @@ export default function BookGrid({
               )}
               {item.chapters && settings.desktopShowBadges !== false && (
                 <div className="badges">
-                  {item.chapters.some((chapter) => chapter.isDownloaded) && (
+                  {chapterCounts[index]?.downloaded > 0 && (
                     <span className="download-badge" title="Capítulos baixados">
-                      {
-                        item.chapters.filter((chapter) => chapter.isDownloaded)
-                          .length
-                      }
+                      {chapterCounts[index].downloaded}
                     </span>
                   )}
-                  {item.chapters.some(
-                    (chapter) => chapter.unread !== false,
-                  ) && (
+                  {chapterCounts[index]?.unread > 0 && (
                     <span className="unread-badge" title="Capítulos não lidos">
-                      {
-                        item.chapters.filter(
-                          (chapter) => chapter.unread !== false,
-                        ).length
-                      }
+                      {chapterCounts[index].unread}
                     </span>
                   )}
                 </div>
@@ -118,9 +119,7 @@ export default function BookGrid({
               <small>
                 {t('Capítulos: {total} · Não lidos: {unread}', {
                   total: item.chapters.length,
-                  unread: item.chapters.filter(
-                    (chapter) => chapter.unread !== false,
-                  ).length,
+                  unread: chapterCounts[index].unread,
                 })}
               </small>
             )}

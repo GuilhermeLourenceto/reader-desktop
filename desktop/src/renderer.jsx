@@ -554,9 +554,7 @@ function App() {
         'A fonte não retornou os detalhes desta obra. Atualize o plugin e tente novamente.',
       );
     const id = nextId(current.current.novels);
-    const firstChapterId = nextId(
-      current.current.novels.flatMap((n) => n.chapters),
-    );
+    const firstChapterId = nextChapterId(current.current.novels);
     const alreadyOpened = current.current.novels.find(
       (book) => book.path === item.path && book.pluginId === pluginId,
     );
