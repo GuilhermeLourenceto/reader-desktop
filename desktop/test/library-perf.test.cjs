@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { nextNovelPage, nextChapterId } = require('../src/libraryPerf.cjs');
+const { nextNovelPage, nextChapterId, countChapterStatuses } = require('../src/libraryPerf.cjs');
 
 const oldLoadedPages = novel => [
   ...new Set([
@@ -61,4 +61,31 @@ test('next chapter ID matches flattened legacy scan for 10k novels / 200k chapte
 test('next chapter ID still rejects exhausted safe integer range', () => {
   const novels = [{ chapters: [{ id: Number.MAX_SAFE_INTEGER }] }];
   assert.throws(() => nextChapterId(novels), /identificador.*limite/);
+});
+
+test('badge counts preserve unread/downloaded semantics with one chapter scan', () => {
+  const chapters = [
+    { id: 1, unread: true, isDownloaded: true },
+    { id: 2, unread: false, isDownloaded: true },
+    { id: 3, unread: undefined, isDownloaded: false },
+    { id: 4, unread: null, isDownloaded: undefined },
+  ];
+  const before = JSON.stringify(chapters);
+  assert.deepEqual(countChapterStatuses(chapters), {
+    downloaded: chapters.filter(chapter => chapter.isDownloaded).length,
+    unread: chapters.filter(chapter => chapter.unread !== false).length,
+  });
+  assert.equal(JSON.stringify(chapters), before, 'must not mutate chapters');
+  assert.deepEqual(countChapterStatuses([]), { downloaded: 0, unread: 0 });
+});
+
+test('badge counts match original filters in a large synthetic book', () => {
+  const chapters = Array.from({ length: 200000 }, (_, i) => ({
+    isDownloaded: i % 5 === 0,
+    unread: i % 3 !== 0,
+  }));
+  assert.deepEqual(countChapterStatuses(chapters), {
+    downloaded: chapters.filter(chapter => chapter.isDownloaded).length,
+    unread: chapters.filter(chapter => chapter.unread !== false).length,
+  });
 });
