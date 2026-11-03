@@ -43,9 +43,9 @@ const state = {
 };
 fs.writeFileSync(path.join(directory, 'library.json'), JSON.stringify(state));
 const timer = setTimeout(() => {
-  console.error('LOCALIZATION HARD TIMEOUT: no completion in 180s');
+  console.error('LOCALIZATION HARD TIMEOUT: no completion in 240s');
   process.exit(1);
-}, 180000);
+}, 240000);
 let once = false;
 app.on('browser-window-created', (_, win) => {
   win.webContents.setBackgroundThrottling(false);
@@ -111,14 +111,18 @@ app.on('browser-window-created', (_, win) => {
           await js(`Array.from(document.querySelectorAll('.palette-swatch')).some(b=>b.textContent.trim()===${JSON.stringify(t('Morango', code))})`),
           'Palette names must be translated in ' + code,
         );
-        // Combined regression: change the REAL interface language and check
-        // all 9 palettes in both light/dark modes (10 x 2 x 9 = 180).
+        // Combined regression: all 9 palettes in light/dark/OLED (10 x 3 x 9 = 270).
         // This deliberately checks final computed colors after transitions.
+        assert.equal(
+          await js("document.querySelector('select option[value=oled]')?.textContent.trim()"),
+          t('Preto OLED', code),
+          'OLED choice must translate in ' + code,
+        );
         const names = [
           'Padrão', 'Crepúsculo', 'Turquesa', 'Yotsuba', 'Lavanda',
           'Morango', 'Tako', 'Catppuccin', 'Yin Yang',
         ];
-        for (const appearance of ['light', 'dark']) {
+        for (const appearance of ['light', 'dark', 'oled']) {
           await js(`(()=>{const select=Array.from(document.querySelectorAll('select')).find(el=>el.getAttribute('aria-label')===${JSON.stringify(t('Tema do aplicativo', code))});if(!select)throw Error('Theme selector missing');select.value=${JSON.stringify(appearance)};select.dispatchEvent(new Event('change',{bubbles:true}));})()`);
           await wait(`document.documentElement.dataset.appTheme===${JSON.stringify(appearance)}`);
           for (let paletteIndex = 0; paletteIndex < 9; paletteIndex++) {
@@ -156,7 +160,11 @@ app.on('browser-window-created', (_, win) => {
             })()`);
             assert.equal(details.locale, code);
             assert.equal(details.theme, appearance);
-            assert.equal(details.scheme, appearance);
+            assert.equal(details.scheme, appearance === 'light' ? 'light' : 'dark');
+            if (appearance === 'oled') {
+              assert.equal(await js("getComputedStyle(document.documentElement).backgroundColor"), 'rgb(0, 0, 0)', 'OLED root must be black');
+              assert.equal(await js("getComputedStyle(document.documentElement).getPropertyValue('--readerBackground').trim()"), '#000000', 'OLED reader must follow black');
+            }
             for (const name of ['rootBackground','title','text','border','selected'])
               assert.equal(details[name], true, name + ': ' + code + ' ' + appearance + ' #' + paletteIndex + ' ' + JSON.stringify(details));
             assert.deepEqual(details.dots, [true,true,true], 'Palette dots: ' + code + '/' + appearance + '/' + paletteIndex);
@@ -168,6 +176,11 @@ app.on('browser-window-created', (_, win) => {
         await click(t('Voltar nas configurações', code));
         await click(t('Leitor', code));
         await wait("document.querySelector('.reader-theme-picker select')");
+        assert.equal(
+          await js("getComputedStyle(document.querySelector('.reading-preview')).backgroundColor"),
+          'rgb(0, 0, 0)',
+          'OLED must apply to reader preview in ' + code,
+        );
         assert.equal(
           await js("document.querySelector('.reader-theme-picker option[value=app]').textContent.trim()"),
           t('Seguir aplicativo', code),

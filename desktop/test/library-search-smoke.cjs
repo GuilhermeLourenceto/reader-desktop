@@ -340,16 +340,16 @@ server.listen(0, '127.0.0.1', () => {
           paletteColors.push(await execute("getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()"));
         }
         assert.ok(new Set(paletteColors).size >= 6, 'palette colors did not respond to settings');
-        // Switch every palette in BOTH appearance modes. Verify that small
+        // Switch every palette in light, dark and OLED appearance. Verify that small
         // surfaces/controls and the three palette dots use live MD3 tokens.
         // This catches light-theme regressions hidden by dark-only testing.
-        for (const mode of ['light', 'dark']) {
+        for (const mode of ['light', 'dark', 'oled']) {
           await select('Tema do aplicativo', mode);
           await wait(`document.documentElement.dataset.appTheme===${JSON.stringify(mode)}`);
           for (let index = 0; index < 9; index++) {
             await execute(`document.querySelectorAll('.palette-swatch')[${index}].click()`);
             await wait(`document.querySelectorAll('.palette-swatch')[${index}].getAttribute('aria-pressed')==='true'`);
-            // Palette buttons animate border and background for 150 ms. Wait
+            // Palette buttons animate border and background for 160 ms. Wait
             // for the final computed colors, not an intermediate frame.
             await wait(`(()=>{const swatch=document.querySelectorAll('.palette-swatch')[${index}];const probe=document.createElement('span');probe.style.borderColor='var(--primary)';probe.style.backgroundColor='var(--surfaceContainerHigh)';document.body.append(probe);const matches=getComputedStyle(swatch).borderTopColor===getComputedStyle(probe).borderTopColor&&getComputedStyle(swatch).backgroundColor===getComputedStyle(probe).backgroundColor;probe.remove();return matches})()`);
             const result = await execute(`(()=>{
@@ -385,7 +385,12 @@ server.listen(0, '127.0.0.1', () => {
               };
             })()`);
             assert.equal(result.mode, mode, 'Theme mode ' + mode + ' #' + index);
-            assert.equal(result.scheme, mode, 'Native color scheme ' + mode + ' #' + index);
+            assert.equal(result.scheme, mode === 'light' ? 'light' : 'dark', 'Native color scheme ' + mode + ' #' + index);
+            if (mode === 'oled') {
+              assert.equal(await execute("getComputedStyle(document.documentElement).backgroundColor"), 'rgb(0, 0, 0)', 'OLED root');
+              assert.equal(await execute("getComputedStyle(document.documentElement).getPropertyValue('--surfaceContainer').trim()"), '#0b0b0b', 'OLED sidebar');
+              assert.equal(await execute("getComputedStyle(document.documentElement).getPropertyValue('--surfaceContainerHigh').trim()"), '#151515', 'OLED menus');
+            }
             for (const field of ['rootBackground', 'primaryLabel', 'selectedBorder', 'text', 'surface', 'selected'])
               assert.equal(result[field], true, field + ': ' + mode + ' palette ' + index + ' ' + JSON.stringify(result));
             assert.deepEqual(result.dots, [true,true,true], 'Palette dots must reflect ' + mode + ' mode #' + index);
@@ -424,7 +429,7 @@ server.listen(0, '127.0.0.1', () => {
           await execute("(()=>{const probe=document.createElement('span');probe.style.background='var(--surfaceContainer)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('.filter-panel')).backgroundColor===expected})()"),
           true,
         );
-        // Buttons animate their background for 150 ms; wait for the final palette color.
+        // Buttons animate their background for 160 ms; wait for the final palette color.
         await wait("(()=>{const probe=document.createElement('span');probe.style.background='var(--secondaryContainer)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();return getComputedStyle(document.querySelector('.searchbar .icon-button[aria-expanded=true]')).backgroundColor===expected})()");
         await click('Filtrar biblioteca');
         await context();
