@@ -7,6 +7,11 @@ const {
   setLocale,
   getLocale,
 } = require('../src/i18n.cjs');
+test('English is the initial interface locale and unsupported locale fallback', () => {
+  assert.equal(getLocale(), 'en');
+  setLocale('does-not-exist');
+  assert.equal(getLocale(), 'en');
+});
 test('all interface messages have nonempty translations in ten distinct locales and matching placeholders', () => {
   assert.equal(new Set(languages.map(([code]) => code)).size, 10);
   for (const [key, row] of Object.entries(messages)) {
@@ -31,7 +36,7 @@ test('locale switching preserves unknown source content, safely interpolates and
   );
   assert.equal(t('Buscar em {count} fontes', { count: 3 }), '配信元3件を検索');
   setLocale('invalid');
-  assert.equal(getLocale(), 'pt-BR');
+  assert.equal(getLocale(), 'en');
 });
 
 test('palette and reader theme options have localized labels for all ten interfaces', () => {

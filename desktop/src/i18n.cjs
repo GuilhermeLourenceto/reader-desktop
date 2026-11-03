@@ -1,11 +1,12 @@
 const { languages, messages } = require('./locales.cjs');
-let locale = 'pt-BR';
+const { DEFAULT_DESKTOP_SETTINGS } = require('./defaultSettings.cjs');
+let locale = DEFAULT_DESKTOP_SETTINGS.desktopInterfaceLanguage;
 const listeners = new Set();
 function getLocale() {
   return locale;
 }
 function setLocale(value) {
-  const next = languages.some(([code]) => code === value) ? value : 'pt-BR';
+  const next = languages.some(([code]) => code === value) ? value : DEFAULT_DESKTOP_SETTINGS.desktopInterfaceLanguage;
   if (next === locale) return;
   locale = next;
   if (typeof document !== 'undefined') document.documentElement.lang = next;

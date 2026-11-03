@@ -46,6 +46,7 @@ const timeout = setTimeout(() => {
 }, 30000);
 server.listen(0, '127.0.0.1', () => {
   const state = emptyState();
+  state.settings.desktopInterfaceLanguage = 'pt-BR';
   state.novels = names.map((name, index) => ({
     id: index + 1,
     name,

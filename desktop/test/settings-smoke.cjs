@@ -10,6 +10,7 @@ app.commandLine.appendSwitch('disable-gpu');
 const originalTime = '2026-10-28T01:00:00Z';
 const state = {
   ...emptyState(),
+  settings: { desktopInterfaceLanguage: 'pt-BR' },
   novels: [
     {
       id: 1,
@@ -275,6 +276,8 @@ app.on('browser-window-created', (_event, win) => {
       assert.equal(afterReset.settings.desktopReaderWidth, 820);
       assert.equal(afterReset.settings.desktopShowBadges, true);
       assert.equal(afterReset.settings.desktopPalette, 'default');
+      assert.equal(afterReset.settings.desktopInterfaceLanguage, 'en', 'Reset must switch to English');
+      assert.equal(await execute('document.documentElement.lang'), 'en');
       await new Promise(resolve => {
         win.webContents.once('did-finish-load', resolve);
         win.webContents.reload();

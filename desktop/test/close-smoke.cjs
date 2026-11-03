@@ -9,6 +9,7 @@ app.setPath('userData', profile);
 app.commandLine.appendSwitch('disable-gpu');
 const saved = emptyState();
 saved.settings.theme = 'dark';
+saved.settings.desktopInterfaceLanguage = 'pt-BR';
 fs.writeFileSync(path.join(profile, 'library.json'), JSON.stringify(saved));
 let prompts = 0;
 dialog.showMessageBox = async (_window, options) => {

@@ -64,7 +64,7 @@ server.listen(0, '127.0.0.1', () => {
       base,
     )} + '/search?term=' + encodeURIComponent(term) + '&page=' + page); if (!response.ok) throw new Error('Falha temporária de teste'); return response.json(); }
   };`;
-  const state = { ...emptyState(), plugins: [plugin] };
+  const state = { ...emptyState(), settings: { desktopInterfaceLanguage: 'pt-BR' }, plugins: [plugin] };
   state.files['Plugins/pagination/index.js'] =
     Buffer.from(code).toString('base64');
   fs.writeFileSync(path.join(directory, 'library.json'), JSON.stringify(state));

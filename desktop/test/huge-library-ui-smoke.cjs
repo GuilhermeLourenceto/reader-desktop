@@ -37,7 +37,7 @@ const state = {
     { id: 1, name: 'Stress Selection',
       novelIds: Array.from({ length: 2500 }, (_, i) => i * 4 + 1) },
   ],
-  files: {}, settings: {}, plugins: [], repositories: [], pluginStorage: {},
+  files: {}, settings: { desktopInterfaceLanguage: 'pt-BR' }, plugins: [], repositories: [], pluginStorage: {},
 };
 fs.writeFileSync(path.join(root, 'library.json'), JSON.stringify(state));
 app.setPath('userData', root);

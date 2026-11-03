@@ -68,9 +68,14 @@ app.on('browser-window-created', (_, win) => {
       await wait(
         "document.querySelector('.book') && !document.querySelector('.busy')",
       );
-      await click('Mais');
-      await click('Configurações');
-      await click('Geral');
+      // This seeded library has no desktop language setting: English must
+      // appear at first launch, independently of the operating system locale.
+      assert.equal(await js('document.documentElement.lang'), 'en');
+      assert.equal(await js("document.querySelector('nav button:last-child').textContent.trim()"), 'More');
+      await click('More');
+      await click('Settings');
+      await click('General');
+      assert.equal(await js("document.querySelector('select[aria-label=\"Interface language\"]').value"), 'en');
       for (let i = 0; i < languages.length; i++) {
         const [code] = languages[i];
         console.log('LOCALE SWITCH:', code);
@@ -106,6 +111,59 @@ app.on('browser-window-created', (_, win) => {
           await js(`Array.from(document.querySelectorAll('.palette-swatch')).some(b=>b.textContent.trim()===${JSON.stringify(t('Morango', code))})`),
           'Palette names must be translated in ' + code,
         );
+        // Combined regression: change the REAL interface language and check
+        // all 9 palettes in both light/dark modes (10 x 2 x 9 = 180).
+        // This deliberately checks final computed colors after transitions.
+        const names = [
+          'Padrão', 'Crepúsculo', 'Turquesa', 'Yotsuba', 'Lavanda',
+          'Morango', 'Tako', 'Catppuccin', 'Yin Yang',
+        ];
+        for (const appearance of ['light', 'dark']) {
+          await js(`(()=>{const select=Array.from(document.querySelectorAll('select')).find(el=>el.getAttribute('aria-label')===${JSON.stringify(t('Tema do aplicativo', code))});if(!select)throw Error('Theme selector missing');select.value=${JSON.stringify(appearance)};select.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+          await wait(`document.documentElement.dataset.appTheme===${JSON.stringify(appearance)}`);
+          for (let paletteIndex = 0; paletteIndex < 9; paletteIndex++) {
+            await js(`document.querySelectorAll('.palette-swatch')[${paletteIndex}].click()`);
+            await wait(`document.querySelectorAll('.palette-swatch')[${paletteIndex}].getAttribute('aria-pressed')==='true'`);
+            await wait(`(()=>{const button=document.querySelectorAll('.palette-swatch')[${paletteIndex}];const probe=document.createElement('span');probe.style.borderColor='var(--primary)';probe.style.backgroundColor='var(--surfaceContainerHigh)';document.body.append(probe);const ok=getComputedStyle(button).borderTopColor===getComputedStyle(probe).borderTopColor&&getComputedStyle(button).backgroundColor===getComputedStyle(probe).backgroundColor;probe.remove();return ok;})()`);
+            const details = await js(`(()=>{
+              const root=document.documentElement;
+              const button=document.querySelectorAll('.palette-swatch')[${paletteIndex}];
+              const probe=document.createElement('span');
+              probe.style.color='var(--primary)';
+              probe.style.backgroundColor='var(--background)';
+              document.body.append(probe);
+              const primary=getComputedStyle(probe).color;
+              const background=getComputedStyle(probe).backgroundColor;
+              probe.style.color='var(--secondary)';
+              const secondary=getComputedStyle(probe).color;
+              probe.style.color='var(--tertiary)';
+              const tertiary=getComputedStyle(probe).color;
+              probe.style.color='var(--onSurface)';
+              const foreground=getComputedStyle(probe).color;
+              probe.remove();
+              return {
+                locale:root.lang,
+                scheme:getComputedStyle(root).colorScheme,
+                theme:root.dataset.appTheme,
+                rootBackground:getComputedStyle(root).backgroundColor===background,
+                title:getComputedStyle(document.querySelector('.settings-section-title')).color===primary,
+                text:getComputedStyle(document.querySelector('.setting-row')).color===foreground,
+                border:getComputedStyle(button).borderTopColor===primary,
+                dots:[...button.querySelectorAll('.palette-dots i')].map((el,index)=>getComputedStyle(el).backgroundColor===[primary,secondary,tertiary][index]),
+                selected:button.getAttribute('aria-pressed')==='true',
+                label:button.getAttribute('aria-label'),
+              };
+            })()`);
+            assert.equal(details.locale, code);
+            assert.equal(details.theme, appearance);
+            assert.equal(details.scheme, appearance);
+            for (const name of ['rootBackground','title','text','border','selected'])
+              assert.equal(details[name], true, name + ': ' + code + ' ' + appearance + ' #' + paletteIndex + ' ' + JSON.stringify(details));
+            assert.deepEqual(details.dots, [true,true,true], 'Palette dots: ' + code + '/' + appearance + '/' + paletteIndex);
+            assert.equal(details.label, t('Paleta {v0}', { v0: t(names[paletteIndex], code) }, code));
+          }
+          console.log('LANGUAGE + THEME + PALETTE MATRIX:', code, appearance, '9 PASS');
+        }
         console.log('LOCALE READER:', code);
         await click(t('Voltar nas configurações', code));
         await click(t('Leitor', code));

@@ -15,6 +15,12 @@ dialog.showOpenDialog = async () => ({
 });
 dialog.showMessageBox = async () => ({ response: 1 });
 app.setPath('userData', dataPath);
+// The legacy Portuguese UI journey uses an explicit locale fixture. A
+// separate fresh-profile smoke verifies the product's English default.
+const { emptyState } = require('../dist/backup.cjs');
+fs.writeFileSync(path.join(dataPath, 'library.json'), JSON.stringify({
+  ...emptyState(), settings: { desktopInterfaceLanguage: 'pt-BR' },
+}));
 app.commandLine.appendSwitch('disable-gpu');
 const server = http.createServer((req, res) => {
   if (req.url === '/redirect') {

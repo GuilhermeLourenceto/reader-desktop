@@ -12,6 +12,12 @@ fs.copyFileSync(
   path.join(report.root, 'library.json'),
   path.join(profile, 'library.json'),
 );
+// This older stress journey verifies labels in Portuguese. Make that an
+// explicit fixture preference instead of depending on the product default.
+const metadataFile = path.join(profile, 'library.json');
+const fixture = JSON.parse(fs.readFileSync(metadataFile, 'utf8'));
+fixture.settings = { ...fixture.settings, desktopInterfaceLanguage: 'pt-BR' };
+fs.writeFileSync(metadataFile, JSON.stringify(fixture));
 app.setPath('userData', profile);
 app.commandLine.appendSwitch('disable-gpu');
 let online = false;

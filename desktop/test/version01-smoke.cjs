@@ -27,6 +27,7 @@ const chapter = number => ({
 });
 const state = {
   ...emptyState(),
+  settings: { desktopInterfaceLanguage: 'pt-BR' },
   plugins: [source('fixture'), source('loop')],
   novels: [
     {
@@ -62,6 +63,7 @@ state.files['Novels/fixture/1/1/index.html'] = Buffer.from(
 fs.writeFileSync(path.join(profile, 'library.json'), JSON.stringify(state));
 if (process.argv.includes('--video-settings')) {
   state.settings = {
+    desktopInterfaceLanguage: 'pt-BR',
     desktopFontSize: 27,
     desktopLineHeight: 1.85,
     desktopReaderWidth: 820,

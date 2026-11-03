@@ -71,6 +71,7 @@ server.listen(0, '127.0.0.1', () => {
   });
   const state = {
     ...emptyState(),
+  settings: { desktopInterfaceLanguage: 'pt-BR' },
     plugins: [
       plugin('a'),
       plugin('ab'),
