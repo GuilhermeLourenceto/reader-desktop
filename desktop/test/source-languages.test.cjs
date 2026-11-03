@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   sourceLanguage, sourceLanguageOptions, matchesSourceLanguage, matchesSourceSearch,
 } = require('../src/sourceLanguages.cjs');
+const { getLocale, setLocale } = require('../src/i18n.cjs');
 
 test('normaliza códigos oficiais e suas variantes regionais', () => {
   for (const value of ['pt', 'pt-BR', 'pt_BR', 'Português']) {
@@ -32,6 +33,15 @@ test('filtra os dois catálogos por idioma mantendo a pesquisa de texto', () => 
   assert.equal(matchesSourceLanguage(br, 'pt'), true);
   assert.equal(matchesSourceLanguage(usa, 'pt'), false);
   assert.equal(matchesSourceLanguage(usa, 'all'), true);
-  assert.equal(matchesSourceSearch(br, 'português'), true);
-  assert.equal(matchesSourceSearch(usa, 'royal'), true);
+  const previous = getLocale();
+  try {
+    for (const locale of ['en', 'pt-BR', 'ja']) {
+      setLocale(locale);
+      assert.equal(matchesSourceSearch(br, 'português'), true, 'Native name ' + locale);
+      assert.equal(matchesSourceSearch(br, 'Portuguese'), true, 'English name ' + locale);
+      assert.equal(matchesSourceSearch(usa, 'royal'), true);
+    }
+  } finally {
+    setLocale(previous);
+  }
 });

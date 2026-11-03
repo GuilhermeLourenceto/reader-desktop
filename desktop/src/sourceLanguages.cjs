@@ -42,11 +42,32 @@ function sourceLanguageOptions(installed = [], available = []) {
 function matchesSourceLanguage(plugin, language = 'all') {
   return language === 'all' || sourceLanguage(plugin) === language;
 }
+// Search by the selected UI language as well as English and each language's
+// own name. Keep these stable names cached for large plugin catalogs.
+const searchNames = new Map();
+function languageSearchNames(code) {
+  if (code === 'unknown') return '';
+  if (searchNames.has(code)) return searchNames.get(code);
+  const labels = [];
+  for (const locale of ['en', code]) {
+    try {
+      const name = new Intl.DisplayNames([locale], { type: 'language' }).of(code);
+      if (name && name !== code) labels.push(name);
+    } catch {
+      // Unknown language codes remain searchable by code and source title.
+    }
+  }
+  const value = labels.join(' ');
+  searchNames.set(code, value);
+  return value;
+}
 function matchesSourceSearch(plugin, query) {
+  const code = sourceLanguage(plugin);
   const text = [
     plugin?.name,
     plugin?.lang,
-    languageLabel(sourceLanguage(plugin)),
+    languageLabel(code),
+    languageSearchNames(code),
   ]
     .filter(Boolean)
     .join(' ')

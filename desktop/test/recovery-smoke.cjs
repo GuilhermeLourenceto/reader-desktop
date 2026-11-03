@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const assert = require('node:assert/strict');
+const { t } = require('../src/i18n.cjs');
 app.setPath(
   'userData',
   fs.mkdtempSync(path.join(os.tmpdir(), 'lnreader-recovery-ui-')),
@@ -21,7 +22,11 @@ app.on('browser-window-created', (_event, win) => {
       try {
         assert.equal(reloads, 2);
         assert.equal(messages.length, 3);
-        assert.ok(messages.at(-1).title.includes('Não foi possível recuperar'));
+        assert.equal(
+          messages.at(-1).title,
+          t('Não foi possível recuperar a interface', {}, 'en'),
+          'Fresh app dialogs must use English',
+        );
         console.log(
           'PASS: repeated renderer failures stop after two recovery attempts instead of reloading forever.',
         );

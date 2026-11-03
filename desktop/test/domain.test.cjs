@@ -12,6 +12,7 @@ const {
   chapterDirection,
   readingChapters,
 } = require('../src/domain.cjs');
+const { getLocale, setLocale } = require('../src/i18n.cjs');
 test('source order stays intact while chronological numbering and resume begin at the oldest chapter', () => {
   const novel = {
     chapters: [
@@ -108,11 +109,22 @@ test('local numbering ignores source chapter numbers and remains stable through 
   );
   assert.equal(merged[0].releaseTime, '2026-10-01');
 });
-test('release labels format ISO dates without guessing ambiguous or missing dates', () => {
-  assert.equal(chapterReleaseLabel('2026-10-01'), '01/10/2026');
-  assert.equal(chapterReleaseLabel('2 days ago'), '2 days ago');
-  assert.equal(chapterReleaseLabel('01/02/2026'), '01/02/2026');
-  assert.equal(chapterReleaseLabel(undefined), '');
+test('release labels follow the interface language without changing unknown dates', () => {
+  const previous = getLocale();
+  try {
+    setLocale('pt-BR');
+    assert.equal(chapterReleaseLabel('2026-10-01'), '01/10/2026');
+    setLocale('en');
+    assert.equal(
+      chapterReleaseLabel('2026-10-01'),
+      new Intl.DateTimeFormat('en').format(new Date(2026, 9, 1, 12)),
+    );
+    assert.equal(chapterReleaseLabel('2 days ago'), '2 days ago');
+    assert.equal(chapterReleaseLabel('01/02/2026'), '01/02/2026');
+    assert.equal(chapterReleaseLabel(undefined), '');
+  } finally {
+    setLocale(previous);
+  }
 });
 test('chapter refresh preserves local state and updates source metadata without duplicate paths', () => {
   const old = [
