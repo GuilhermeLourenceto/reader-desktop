@@ -47,7 +47,7 @@ button {
   background: var(--surfaceContainer);
   font-size: 14px;
   font-weight: 600;
-  transition: background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
+  transition: background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease);
 }
 /* Keep this fallback hover intentionally low-specificity: selected tabs,
    primary actions and pressed chapter buttons must retain their theme colors. */
@@ -372,6 +372,7 @@ nav button {
   gap: 4px;
   font-size: 12px;
   font-weight: 500;
+  transition: color var(--motion-fast) var(--motion-ease);
 }
 nav button:hover {
   background: transparent;
@@ -388,7 +389,8 @@ nav button:hover {
 nav button:hover .nav-icon {
   background: color-mix(in srgb, var(--onSurface) 8%, transparent);
 }
-nav .active {
+nav .active,
+nav button.active:hover {
   color: var(--primary);
 }
 nav .active .nav-icon,
@@ -652,10 +654,11 @@ label {
   align-items: center;
   padding: 15px 8px;
   min-height: 76px;
+  border-radius: 8px;
+  transition: background-color var(--motion-fast) var(--motion-ease);
 }
 .source:hover {
-  background: color-mix(in srgb, var(--onSurface) 4%, transparent);
-  border-radius: 8px;
+  background-color: color-mix(in srgb, var(--onSurface) 4%, transparent);
 }
 .source > div:not(.source-icon):not(.row) {
   flex: 1;
@@ -2160,7 +2163,7 @@ footer {
   background: var(--surfaceContainerHigh);
   color: var(--onSurface);
   font-size: 13px;
-  transition: border-color var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease);
+  transition: border-color var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease);
 }
 .palette-swatch:not(:disabled):hover {
   border-color: var(--primary);

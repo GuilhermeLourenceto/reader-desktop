@@ -155,6 +155,7 @@ app.on('browser-window-created', (_, win) => {
                 border:getComputedStyle(button).borderTopColor===primary,
                 dots:[...button.querySelectorAll('.palette-dots i')].map((el,index)=>getComputedStyle(el).backgroundColor===[primary,secondary,tertiary][index]),
                 selected:button.getAttribute('aria-pressed')==='true',
+                navSelected:getComputedStyle(document.querySelector('nav button.active')).color===primary,
                 label:button.getAttribute('aria-label'),
               };
             })()`);
@@ -163,9 +164,10 @@ app.on('browser-window-created', (_, win) => {
             assert.equal(details.scheme, appearance === 'light' ? 'light' : 'dark');
             if (appearance === 'oled') {
               assert.equal(await js("getComputedStyle(document.documentElement).backgroundColor"), 'rgb(0, 0, 0)', 'OLED root must be black');
+              assert.equal(await js("getComputedStyle(document.documentElement).getPropertyValue('--surface').trim()"), '#000000', 'OLED surface must be black');
               assert.equal(await js("getComputedStyle(document.documentElement).getPropertyValue('--readerBackground').trim()"), '#000000', 'OLED reader must follow black');
             }
-            for (const name of ['rootBackground','title','text','border','selected'])
+            for (const name of ['rootBackground','title','text','border','selected','navSelected'])
               assert.equal(details[name], true, name + ': ' + code + ' ' + appearance + ' #' + paletteIndex + ' ' + JSON.stringify(details));
             assert.deepEqual(details.dots, [true,true,true], 'Palette dots: ' + code + '/' + appearance + '/' + paletteIndex);
             assert.equal(details.label, t('Paleta {v0}', { v0: t(names[paletteIndex], code) }, code));

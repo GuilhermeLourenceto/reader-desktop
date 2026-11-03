@@ -77,7 +77,7 @@ app.on('browser-window-created', (_event, win) => {
       const metrics = await js(`(() => {
         const container = document.createElement('div');
         container.id = 'motion-test';
-        container.innerHTML = '<button>Test</button><nav><button class="active"><span class="nav-icon">Home</span></button></nav><div class="cover-wrap"></div><button class="palette-swatch">Palette</button><div class="setting-switch"><span></span></div><div class="chapter-download-track"><span></span></div><div class="chapter-download-track is-indeterminate"><span></span></div><div class="reader-view"><header></header><footer></footer></div>';
+        container.innerHTML = '<button>Test</button><nav><button class="active"><span class="nav-icon">Home</span></button></nav><div class="source">Source</div><div class="cover-wrap"></div><button class="palette-swatch">Palette</button><div class="setting-switch"><span></span></div><div class="chapter-download-track"><span></span></div><div class="chapter-download-track is-indeterminate"><span></span></div><div class="reader-view"><header></header><footer></footer></div>';
         document.body.append(container);
         const duration = selector => getComputedStyle(container.querySelector(selector)).transitionDuration;
         const track = container.querySelector('.chapter-download-track.is-indeterminate > span');
@@ -85,6 +85,7 @@ app.on('browser-window-created', (_event, win) => {
           button: duration('button'),
           navIcon: duration('nav .nav-icon'),
           cover: duration('.cover-wrap'),
+          sourceRow: duration('.source'),
           palette: duration('button.palette-swatch'),
           toggle: duration('.setting-switch > span'),
           switchTrack: duration('.setting-switch'),
@@ -98,7 +99,7 @@ app.on('browser-window-created', (_event, win) => {
       const quick = reduced ? '0s' : '0.16s';
       const standard = reduced ? '0s' : '0.22s';
       const progress = reduced ? '0s' : '0.18s';
-      for (const name of ['button', 'navIcon', 'cover', 'palette', 'toggle', 'switchTrack'])
+      for (const name of ['button', 'navIcon', 'cover', 'sourceRow', 'palette', 'toggle', 'switchTrack'])
         assert.ok(metrics[name].split(',').every(value => value.trim() === quick), name + ': ' + JSON.stringify(metrics));
       assert.ok(metrics.chrome.split(',').every(value => value.trim() === standard), 'Reader chrome transition');
       assert.equal(metrics.progress, progress, 'Progress transition');
@@ -114,12 +115,48 @@ app.on('browser-window-created', (_event, win) => {
       await js("document.getElementById('motion-test').remove()");
     }
 
+
+    async function verifyActiveNavigation() {
+      const nav = await js(`(() => {
+        const button = document.querySelector('.app nav button.active');
+        if (!button) throw new Error('Selected navigation tab is missing');
+        const rect = button.getBoundingClientRect();
+        const probe = document.createElement('span');
+        probe.style.color = 'var(--primary)';
+        probe.style.backgroundColor = 'var(--secondaryContainer)';
+        document.body.appendChild(probe);
+        const result = {
+          x: Math.round(rect.left + rect.width / 2),
+          y: Math.round(rect.top + rect.height / 2),
+          expectedColor: getComputedStyle(probe).color,
+          expectedBackground: getComputedStyle(probe).backgroundColor,
+        };
+        probe.remove();
+        return result;
+      })()`);
+      assert.ok(nav.x > 0 && nav.y > 0, 'Selected navigation must be visible');
+      win.webContents.sendInputEvent({ type: 'mouseMove', x: nav.x, y: nav.y });
+      await sleep(240);
+      const current = await js(`(() => {
+        const button = document.querySelector('.app nav button.active');
+        return {
+          hovered: button.matches(':hover'),
+          color: getComputedStyle(button).color,
+          iconBackground: getComputedStyle(button.querySelector('.nav-icon')).backgroundColor,
+        };
+      })()`);
+      assert.equal(current.hovered, true, 'Real pointer must hover the selected tab');
+      assert.equal(current.color, nav.expectedColor, 'Active tab text must retain the theme accent on hover');
+      assert.equal(current.iconBackground, nav.expectedBackground, 'Active icon must retain its selected background on hover');
+    }
+
     let attached = false;
     try {
       win.showInactive(); // A visible renderer is needed to test real frames.
       await probe(false, false);
       await probe(true, false);
       await verifyMotion(false);
+      await verifyActiveNavigation();
       win.webContents.debugger.attach('1.3');
       attached = true;
       await win.webContents.debugger.sendCommand('Emulation.setEmulatedMedia', {
@@ -127,7 +164,7 @@ app.on('browser-window-created', (_event, win) => {
       });
       await probe(false, true);
       await verifyMotion(true);
-      console.log('PASS: spinner, progress bar, nav highlight, buttons, palette, switch track/thumb and reader chrome animations across regular and reduced motion');
+      console.log('PASS: spinner, progress bar, active navigation hover, source highlight, buttons, palette, switch track/thumb and reader chrome animations across regular and reduced motion');
       finish(0);
     } catch (error) {
       console.error('SPINNER ANIMATION FAILURE', error);
