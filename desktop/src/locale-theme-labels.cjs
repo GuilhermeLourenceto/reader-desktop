@@ -12,4 +12,5 @@ Sépia original|Original sepia|Sepia original|Sépia original|Original Sepia|Sep
 Verde suave|Soft green|Verde suave|Vert doux|Sanftes Grün|Verde tenue|Мягкий зелёный|ソフトグリーン|연한 녹색|柔和绿色
 Escuro original|Original dark|Oscuro original|Sombre original|Original dunkel|Scuro originale|Оригинальная тёмная|オリジナル・ダーク|원본 다크|原版深色
 Preto AMOLED|AMOLED black|Negro AMOLED|Noir AMOLED|AMOLED-Schwarz|Nero AMOLED|Чёрный AMOLED|AMOLEDブラック|AMOLED 블랙|AMOLED纯黑
+Preto OLED|OLED black|Negro OLED|Noir OLED|OLED-Schwarz|Nero OLED|Чёрный OLED|OLEDブラック|OLED 블랙|OLED纯黑
 `;

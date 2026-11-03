@@ -49,6 +49,7 @@ import Settings from './Settings';
 import { restoreDesktopDefaults } from './defaultSettings.cjs';
 import Spinner from './Spinner';
 import { appTheme } from './appThemes';
+import { resolveAppearance, appearanceColors } from './appearance.cjs';
 import NovelDetails from './NovelDetails';
 import History from './History';
 import Updates from './Updates';
@@ -74,7 +75,7 @@ import { readerProgress, pageAmplitude } from './readerPaging.cjs';
 
 // As paletas do app misturam `rgb(...)`, `#RRGGBB` e `rgba(...)`.
 const isColor = (value) =>
-  typeof value === 'string' && /^(rgb|rgba|#|hsl)/i.test(value);
+  typeof value === 'string' && /^(rgb|rgba|#|hsl|color-mix)/i.test(value);
 
 for (const [key, value] of Object.entries(defaultTheme.dark)) {
   if (isColor(value)) {
@@ -266,41 +267,15 @@ function App() {
   useLayoutEffect(() => {
     const media = matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
-      const dark =
-        preferences.desktopTheme === 'system'
-          ? media.matches
-          : preferences.desktopTheme !== 'light';
+      const { dark, mode } = resolveAppearance(preferences.desktopTheme, media.matches);
       const palette = appTheme(preferences.desktopPalette, dark);
-      for (const [key, value] of Object.entries(palette)) {
+      const colors = appearanceColors(palette, preferences.desktopPalette, mode);
+      for (const [key, value] of Object.entries(colors)) {
         if (isColor(value))
           document.documentElement.style.setProperty(`--${key}`, value);
       }
       document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
-      document.documentElement.dataset.appTheme = dark ? 'dark' : 'light';
-      document.documentElement.style.setProperty(
-        '--surfaceContainer',
-        preferences.desktopPalette && preferences.desktopPalette !== 'default'
-          ? `color-mix(in srgb, ${palette.surface} 94%, ${palette.onSurface})`
-          : dark
-            ? '#24252c'
-            : '#f1f2fa',
-      );
-      document.documentElement.style.setProperty(
-        '--surfaceContainerHigh',
-        preferences.desktopPalette && preferences.desktopPalette !== 'default'
-          ? `color-mix(in srgb, ${palette.surface} 88%, ${palette.onSurface})`
-          : dark
-            ? '#2d2e36'
-            : '#e7e8f1',
-      );
-      document.documentElement.style.setProperty(
-        '--readerBackground',
-        palette.background,
-      );
-      document.documentElement.style.setProperty(
-        '--readerText',
-        palette.onBackground,
-      );
+      document.documentElement.dataset.appTheme = mode;
     };
     apply();
     media.addEventListener('change', apply);

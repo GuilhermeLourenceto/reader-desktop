@@ -291,6 +291,7 @@ export default function Settings({
                 ['system', 'Seguir tema do sistema'],
                 ['light', 'Claro'],
                 ['dark', 'Escuro'],
+                ['oled', 'Preto OLED'],
               ]}
               onChange={(value) => change('desktopTheme', value)}
             />
