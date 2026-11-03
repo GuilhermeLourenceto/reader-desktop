@@ -1175,6 +1175,10 @@ footer {
   position: static;
   inset: auto;
   display: flex;
+  /* A global busy indicator should not become a full-width banner. */
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   margin: 0 0 12px;

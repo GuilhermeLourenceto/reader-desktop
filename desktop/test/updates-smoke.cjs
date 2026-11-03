@@ -17,7 +17,7 @@ const plugin = {
 };
 const state = {
   ...emptyState(),
-  settings: { desktopInterfaceLanguage: 'pt-BR' },
+  settings: { desktopInterfaceLanguage: 'pt-BR', desktopTheme: 'oled', desktopPalette: 'lavender' },
   plugins: [plugin],
   novels: [
     {
@@ -62,7 +62,7 @@ const state = {
 state.files['Plugins/updates/index.js'] = Buffer.from(
   `exports.default={...${JSON.stringify(
     plugin,
-  )},parseNovel:async(path)=>{if(path==='/fail')throw new Error('falha simulada');return {name:'Obra de exemplo',totalPages:3,chapters:[1,2,3].map(n=>({name:'Capítulo '+n,path:'/'+n,chapterNumber:n}))};},parsePage:async(path,page)=>({chapters:(page==='2'?[4,5]:[6,7]).map(n=>({name:'Capítulo '+n,path:'/'+n,chapterNumber:n}))}),parseChapter:async()=>'<p>Leitura de uma atualização.</p>'.repeat(30)};`,
+  )},parseNovel:async(path)=>{await new Promise(resolve=>setTimeout(resolve,900));if(path==='/fail')throw new Error('falha simulada');return {name:'Obra de exemplo',totalPages:3,chapters:[1,2,3].map(n=>({name:'Capítulo '+n,path:'/'+n,chapterNumber:n}))};},parsePage:async(path,page)=>({chapters:(page==='2'?[4,5]:[6,7]).map(n=>({name:'Capítulo '+n,path:'/'+n,chapterNumber:n}))}),parseChapter:async()=>'<p>Leitura de uma atualização.</p>'.repeat(30)};`,
 ).toString('base64');
 fs.writeFileSync(path.join(profile, 'library.json'), JSON.stringify(state));
 const timeout = setTimeout(() => app.exit(1), 60000);
@@ -88,6 +88,54 @@ app.on('browser-window-created', (_event, win) => {
           label,
         )}).click()`,
       );
+
+    // Inspect the real Updates component while a source worker is pending.
+    // The previous isolated spinner test missed a parent flex selector that
+    // stretched the animation across the entire page.
+    const inspectLiveProgress = async label => {
+      const metrics = await execute(`(() => {
+        const panel = document.querySelector('.updates-progress');
+        if (!panel) throw new Error('The real Updates progress panel is missing');
+        const spinner = panel.querySelector('.spinner');
+        const text = panel.querySelector('.updates-progress-text');
+        const main = document.querySelector('main');
+        const panelRect = panel.getBoundingClientRect();
+        const spinnerRect = spinner.getBoundingClientRect();
+        const mainRect = main.getBoundingClientRect();
+        const style = getComputedStyle(spinner);
+        return {
+          innerWidth,
+          documentWidth: document.documentElement.scrollWidth,
+          panelWidth: panelRect.width,
+          panelLeft: panelRect.left,
+          panelRight: panelRect.right,
+          mainLeft: mainRect.left,
+          mainRight: mainRect.right,
+          spinnerWidth: spinner.offsetWidth,
+          spinnerHeight: spinner.offsetHeight,
+          spinnerPaintWidth: spinnerRect.width,
+          spinnerPaintHeight: spinnerRect.height,
+          spinnerAnimation: style.animationName,
+          spinnerState: style.animationPlayState,
+          textWidth: text.getBoundingClientRect().width,
+          appearance: document.documentElement.dataset.appTheme,
+          duplicateGlobalBusy: !!document.querySelector('.busy'),
+        };
+      })()`);
+      assert.equal(metrics.appearance, 'oled', label + ': real OLED theme');
+      assert.equal(metrics.duplicateGlobalBusy, false, label + ': no duplicate full-width busy banner');
+      assert.equal(metrics.spinnerWidth, 18, label + ': spinner width');
+      assert.equal(metrics.spinnerHeight, 18, label + ': spinner height');
+      assert.ok(Math.abs(metrics.spinnerPaintWidth - metrics.spinnerPaintHeight) < 0.1, label + ': spinner must remain circular even during animation');
+      assert.equal(metrics.spinnerAnimation, 'loading-spin', label + ': CSS animation name');
+      assert.equal(metrics.spinnerState, 'running', label + ': CSS animation must be running');
+      assert.ok(metrics.textWidth > 0, label + ': progress label must remain visible');
+      assert.ok(metrics.panelWidth <= Math.min(900, metrics.innerWidth), label + ': panel width');
+      assert.ok(metrics.panelLeft >= metrics.mainLeft - 1, label + ': progress must stay inside the content area');
+      assert.ok(metrics.panelRight <= metrics.mainRight + 1, label + ': progress must not clip outside content area');
+      assert.ok(metrics.documentWidth <= metrics.innerWidth + 1, label + ': no horizontal page overflow');
+      return metrics;
+    };
     try {
       await wait(
         "document.querySelector('.book') && !document.querySelector('.busy')",
@@ -99,6 +147,14 @@ app.on('browser-window-created', (_event, win) => {
         0,
       );
       await click('Atualizar biblioteca');
+      await wait("!!document.querySelector('.updates-progress')");
+      await inspectLiveProgress('1280px live refresh');
+      win.setSize(800, 650);
+      await wait('innerWidth <= 800');
+      await inspectLiveProgress('800px live refresh');
+      fs.mkdirSync(path.join(__dirname, '../docs/previews'), { recursive: true });
+      fs.writeFileSync(path.join(__dirname, '../docs/previews/updates-progress-800.png'), (await win.webContents.capturePage()).toPNG());
+      win.setSize(1280, 850);
       await wait(
         "!document.querySelector('.busy') && document.querySelector('.update-group') && document.querySelector('.updates-errors')",
       );
@@ -178,7 +234,7 @@ app.on('browser-window-created', (_event, win) => {
         true,
       );
       console.log(
-        'PASS: updates tab, full library refresh, unknown historical pages excluded, new pages detected, partial failure isolation, preserved IDs/progress/bookmarks, repeat refresh without duplicates, read/unread, group downloads and offline reading.',
+        'PASS: real OLED update spinner at 1280px and 800px, no duplicate busy strip, screenshot captured, library refresh, partial failures, saved progress, repeat refresh, read/unread and offline reading.',
       );
       clearTimeout(timeout);
       win.destroy();

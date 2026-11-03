@@ -157,6 +157,31 @@ app.on('browser-window-created', (_event, win) => {
       await js("document.getElementById('updates-spinner-layout-test').remove()");
     }
 
+ 
+    async function verifyCompactGlobalBusy() {
+      const metrics = await js(`(() => {
+        const busy = document.createElement('div');
+        busy.id = 'global-busy-visual-audit';
+        busy.className = 'busy';
+        busy.innerHTML = '<span class="spinner" aria-hidden="true"></span><span>Processando…</span><button>Cancelar operação</button>';
+        document.body.appendChild(busy);
+        const spinner = busy.querySelector('.spinner');
+        const result = {
+          width: busy.offsetWidth,
+          viewport: document.documentElement.clientWidth,
+          spinnerWidth: spinner.offsetWidth,
+          spinnerHeight: spinner.offsetHeight,
+          flexWrap: getComputedStyle(busy).flexWrap,
+        };
+        busy.remove();
+        return result;
+      })()`);
+      assert.ok(metrics.width < Math.min(650, metrics.viewport * 0.75), 'Global busy banner must shrink to its content');
+      assert.equal(metrics.spinnerWidth, 18, 'Global busy spinner width');
+      assert.equal(metrics.spinnerHeight, 18, 'Global busy spinner height');
+      assert.equal(metrics.flexWrap, 'wrap', 'Busy labels and buttons must wrap if the window narrows');
+    }
+
     async function verifyActiveNavigation() {
       const nav = await js(`(() => {
         const button = document.querySelector('.app nav button.active');
@@ -198,6 +223,7 @@ app.on('browser-window-created', (_event, win) => {
       await probe(true, false);
       await verifyMotion(false);
       await verifyUpdatesProgressLayout(false);
+      await verifyCompactGlobalBusy();
       await verifyActiveNavigation();
       win.webContents.debugger.attach('1.3');
       attached = true;
@@ -207,7 +233,7 @@ app.on('browser-window-created', (_event, win) => {
       await probe(false, true);
       await verifyMotion(true);
       await verifyUpdatesProgressLayout(true);
-      console.log('PASS: circular Updates spinner layout, progress bar, active navigation hover, source highlight, buttons, palette, switch track/thumb and reader chrome animations across regular and reduced motion');
+      console.log('PASS: compact busy banner, circular Updates spinner layout, progress bar, active navigation hover, source highlight, buttons, palette, switch track/thumb and reader chrome animations across regular and reduced motion');
       finish(0);
     } catch (error) {
       console.error('SPINNER ANIMATION FAILURE', error);
