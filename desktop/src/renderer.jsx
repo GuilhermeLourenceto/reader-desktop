@@ -21,6 +21,7 @@ import {
   hydrate,
   snapshot,
   nextId,
+  nextChapterId,
   fileKey,
   loadedPages,
   nextNovelPage,
@@ -1148,7 +1149,7 @@ function App() {
       latest.chapters,
       response.chapters,
       book.id,
-      nextId(current.current.novels.flatMap((item) => item.chapters)),
+      nextChapterId(current.current.novels),
       String(page),
     );
     const changed = {
@@ -1368,7 +1369,7 @@ function App() {
       latest.chapters,
       detail.chapters,
       book.id,
-      nextId(current.current.novels.flatMap((item) => item.chapters)),
+      nextChapterId(current.current.novels),
     );
     changeNovel({
       ...latest,
@@ -2167,8 +2168,11 @@ function App() {
                 let book = current.current.novels.find(
                   (item) => item.id === novel.id,
                 );
-                while (nextNovelPage(book))
-                  book = await loadNovelPage(book, nextNovelPage(book));
+                while (true) {
+                  const page = nextNovelPage(book);
+                  if (page === undefined) break;
+                  book = await loadNovelPage(book, page);
+                }
                 const first = readingChapters(book)[0];
                 if (first) await loadChapter(book, first);
               })
