@@ -173,7 +173,7 @@ select option {
   width: 66px;
   height: 99px;
   background: var(--surfaceContainerHigh);
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -287,6 +287,32 @@ select {
   color: inherit;
   max-width: 100%;
   min-width: 0;
+}
+/* Rounded text fields without changing the native shapes of checkboxes/sliders. */
+input:not([type='checkbox']):not([type='radio']):not([type='range']),
+select {
+  border-radius: 12px;
+}
+/* Native dropdown arrows differ between Windows/Linux and can hug the edge.
+   Use a palette-aware chevron with a reserved text gutter and fixed inset. */
+select:not([multiple]) {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 44px;
+  padding-inline: 16px 44px;
+  background-color: transparent;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--onSurfaceVariant) 50%),
+    linear-gradient(135deg, var(--onSurfaceVariant) 50%, transparent 50%);
+  background-position:
+    calc(100% - 23px) calc(50% + 2px),
+    calc(100% - 17px) calc(50% + 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+select:disabled {
+  cursor: default;
 }
 input {
   min-width: 220px;
@@ -504,7 +530,7 @@ header {
   flex-wrap: wrap;
 }
 .library-status-options button {
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 10px 12px;
   font-size: 12px;
   flex: 1 1 auto;
@@ -617,7 +643,7 @@ header {
   top: 5px;
   display: flex;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: 8px;
   box-shadow: 0 1px 4px #0005;
 }
 .badges span {
@@ -678,7 +704,7 @@ label {
   place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 6px;
+  border-radius: 10px;
   background: var(--surfaceContainerHigh);
   color: var(--primary);
   overflow: hidden;
@@ -703,7 +729,7 @@ label {
   margin-top: 12px;
   padding: 8px 12px;
   font-size: 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surfaceContainer);
   overflow-wrap: anywhere;
 }
@@ -1339,7 +1365,7 @@ footer {
   gap: 20px;
   padding: 16px;
   background: var(--surfaceContainer);
-  border-radius: 10px;
+  border-radius: 14px;
 }
 .chapter-filters label {
   flex: 1;
@@ -1830,6 +1856,17 @@ footer {
   .reader-control-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  /* Settings choices stack at compact widths rather than crowd the label. */
+  .choice-row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .choice-row select {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
   .chapter-actions button {
     padding: 7px;
   }
@@ -1890,8 +1927,12 @@ footer {
 }
 .source-filters fieldset {
   border: 1px solid var(--outlineVariant);
-  border-radius: 8px;
+  border-radius: 12px;
   min-width: 0;
+}
+.source-filters select,
+.source-filters input:not([type='checkbox']) {
+  width: 100%;
 }
 .source-filters legend {
   color: var(--primary);
