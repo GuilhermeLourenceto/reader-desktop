@@ -138,6 +138,14 @@ jobs:
         run: xvfb-run -a npx electron --no-sandbox test/pagination-smoke.cjs --visual-preview
       - if: runner.os == 'Linux'
         run: xvfb-run -a npx electron --no-sandbox test/reader-rules-smoke.cjs --visual-preview
+      - name: Audit real dropdown spacing and rounded control geometry (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 2
+        run: npx electron test/control-layout-smoke.cjs
+      - name: Audit real dropdown spacing and rounded control geometry (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 2
+        run: xvfb-run -a npx electron --no-sandbox test/control-layout-smoke.cjs --visual-preview
       - name: Verify the loading spinner really animates (Windows)
         if: runner.os == 'Windows'
         timeout-minutes: 2
