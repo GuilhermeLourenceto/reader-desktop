@@ -18,7 +18,7 @@ The desktop client ID is a **public application identifier**, not a confidential
 - Desktop OAuth 2.0 uses the default system browser, loopback 127.0.0.1 on a random local port, PKCE S256 and CSRF state validation. The requested scope is restricted to Google Drive's drive.file permission.
 - Google OAuth refresh tokens are encrypted using Electron safeStorage in a file separate from the library. If the Linux password store reports basic_text or secure encryption is not available, sign-in is blocked instead of storing the token in plaintext.
 - Backup files are generated through the existing LNReader backup worker and are uploaded using a Google Drive resumable upload session with a streamed ZIP. No change is made to ZIP compatibility.
-- The app only lists and downloads backups from its own LNReader Backups folder in Google Drive. Download size is limited to 512 MiB and integrity is verified via Google file metadata (including MD5 when available). Downloads are validated by the existing LNReader backup parser.
+- The app only lists and downloads backups from its own LNReader Backups folder in Google Drive. The **Restore latest backup** button uses the newest Drive creation timestamp rather than trusting the API response order. The **Choose another backup** button opens an explicit radio selection: restore stays disabled until a version is picked. The same existing confirmation still applies to either choice. Download size is limited to 512 MiB and integrity is verified via Google file metadata (including MD5 when available). Downloads are validated by the existing LNReader backup parser.
 - Restoring asks for confirmation and saves the previous local library state, exactly as the existing local restore flow does.
 - Daily automatic backup is opt-in. It runs only while the app is open and connected; no separate OS background service is installed. It is delayed at least 24 hours after the previous successful upload.
 - Backups are not automatically deleted; they use the user's own Google Drive storage quota. Account revocation is controlled by the user's Google account settings.
@@ -33,3 +33,5 @@ Official documentation:
 - https://developers.google.com/identity/protocols/oauth2/native-app
 - https://developers.google.com/workspace/drive/api/guides/api-specific-auth
 - https://developers.google.com/workspace/drive/api/guides/manage-uploads
+
+The secure token vault checks the **initialized** Linux keyring backend and refuses missing or plaintext providers; a change from a working backend to `basic_text` must not allow access to saved refresh tokens.

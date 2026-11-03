@@ -1,5 +1,5 @@
 // Exercise Google Drive settings in Electron without accounts or live APIs.
-const { app } = require('electron');
+const { app, ipcMain } = require('electron');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -38,7 +38,53 @@ app.on('browser-window-created', (_event, win) => {
       }
       await click('Back in settings');
       assert.equal(await js("document.querySelector('.settings-screen').dataset.settingsPage"), 'backup');
-      console.log('PASS: Drive backup page, translation, navigation and zero user API-key inputs.');
+
+      // Simulate connected Drive APIs with deliberately UNSORTED backups;
+      // no user credentials and no actual remote requests are involved.
+      const newest = 'backupNewest12345';
+      const older = 'backupOlder12345';
+      const requested = [];
+      ipcMain.removeHandler('drive-status');
+      ipcMain.handle('drive-status', async () => ({
+        configured: true, connected: true, secure: true,
+        automatic: false, lastBackupAt: null, busy: false,
+      }));
+      ipcMain.removeHandler('drive-list');
+      ipcMain.handle('drive-list', async () => [
+        { id: older, name: 'LNReader-older.zip', size: 1024,
+          createdTime: '2025-01-03T10:00:00Z' },
+        { id: newest, name: 'LNReader-newest.zip', size: 2048,
+          createdTime: '2026-11-03T11:00:00Z' },
+      ]);
+      ipcMain.removeHandler('drive-restore');
+      ipcMain.handle('drive-restore', async (_, id) => {
+        requested.push(id);
+        return null; // Cancelled confirmation; must not modify any library.
+      });
+
+      await click('Google Drive');
+      await wait("document.querySelector('.cloud-latest') && document.querySelector('.cloud-latest').textContent.includes('LNReader-newest.zip')");
+      assert.equal(await js("document.querySelectorAll('.cloud-choice input').length"), 0, 'Choices start collapsed');
+      assert.equal(await js("document.querySelector('.cloud-latest button').disabled"), false);
+      await click('Choose another backup');
+      await wait("document.querySelectorAll('.cloud-choice input[type=radio]').length===2");
+      assert.equal(await js("document.querySelector('.cloud-restore-selected').disabled"), true);
+      assert.deepEqual(await js("Array.from(document.querySelectorAll('.cloud-choice input')).map(el=>el.value)"), [newest, older]);
+
+      await js("document.querySelectorAll('.cloud-choice input')[1].click()");
+      await wait("!document.querySelector('.cloud-restore-selected').disabled");
+      await click('Restore selected backup');
+      for (let attempt = 0; requested.length < 1 && attempt < 200; attempt++)
+        await new Promise(resolve => setTimeout(resolve, 30));
+      assert.deepEqual(requested, [older], 'Manual choice must restore exactly the selected older ID');
+      await wait("!document.querySelector('.cloud-latest button').disabled");
+      await click('Restore latest backup');
+      for (let attempt = 0; requested.length < 2 && attempt < 200; attempt++)
+        await new Promise(resolve => setTimeout(resolve, 30));
+      assert.deepEqual(requested, [older, newest], 'Latest shortcut must choose newest ID by date');
+      assert.equal(fs.existsSync(path.join(directory, 'before-restore.json')), false,
+        'Cancelled restores must not overwrite local data');
+      console.log('PASS: Drive UI sorts latest, chooses older backup, uses correct IDs and no unintended restore.');
       clearTimeout(deadline);
       win.destroy();
       app.exit(0);

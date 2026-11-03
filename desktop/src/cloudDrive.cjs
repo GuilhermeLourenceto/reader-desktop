@@ -9,6 +9,7 @@ const { createHash, randomBytes, timingSafeEqual } = require('node:crypto');
 const { Readable, Transform } = require('node:stream');
 const { pipeline } = require('node:stream/promises');
 const { backupJob } = require('./backupJobs.cjs');
+const { sortDriveBackups } = require('./driveBackupList.cjs');
 
 const API = 'https://www.googleapis.com/drive/v3/files';
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
@@ -139,10 +140,13 @@ class TokenVault {
     this.platform = platform;
   }
   async available() {
-    if (this.platform === 'linux' && this.safeStorage.getSelectedStorageBackend?.() === 'basic_text')
-      return false;
-    return typeof this.safeStorage.isAsyncEncryptionAvailable === 'function'
-      && await this.safeStorage.isAsyncEncryptionAvailable();
+    if (typeof this.safeStorage.isAsyncEncryptionAvailable !== 'function' ||
+      !await this.safeStorage.isAsyncEncryptionAvailable()) return false;
+    // Check the backend AFTER async encryption initializes it. An earlier
+    // check could return "unknown" and then silently select basic_text.
+    if (this.platform !== 'linux') return true;
+    const backend = this.safeStorage.getSelectedStorageBackend?.();
+    return ['gnome_libsecret', 'kwallet', 'kwallet5', 'kwallet6'].includes(backend);
   }
   exists() { return fs.existsSync(this.file); }
   async read() {
@@ -297,8 +301,10 @@ class CloudDrive {
       undefined,
       'createdTime desc',
     );
-    return files.filter(x => idIsValid(x.id) && /^LNReader-.*\.zip$/i.test(x.name || ''))
-      .map(x => ({ id: x.id, name: x.name, createdTime: x.createdTime || '', size: Number(x.size) || 0 }));
+    return sortDriveBackups(
+      files.filter(x => idIsValid(x.id) && /^LNReader-.*\.zip$/i.test(x.name || ''))
+        .map(x => ({ id: x.id, name: x.name, createdTime: x.createdTime || '', size: Number(x.size) || 0 })),
+    );
   }
   async upload(file) {
     const stat = await fsp.stat(file);
