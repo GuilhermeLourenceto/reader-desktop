@@ -1,6 +1,7 @@
 const { t } = require('./i18n.cjs');
+const { DEFAULT_DESKTOP_SETTINGS } = require('./defaultSettings.cjs');
 const ui = (message, values = {}) =>
-  t(message, values, state?.settings?.desktopInterfaceLanguage || 'pt-BR');
+  t(message, values, state?.settings?.desktopInterfaceLanguage || DEFAULT_DESKTOP_SETTINGS.desktopInterfaceLanguage);
 const {
   app,
   BrowserWindow,

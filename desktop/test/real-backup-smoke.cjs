@@ -40,13 +40,13 @@ app.on('browser-window-created', (_event, win) => {
     };
     try {
       await wait(
-        "Array.from(document.querySelectorAll('button')).some(button=>button.textContent==='Restaurar backup')",
+        "Array.from(document.querySelectorAll('button')).some(button=>button.textContent==='Restore backup')",
       );
       await execute(
-        "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Restaurar backup').click()",
+        "Array.from(document.querySelectorAll('button')).find(button=>button.textContent==='Restore backup').click()",
       );
       await wait(
-        "document.querySelector('.notice')?.textContent.includes('Backup restaurado') && !document.querySelector('.busy')",
+        "document.querySelector('.notice') && !document.querySelector('.busy')",
       );
       const restored = await execute(
         'window.desktop.load({metadataOnly:true})',

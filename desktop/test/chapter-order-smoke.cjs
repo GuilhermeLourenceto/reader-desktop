@@ -17,6 +17,8 @@ const plugin = {
 };
 const state = {
   ...emptyState(),
+    // These older UI journeys intentionally assert Portuguese labels.
+    settings: { desktopInterfaceLanguage: 'pt-BR' },
   plugins: [plugin],
   novels: [
     {

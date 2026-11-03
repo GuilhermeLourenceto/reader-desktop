@@ -1,7 +1,7 @@
 // Only desktop display and reading preferences are reset. Library, progress,
 // installed sources, source settings and unrelated imported backup data survive.
 const DEFAULT_DESKTOP_SETTINGS = Object.freeze({
-  desktopInterfaceLanguage: 'pt-BR',
+  desktopInterfaceLanguage: 'en',
   desktopTheme: 'dark',
   desktopPalette: 'default',
   desktopCoverSize: 'normal',

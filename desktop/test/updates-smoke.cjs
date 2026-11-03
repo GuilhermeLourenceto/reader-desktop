@@ -17,6 +17,7 @@ const plugin = {
 };
 const state = {
   ...emptyState(),
+  settings: { desktopInterfaceLanguage: 'pt-BR' },
   plugins: [plugin],
   novels: [
     {

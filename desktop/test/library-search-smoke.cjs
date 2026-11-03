@@ -65,6 +65,8 @@ server.listen(0, '127.0.0.1', () => {
   }));
   const state = {
     ...emptyState(),
+    // These older UI journeys intentionally assert Portuguese labels.
+    settings: { desktopInterfaceLanguage: 'pt-BR' },
     plugins,
     categories: [
       { id: 1, name: 'Lendo', novelIds: [1] },

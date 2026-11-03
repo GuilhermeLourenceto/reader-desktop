@@ -5,6 +5,7 @@ import ReaderThemes from './ReaderThemes';
 import Spinner from './Spinner';
 import { appThemes } from './appThemes';
 import { languages } from './i18n.cjs';
+import { DEFAULT_DESKTOP_SETTINGS } from './defaultSettings.cjs';
 
 function PalettePicker({ value = 'default', onChange }) {
   return (
@@ -267,7 +268,7 @@ export default function Settings({
           <div className="settings-group">
             <Choice
               title="Idioma da interface"
-              value={settings.desktopInterfaceLanguage || 'pt-BR'}
+              value={settings.desktopInterfaceLanguage || DEFAULT_DESKTOP_SETTINGS.desktopInterfaceLanguage}
               options={languages}
               onChange={(value) => change('desktopInterfaceLanguage', value)}
             />

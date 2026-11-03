@@ -6,10 +6,13 @@ const os = require('node:os');
 const assert = require('node:assert/strict');
 const repository =
   'https://raw.githubusercontent.com/LNReader/lnreader-plugins/plugins/v3.0.0/.dist/plugins.min.json';
-app.setPath(
-  'userData',
-  fs.mkdtempSync(path.join(os.tmpdir(), 'lnreader-repository-')),
-);
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'lnreader-repository-'));
+app.setPath('userData', profile);
+const { emptyState } = require('../dist/backup.cjs');
+fs.writeFileSync(path.join(profile, 'library.json'), JSON.stringify({
+  ...emptyState(),
+  settings: { desktopInterfaceLanguage: 'pt-BR' },
+}));
 app.commandLine.appendSwitch('disable-gpu');
 const timeout = setTimeout(() => {
   console.error('Repository check timed out');
