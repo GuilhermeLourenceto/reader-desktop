@@ -136,24 +136,36 @@ app.on('browser-window-created', (_event, win) => {
       assert.ok(metrics.documentWidth <= metrics.innerWidth + 1, label + ': no horizontal page overflow');
       return metrics;
     };
+    let stage = 'wait-library';
     try {
+      console.log('UPDATES VISUAL CHECK: ' + stage);
       await wait(
         "document.querySelector('.book') && !document.querySelector('.busy')",
       );
+      stage = 'open-updates';
+      console.log('UPDATES VISUAL CHECK: ' + stage);
       await click('Atualizações');
       await wait("document.querySelector('.updates-page')");
       assert.equal(
         await execute("document.querySelectorAll('.update-group').length"),
         0,
       );
+      stage = 'refresh-running';
+      console.log('UPDATES VISUAL CHECK: ' + stage);
       await click('Atualizar biblioteca');
       await wait("!!document.querySelector('.updates-progress')");
+      stage = 'audit-wide';
+      console.log('UPDATES VISUAL CHECK: ' + stage);
       await inspectLiveProgress('1280px live refresh');
+      stage = 'audit-narrow';
+      console.log('UPDATES VISUAL CHECK: ' + stage);
       win.setSize(800, 650);
       await wait('innerWidth <= 800');
       await inspectLiveProgress('800px live refresh');
       fs.mkdirSync(path.join(__dirname, '../docs/previews'), { recursive: true });
       fs.writeFileSync(path.join(__dirname, '../docs/previews/updates-progress-800.png'), (await win.webContents.capturePage()).toPNG());
+      stage = 'wait-refresh-complete';
+      console.log('UPDATES VISUAL CHECK: ' + stage);
       win.setSize(1280, 850);
       await wait(
         "!document.querySelector('.busy') && document.querySelector('.update-group') && document.querySelector('.updates-errors')",
@@ -240,6 +252,7 @@ app.on('browser-window-created', (_event, win) => {
       win.destroy();
       app.exit(0);
     } catch (error) {
+      console.error('UPDATES VISUAL AUDIT FAILED AT', stage, 'name:', error?.name, 'message:', error?.message, 'stack:', error?.stack);
       console.error(error);
       clearTimeout(timeout);
       win.destroy();
