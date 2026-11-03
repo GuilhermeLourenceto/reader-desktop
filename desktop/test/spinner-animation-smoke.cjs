@@ -77,15 +77,17 @@ app.on('browser-window-created', (_event, win) => {
       const metrics = await js(`(() => {
         const container = document.createElement('div');
         container.id = 'motion-test';
-        container.innerHTML = '<button>Test</button><div class="cover-wrap"></div><button class="palette-swatch">Palette</button><div class="setting-switch"><span></span></div><div class="chapter-download-track"><span></span></div><div class="chapter-download-track is-indeterminate"><span></span></div><div class="reader-view"><header></header><footer></footer></div>';
+        container.innerHTML = '<button>Test</button><nav><button class="active"><span class="nav-icon">Home</span></button></nav><div class="cover-wrap"></div><button class="palette-swatch">Palette</button><div class="setting-switch"><span></span></div><div class="chapter-download-track"><span></span></div><div class="chapter-download-track is-indeterminate"><span></span></div><div class="reader-view"><header></header><footer></footer></div>';
         document.body.append(container);
         const duration = selector => getComputedStyle(container.querySelector(selector)).transitionDuration;
         const track = container.querySelector('.chapter-download-track.is-indeterminate > span');
         return {
           button: duration('button'),
+          navIcon: duration('nav .nav-icon'),
           cover: duration('.cover-wrap'),
           palette: duration('button.palette-swatch'),
           toggle: duration('.setting-switch > span'),
+          switchTrack: duration('.setting-switch'),
           progress: duration('.chapter-download-track:not(.is-indeterminate) > span'),
           chrome: duration('.reader-view > header'),
           indeterminate: getComputedStyle(track).animationDuration,
@@ -96,7 +98,7 @@ app.on('browser-window-created', (_event, win) => {
       const quick = reduced ? '0s' : '0.16s';
       const standard = reduced ? '0s' : '0.22s';
       const progress = reduced ? '0s' : '0.18s';
-      for (const name of ['button', 'cover', 'palette', 'toggle'])
+      for (const name of ['button', 'navIcon', 'cover', 'palette', 'toggle', 'switchTrack'])
         assert.ok(metrics[name].split(',').every(value => value.trim() === quick), name + ': ' + JSON.stringify(metrics));
       assert.ok(metrics.chrome.split(',').every(value => value.trim() === standard), 'Reader chrome transition');
       assert.equal(metrics.progress, progress, 'Progress transition');
@@ -125,7 +127,7 @@ app.on('browser-window-created', (_event, win) => {
       });
       await probe(false, true);
       await verifyMotion(true);
-      console.log('PASS: spinner, progress bar, buttons, palette, toggle and reader chrome animations across regular and reduced motion');
+      console.log('PASS: spinner, progress bar, nav highlight, buttons, palette, switch track/thumb and reader chrome animations across regular and reduced motion');
       finish(0);
     } catch (error) {
       console.error('SPINNER ANIMATION FAILURE', error);

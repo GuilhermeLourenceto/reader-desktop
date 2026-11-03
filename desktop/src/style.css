@@ -383,6 +383,7 @@ nav button:hover {
   width: 64px;
   height: 30px;
   border-radius: 18px;
+  transition: background-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease);
 }
 nav button:hover .nav-icon {
   background: color-mix(in srgb, var(--onSurface) 8%, transparent);
@@ -390,7 +391,8 @@ nav button:hover .nav-icon {
 nav .active {
   color: var(--primary);
 }
-nav .active .nav-icon {
+nav .active .nav-icon,
+nav button.active:hover .nav-icon {
   background: var(--secondaryContainer);
   color: var(--onSecondaryContainer);
 }
@@ -1039,6 +1041,7 @@ footer {
   border-radius: 18px;
   background: var(--surfaceContainerHigh);
   flex-shrink: 0;
+  transition: background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
 }
 .setting-switch > span {
   display: block;
@@ -1046,7 +1049,7 @@ footer {
   height: 18px;
   background: var(--outline);
   border-radius: 50%;
-  transition: transform var(--motion-fast) var(--motion-ease);
+  transition: transform var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease);
 }
 .setting-switch.checked {
   background: var(--primary);
