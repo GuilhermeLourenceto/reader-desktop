@@ -1889,11 +1889,17 @@ footer {
   border: 3px solid var(--outlineVariant);
   border-top-color: var(--primary);
   border-radius: 50%;
+  /* Keep the loader on its own compositor layer during expensive renders. */
+  transform: translateZ(0);
+  will-change: transform;
   animation: loading-spin 0.8s linear infinite;
 }
 @keyframes loading-spin {
+  from {
+    transform: translateZ(0) rotate(0deg);
+  }
   to {
-    transform: rotate(360deg);
+    transform: translateZ(0) rotate(360deg);
   }
 }
 .reader-theme-picker {
@@ -1937,7 +1943,7 @@ footer {
   /* A bolinha continua girando: parar a animação a transforma em um ponto
      estático, que não comunica progresso. Apenas fica mais lenta. */
   .spinner {
-    animation-duration: 2.6s;
+    animation-duration: 1.6s;
   }
 }
 @media (max-width: 900px) {
@@ -2165,4 +2171,24 @@ footer {
     color-mix(in srgb, var(--onSurface) 5%, transparent),
     color-mix(in srgb, var(--onSurface) 5%, transparent)
   );
+}
+
+/* Long lists load more items without flooding the DOM. Follow the active palette. */
+.history-more,
+.updates-more-chapters {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--outlineVariant);
+  border-radius: 10px;
+  background: var(--surfaceContainer);
+  color: var(--onSurface);
+  font-weight: 600;
+  text-align: center;
+}
+.history-more:not(:disabled):hover,
+.updates-more-chapters:not(:disabled):hover {
+  background: var(--secondaryContainer);
+  color: var(--onSecondaryContainer);
 }

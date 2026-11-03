@@ -120,6 +120,14 @@ jobs:
         run: xvfb-run -a npx electron --no-sandbox test/pagination-smoke.cjs --visual-preview
       - if: runner.os == 'Linux'
         run: xvfb-run -a npx electron --no-sandbox test/reader-rules-smoke.cjs --visual-preview
+      - name: Verify the loading spinner really animates (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 2
+        run: npx electron test/spinner-animation-smoke.cjs
+      - name: Verify the loading spinner really animates (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 2
+        run: xvfb-run -a npx electron --no-sandbox test/spinner-animation-smoke.cjs --visual-preview
       - name: Ensure 10k-book library remains virtualized (Windows)
         if: runner.os == 'Windows'
         timeout-minutes: 4
@@ -138,7 +146,10 @@ jobs:
       - name: Test Linux backup worker inside packaged ASAR
         if: runner.os == 'Linux'
         run: xvfb-run -a npx electron --no-sandbox test/packaged-backup-smoke.cjs
+      # Preserve installers for explicit release builds, without filling the
+      # free artifact storage quota during routine PR/main validation.
       - uses: actions/upload-artifact@v4
+        if: "github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, 'release: v'))"
         with:
           name: lnreader-desktop-${{ runner.os }}
           path: |
@@ -169,7 +180,7 @@ jobs:
         run: npm run test:journeys
         timeout-minutes: 24
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
         with:
           name: everyday-user-journeys
           path: desktop/.tmp/user-journeys-results.json
@@ -205,7 +216,7 @@ jobs:
         run: node test/source-matrix.cjs
         timeout-minutes: 15
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
         with:
           name: lnreader-source-matrix
           path: desktop/.tmp/source-matrix/

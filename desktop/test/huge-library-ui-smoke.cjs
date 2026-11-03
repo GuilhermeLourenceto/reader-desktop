@@ -27,6 +27,9 @@ const state = {
       bookmark: j === 1,
       unread: (i + j) % 4 !== 0,
       isDownloaded: i % 5 === 0 && j === 0,
+      readTime: i < 1500 && j === 0
+        ? new Date(Date.UTC(2026, 0, 1) + i * 60000).toISOString()
+        : undefined,
     })),
   })),
   categories: [
@@ -115,6 +118,17 @@ app.on('browser-window-created', (_event, win) => {
       assert.equal(await js("document.querySelectorAll('.book-card.is-selected').length===document.querySelectorAll('.book-card').length"), true);
       await js("(()=>{const button=[...document.querySelectorAll('.library-selection button')].find(node=>node.textContent.trim()==='Cancelar seleção');if(!button)throw Error('Cancel selection missing');button.click();return true})()");
       await wait("document.querySelectorAll('.book-card.is-selected').length===0", 'clear 10k selection');
+      // Deep history: only the first page should mount despite 1500 read records.
+      await nav('Histórico');
+      await wait("document.querySelectorAll('.history-row').length===100", 'history starts with 100 of 1500 records');
+      await nav('Mostrar mais histórico');
+      await wait("document.querySelectorAll('.history-row').length===200", 'history pages without losing chronology');
+      await js("(()=>{const input=document.querySelector('input[aria-label=\"Pesquisar histórico\"]');const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;setter.call(input,'Synthetic Library Entry 01500');input.dispatchEvent(new Event('input',{bubbles:true}));return true})()");
+      await wait("document.querySelectorAll('.history-row').length===1", 'history filters beyond initial page');
+      await js("(()=>{const input=document.querySelector('input[aria-label=\"Pesquisar histórico\"]');const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;setter.call(input,'');input.dispatchEvent(new Event('input',{bubbles:true}));return true})()");
+      await wait("document.querySelectorAll('.history-row').length===100", 'history resets paging after search');
+      await nav('Biblioteca');
+      await wait("document.querySelector('.grid[data-virtualized=\"true\"]') && document.querySelectorAll('.book').length<100", 'virtualized library after history');
       const persisted = await js('window.desktop.load({metadataOnly:true})');
       assert.equal(persisted.novels.length, bookCount);
       assert.equal(persisted.novels[0].chapters.length, chapterCount);
@@ -126,6 +140,8 @@ app.on('browser-window-created', (_event, win) => {
         initialRenderedCards: initialCards,
         endRenderedCards: endCards,
         chapters: bookCount * chapterCount,
+        syntheticHistoryEntries: 1500,
+        historyInitialRenderedRows: 100,
         startupSeconds: startup,
         fullNavigationSeconds: +((performance.now() - started) / 1000).toFixed(2),
         appMetrics: app.getAppMetrics().map(({ type, memory }) => ({

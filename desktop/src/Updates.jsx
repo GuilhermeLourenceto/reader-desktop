@@ -1,6 +1,6 @@
 import { t as translateMessage } from './i18n.cjs';
 import { getLocale, t } from './i18n.cjs';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { updateGroups } from './updates.cjs';
 import { chapterOrdinals, chapterDirection } from './domain.cjs';
 import Spinner from './Spinner';
@@ -9,8 +9,8 @@ function dateLabel(day) {
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
   const date = new Date(day + 'T12:00:00');
-  if (date.toDateString() === today.toDateString()) return 'Hoje';
-  if (date.toDateString() === yesterday.toDateString()) return 'Ontem';
+  if (date.toDateString() === today.toDateString()) return t('Hoje');
+  if (date.toDateString() === yesterday.toDateString()) return t('Ontem');
   return date.toLocaleDateString(getLocale(), {
     day: 'numeric',
     month: 'long',
@@ -37,19 +37,36 @@ export default function Updates({
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [expanded, setExpanded] = useState({});
   const [limit, setLimit] = useState(30);
-  const all = updateGroups(novels);
-  const groups = all
-    .map((group) => ({
-      ...group,
-      chapters: group.chapters.filter(
-        (chapter) =>
-          (!onlyUnread || chapter.unread !== false) &&
-          `${group.novel.name} ${chapter.name}`
-            .toLocaleLowerCase()
-            .includes(query.toLocaleLowerCase()),
-      ),
-    }))
-    .filter((group) => group.chapters.length);
+  const [chapterLimits, setChapterLimits] = useState({});
+  const all = useMemo(() => {
+    const numberingByNovel = new Map();
+    return updateGroups(novels).map(group => {
+      let numbering = numberingByNovel.get(group.novel.id);
+      if (!numbering) {
+        numbering = chapterOrdinals(
+          group.novel.chapters,
+          chapterDirection(group.novel).direction,
+        );
+        numberingByNovel.set(group.novel.id, numbering);
+      }
+      return { ...group, numbering };
+    });
+  }, [novels]);
+  const groups = useMemo(() => {
+    const term = query.toLocaleLowerCase();
+    return all
+      .map((group) => ({
+        ...group,
+        chapters: group.chapters.filter(
+          (chapter) =>
+            (!onlyUnread || chapter.unread !== false) &&
+            `${group.novel.name} ${chapter.name}`
+              .toLocaleLowerCase()
+              .includes(term),
+        ),
+      }))
+      .filter((group) => group.chapters.length);
+  }, [all, onlyUnread, query]);
   let previousDay;
   return (
     <div className="updates-page history-page">
@@ -132,10 +149,7 @@ export default function Updates({
         const showDate = previousDay !== group.day;
         previousDay = group.day;
         const ids = group.chapters.map((chapter) => chapter.id);
-        const numbering = chapterOrdinals(
-          group.novel.chapters,
-          chapterDirection(group.novel).direction,
-        );
+        const numbering = group.numbering;
         return (
           <section
             className="update-group"
@@ -220,7 +234,7 @@ export default function Updates({
             </div>
             {expanded[group.key] && (
               <div className="update-chapters">
-                {group.chapters.map((chapter) => (
+                {group.chapters.slice(0, chapterLimits[group.key] || 100).map((chapter) => (
                   <div
                     className={`update-chapter ${
                       chapter.unread === false ? 'is-read' : ''
@@ -260,6 +274,17 @@ export default function Updates({
                     </button>
                   </div>
                 ))}
+                {group.chapters.length > (chapterLimits[group.key] || 100) && (
+                  <button
+                    className="updates-more-chapters"
+                    onClick={() => setChapterLimits(current => ({
+                      ...current,
+                      [group.key]: (current[group.key] || 100) + 100,
+                    }))}
+                  >
+                    {translateMessage('Mostrar mais capítulos')}
+                  </button>
+                )}
               </div>
             )}
           </section>

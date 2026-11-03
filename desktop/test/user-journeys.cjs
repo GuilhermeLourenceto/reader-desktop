@@ -46,7 +46,11 @@ for (const test of scenarios) {
   const meaningful = output.split(/\r?\n/).filter(line =>
     /PASS:|AssertionError|Error:|timed out|Timeout|FAILED|TypeError|ReferenceError|SyntaxError/.test(line),
   );
-  console.log(meaningful.slice(-18).join('\n') || output.slice(-1500));
+  console.log(
+    info.status === 'FAIL'
+      ? output.slice(-5000)
+      : meaningful.slice(-18).join('\n') || output.slice(-1500),
+  );
   console.log('USER JOURNEY RESULT ' + JSON.stringify(info));
 }
 const summary = {
