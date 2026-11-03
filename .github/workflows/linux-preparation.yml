@@ -1,4 +1,6 @@
 name: Linux Desktop preparation (experimental)
+env:
+  LNREADER_GOOGLE_CLIENT_ID: ${{ vars.LNREADER_GOOGLE_CLIENT_ID }}
 
 # Experimental builds are opt-in only. Editing the Linux branch does NOT
 # generate packages. To request a build, explicitly change the marker file
