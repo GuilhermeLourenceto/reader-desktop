@@ -35,3 +35,5 @@ Official documentation:
 - https://developers.google.com/workspace/drive/api/guides/manage-uploads
 
 The secure token vault checks the **initialized** Linux keyring backend and refuses missing or plaintext providers; a change from a working backend to `basic_text` must not allow access to saved refresh tokens.
+
+If Google invalidates a cached access token early, the app refreshes it and retries **one read request**. Write/upload operations are not automatically repeated after an HTTP 401 so that a consumed stream or mutation cannot be replayed unexpectedly; users can retry manually after the refreshed login state.

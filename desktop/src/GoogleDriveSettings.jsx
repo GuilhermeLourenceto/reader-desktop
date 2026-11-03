@@ -96,11 +96,11 @@ export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
               ? <button disabled={blocked} onClick={() => action(async () => {
                   await window.desktop.driveDisconnect();
                   return t('Conta desconectada.');
-                })}>{t('Desconectar conta')}</button>
+                })}>{t('Desconectar')}</button>
               : <button disabled={blocked || !canUse} onClick={() => action(async () => {
                   await window.desktop.driveConnect();
                   return t('Conta conectada');
-                })}>{t('Conectar conta Google')}</button>}
+                })}>{t('Conectar Google')}</button>}
           </div>
           <label className="cloud-toggle">
             <span>
@@ -131,12 +131,12 @@ export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
                 ? t('Backup enviado com arquivos ausentes: {v0}', { v0: uploaded.missingCount })
                 : t('Backup enviado ao Google Drive.');
             })}>
-              {t('Salvar no Drive agora')}
+              {t('Salvar no Drive')}
             </button>
             <button disabled={blocked} onClick={() => action(async () => {
               await refresh();
             })}>
-              {t('Atualizar lista de backups')}
+              {t('Atualizar')}
             </button>
           </div>
           <p className="settings-note">
@@ -159,7 +159,7 @@ export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
                 const restored = await onRestore(mostRecent.id);
                 if (restored) return t('Backup restaurado.');
               })}>
-                {t('Restaurar backup mais recente')}
+                {t('Restaurar último')}
               </button>
             </div>
           )}
@@ -175,12 +175,12 @@ export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
                   setSelectedId('');
                 }}
               >
-                {choosingBackup ? t('Ocultar lista de backups') : t('Escolher outro backup')}
+                {choosingBackup ? t('Ocultar lista') : t('Escolher backup')}
               </button>
               {choosingBackup && (
                 <div className="cloud-backup-choices" id="cloud-backup-choices">
                   <p className="settings-note">{t('Selecione a versão que deseja restaurar.')}</p>
-                  <div className="cloud-files" role="radiogroup" aria-label={t('Escolher outro backup')}>
+                  <div className="cloud-files" role="radiogroup" aria-label={t('Escolher backup')}>
                     {orderedFiles.map(file => (
                       <label className="cloud-file cloud-choice" key={file.id}>
                         <input
@@ -209,7 +209,7 @@ export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
                       if (restored) return t('Backup restaurado.');
                     })}
                   >
-                    {t('Restaurar backup selecionado')}
+                    {t('Restaurar selecionado')}
                   </button>
                 </div>
               )}
