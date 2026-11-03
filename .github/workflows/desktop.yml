@@ -136,6 +136,13 @@ jobs:
         if: runner.os == 'Linux'
         timeout-minutes: 4
         run: xvfb-run -a npx electron --no-sandbox test/huge-library-ui-smoke.cjs --visual-preview
+      # Diagnostic-only; no user data and no artifact upload. Allows comparing
+      # Linux offscreen/Xvfb metrics with a visible Xvfb window on the same CI.
+      - name: Profile Linux memory in normal Xvfb window (RSS/PSS)
+        # Diagnostic runs are intentionally manual to preserve free Actions minutes.
+        if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch'
+        timeout-minutes: 4
+        run: xvfb-run -a npx electron --no-sandbox test/huge-library-ui-smoke.cjs --windowed-memory-profile
       - if: runner.os == 'Windows'
         run: npm run dist:win
       - if: runner.os == 'Linux'
