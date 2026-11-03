@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const { performance } = require('node:perf_hooks');
+const { captureMemoryMetrics } = require('./linux-memory-metrics.cjs');
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'lnreader-huge-ui-'));
 const bookCount = 10000;
@@ -63,6 +64,9 @@ app.on('browser-window-created', (_event, win) => {
   window = win;
   win.webContents.setBackgroundThrottling(false);
   win.webContents.once('did-finish-load', async () => {
+    // Compare Xvfb's regular on-screen window against the offscreen test mode.
+    // This is only for diagnostics, not a production Electron flag.
+    if (process.argv.includes('--windowed-memory-profile')) win.showInactive();
     const js = source => win.webContents.executeJavaScript(source, true);
     const wait = async (predicate, label, timeout = 120000) => {
       const began = performance.now();
@@ -76,6 +80,7 @@ app.on('browser-window-created', (_event, win) => {
       await wait("document.querySelector('.grid[data-virtualized=\"true\"]') && document.querySelectorAll('.book').length>0 && !document.querySelector('.busy')", 'virtualized 10,000 book library', 30000);
       const startup = +((performance.now() - started) / 1000).toFixed(2);
       const initialCards = await js("document.querySelectorAll('.book').length");
+      const startupMemory = captureMemoryMetrics(app.getAppMetrics());
       assert.ok(initialCards > 0 && initialCards < 100, 'large libraries must not render all cards');
       // Exercise the actual scroll container and prove the LAST book is reachable.
       await js("(()=>{const main=document.querySelector('main');main.scrollTop=main.scrollHeight;main.dispatchEvent(new Event('scroll'));return true})()");
@@ -144,11 +149,13 @@ app.on('browser-window-created', (_event, win) => {
         historyInitialRenderedRows: 100,
         startupSeconds: startup,
         fullNavigationSeconds: +((performance.now() - started) / 1000).toFixed(2),
-        appMetrics: app.getAppMetrics().map(({ type, memory }) => ({
-          type,
-          workingSetMiB: memory?.workingSetSize,
-          privateMiB: memory?.privateBytes,
-        })),
+        environment: {
+          offscreenTestMode: process.argv.includes('--visual-preview'),
+          windowedXvfbProfile: process.argv.includes('--windowed-memory-profile'),
+          gpuDisabledForTest: true,
+        },
+        startupMemory,
+        finalMemory: captureMemoryMetrics(app.getAppMetrics()),
       };
       console.log('GIANT UI RESULT', JSON.stringify(metrics));
       finish(0);
