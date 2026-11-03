@@ -136,6 +136,23 @@ app.on('browser-window-created', (_event, win) => {
       assert.ok(metrics.documentWidth <= metrics.innerWidth + 1, label + ': no horizontal page overflow');
       return metrics;
     };
+
+    // On some headless Linux/Xvfb builds Chromium cannot capture an offscreen
+    // surface and returns UnknownVizError. Geometry checks remain mandatory;
+    // screenshots are a complementary, best-effort visual diagnostic.
+    const captureVisual = async name => {
+      try {
+        win.showInactive();
+        const bitmap = await win.webContents.capturePage();
+        if (bitmap.isEmpty()) throw new Error('Empty screenshot');
+        const output = path.join(__dirname, '../docs/previews');
+        fs.mkdirSync(output, { recursive: true });
+        fs.writeFileSync(path.join(output, name), bitmap.toPNG());
+        console.log('VISUAL SCREENSHOT SAVED:', name);
+      } catch (error) {
+        console.warn('Screenshot unavailable in headless runner:', error?.message || error);
+      }
+    };
     let stage = 'wait-library';
     try {
       console.log('UPDATES VISUAL CHECK: ' + stage);
@@ -162,8 +179,7 @@ app.on('browser-window-created', (_event, win) => {
       win.setSize(800, 650);
       await wait('innerWidth <= 800');
       await inspectLiveProgress('800px live refresh');
-      fs.mkdirSync(path.join(__dirname, '../docs/previews'), { recursive: true });
-      fs.writeFileSync(path.join(__dirname, '../docs/previews/updates-progress-800.png'), (await win.webContents.capturePage()).toPNG());
+      await captureVisual('updates-progress-800.png');
       stage = 'wait-refresh-complete';
       console.log('UPDATES VISUAL CHECK: ' + stage);
       win.setSize(1280, 850);
@@ -209,7 +225,6 @@ app.on('browser-window-created', (_event, win) => {
       await wait(
         "!document.querySelector('.busy') && document.querySelectorAll('.update-chapter-open small').length===3 && Array.from(document.querySelectorAll('.update-chapter-open small')).every(e=>e.textContent.includes('Baixado'))",
       );
-      const shots = path.join(__dirname, '../docs/previews');
       await execute('void (window.confirm=()=>true)');
       await click('Apagar download da atualização: Capítulo 3');
       await wait(
@@ -219,11 +234,7 @@ app.on('browser-window-created', (_event, win) => {
       await wait(
         "!document.querySelector('.busy') && document.querySelector('[aria-label=\"Apagar download da atualização: Capítulo 3\"]')",
       );
-      fs.mkdirSync(shots, { recursive: true });
-      fs.writeFileSync(
-        path.join(shots, 'updates.png'),
-        (await win.webContents.capturePage()).toPNG(),
-      );
+      await captureVisual('updates.png');
       await execute("document.querySelector('.update-chapter-open').click()");
       await wait(
         "document.querySelector('article')?.textContent.includes('Leitura de uma atualização') && !document.querySelector('.busy')",
