@@ -101,3 +101,14 @@ test('About screen labels Windows and Linux in all ten interface languages', () 
   }
   assert.equal(messages['· Versão experimental para Windows'], undefined);
 });
+
+test('native restore confirmation button is translated in all ten locales', () => {
+  assert.ok(messages['Restaurar'], 'Missing translation for native Restore button');
+  for (const [code] of languages) {
+    const label = t('Restaurar', {}, code);
+    assert.ok(label.trim(), 'Empty restore button: ' + code);
+  }
+  assert.equal(t('Restaurar', {}, 'en'), 'Restore');
+  assert.equal(t('Restaurar', {}, 'de'), 'Wiederherstellen');
+  assert.equal(t('Restaurar', {}, 'ja'), '復元');
+});

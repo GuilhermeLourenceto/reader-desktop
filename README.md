@@ -1,8 +1,8 @@
 # LNReader Desktop
 
-Adaptação independente e experimental do LNReader para **Windows**
-e preparação para **Linux**. Utiliza extensões e backups no formato
-do LNReader Android, com código específico para computador.
+Adaptação independente e experimental do LNReader para **Windows e Linux**.
+Utiliza extensões e backups no formato do LNReader Android, com código
+específico para computador.
 
 ![Tela de detalhes](./desktop/docs/screenshots/desktop-novel.png)
 
@@ -20,7 +20,8 @@ O suporte a fontes pode variar conforme autenticação e bloqueios dos sites.
 
 ## Estado do projeto
 
-**Versão 0.4.2 Beta** — [Baixar instalador](https://github.com/GuilhermeLourenceto/lnreader-desktop/releases/tag/v0.4.2) · [Novidades](desktop/docs/RELEASE_NOTES_0.4.2.md).
+**Última versão publicada: 0.4.5 Beta** — [Baixar instaladores para Windows e Linux](https://github.com/GuilhermeLourenceto/lnreader-desktop/releases/tag/v0.4.5) · [Novidades](desktop/docs/RELEASE_NOTES_0.4.5.md).
+A `main` inclui alterações posteriores à versão publicada; para obter essas melhorias, compile o código mais recente.
 O projeto ainda é experimental; algumas extensões podem exigir login, apresentar bloqueios ou falhar.
 A compilação do Desktop, seus testes e as jornadas automatizadas são verificados
 pelo [GitHub Actions](https://github.com/GuilhermeLourenceto/lnreader-desktop/actions/workflows/desktop.yml).

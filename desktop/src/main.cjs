@@ -542,7 +542,7 @@ app
       });
       const confirmation = await dialog.showMessageBox(mainWindow, {
         type: 'question',
-        buttons: [ui('Cancelar'), 'Restaurar'],
+        buttons: [ui('Cancelar'), ui('Restaurar')],
         defaultId: 0,
         cancelId: 0,
         message: ui('Restaurar {count} obras?', {
