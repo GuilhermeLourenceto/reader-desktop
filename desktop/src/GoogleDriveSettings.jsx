@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { t, getLocale } from './i18n.cjs';
+import { sortDriveBackups, createdAtMillis } from './driveBackupList.cjs';
 
 export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
   const [status, setStatus] = useState(null);
@@ -7,12 +8,26 @@ export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [choosingBackup, setChoosingBackup] = useState(false);
+  const [selectedId, setSelectedId] = useState('');
+  const orderedFiles = sortDriveBackups(files);
+  // If timestamps are missing, we cannot honestly label a backup "latest".
+  const mostRecent = orderedFiles.find(file => createdAtMillis(file) > 0);
+  const selectedBackup = orderedFiles.find(file => file.id === selectedId);
+  const details = file => [
+    createdAtMillis(file)
+      ? new Date(file.createdTime).toLocaleString(getLocale())
+      : t('Data indisponível'),
+    Math.ceil(Math.max(0, Number(file.size) || 0) / 1024 / 1024) + ' MB',
+  ].join(' · ');
 
   async function refresh() {
     const next = await window.desktop.driveStatus();
     setStatus(next);
     if (next.connected && next.secure) {
-      setFiles(await window.desktop.driveList());
+      const list = await window.desktop.driveList();
+      setFiles(list);
+      setSelectedId(previous => list.some(file => file.id === previous) ? previous : '');
     } else {
       setFiles([]);
     }
@@ -129,29 +144,77 @@ export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
               ? t('Último envio: {v0}', { v0: new Date(status.lastBackupAt).toLocaleString(getLocale()) })
               : t('Nenhum envio automático realizado.')}
           </p>
-          <h3 className="settings-section-title">{t('Backups disponíveis')}</h3>
-          {files.length === 0 && (
+          <h3 className="settings-section-title">{t('Restaurar do Google Drive')}</h3>
+          {orderedFiles.length === 0 && (
             <p className="settings-note">{t('Nenhum backup encontrado no Drive.')}</p>
           )}
-          <div className="cloud-files">
-            {files.map(file => (
-              <div className="cloud-file" key={file.id}>
-                <span className="cloud-file-name" title={file.name}>
-                  <strong>{file.name}</strong>
-                  <small>
-                    {file.createdTime ? new Date(file.createdTime).toLocaleString(getLocale()) : ''}
-                    {file.size ? ' · ' + Math.ceil(file.size / 1024 / 1024) + ' MB' : ''}
-                  </small>
-                </span>
-                <button disabled={blocked} onClick={() => action(async () => {
-                  const result = await onRestore(file.id);
-                  if (result) return t('Backup restaurado.');
-                })}>
-                  {t('Restaurar deste backup')}
-                </button>
-              </div>
-            ))}
-          </div>
+          {mostRecent && (
+            <div className="cloud-latest">
+              <span className="cloud-file-name">
+                <strong>{t('Backup mais recente')}</strong>
+                <small title={mostRecent.name}>{mostRecent.name}</small>
+                <small>{details(mostRecent)}</small>
+              </span>
+              <button disabled={blocked} onClick={() => action(async () => {
+                const restored = await onRestore(mostRecent.id);
+                if (restored) return t('Backup restaurado.');
+              })}>
+                {t('Restaurar backup mais recente')}
+              </button>
+            </div>
+          )}
+          {orderedFiles.length > 0 && (
+            <>
+              <button
+                className="cloud-choose-button"
+                disabled={blocked}
+                aria-expanded={choosingBackup}
+                aria-controls="cloud-backup-choices"
+                onClick={() => {
+                  setChoosingBackup(value => !value);
+                  setSelectedId('');
+                }}
+              >
+                {choosingBackup ? t('Ocultar lista de backups') : t('Escolher outro backup')}
+              </button>
+              {choosingBackup && (
+                <div className="cloud-backup-choices" id="cloud-backup-choices">
+                  <p className="settings-note">{t('Selecione a versão que deseja restaurar.')}</p>
+                  <div className="cloud-files" role="radiogroup" aria-label={t('Escolher outro backup')}>
+                    {orderedFiles.map(file => (
+                      <label className="cloud-file cloud-choice" key={file.id}>
+                        <input
+                          type="radio"
+                          name="cloud-backup-choice"
+                          value={file.id}
+                          checked={selectedId === file.id}
+                          disabled={blocked}
+                          onChange={() => setSelectedId(file.id)}
+                          aria-label={file.name}
+                        />
+                        <span className="cloud-file-name" title={file.name}>
+                          <strong>{file.name}</strong>
+                          <small>{details(file)}</small>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <button
+                    className="cloud-restore-selected"
+                    disabled={blocked || !selectedBackup}
+                    onClick={() => action(async () => {
+                      // The user explicitly chooses an ID; no fallback to a
+                      // newer/different backup if the selected one disappears.
+                      const restored = await onRestore(selectedBackup.id);
+                      if (restored) return t('Backup restaurado.');
+                    })}
+                  >
+                    {t('Restaurar backup selecionado')}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </>
       )}
       {working && <p role="status" className="settings-status">{t('Processando backup…')}</p>}

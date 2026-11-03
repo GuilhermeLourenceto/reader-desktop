@@ -183,3 +183,65 @@ test('missing developer OAuth client disables login rather than asking users for
     await assert.rejects(cloud.connect(), /desenvolvedor/);
   } finally { await fsp.rm(directory, { recursive: true, force: true }); }
 });
+
+test('Linux vault checks the initialized backend instead of trusting unknown/basic text', async () => {
+  const directory = temp();
+  try {
+    let backend = 'unknown';
+    const storage = {
+      ...secure,
+      getSelectedStorageBackend: () => backend,
+      isAsyncEncryptionAvailable: async () => {
+        backend = 'basic_text'; // initialized lazily after the first check
+        return true;
+      },
+    };
+    const vault = new TokenVault({ directory, platform: 'linux', safeStorage: storage });
+    assert.equal(await vault.available(), false, 'No plaintext credential fallback');
+    backend = 'unknown';
+    storage.isAsyncEncryptionAvailable = async () => {
+      backend = 'gnome_libsecret';
+      return true;
+    };
+    assert.equal(await vault.available(), true);
+    backend = 'unknown';
+    storage.isAsyncEncryptionAvailable = async () => true;
+    assert.equal(await vault.available(), false, 'Unknown Linux provider must fail closed');
+  } finally {
+    await fsp.rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('Google Drive list is sorted by creation date, not by API result ordering', async () => {
+  const directory = temp();
+  const folderId = 'folder126789';
+  const newestId = 'latest126789';
+  const olderId = 'older126789';
+  const mock = async (url, options = {}) => {
+    const parsed = new URL(url);
+    if (parsed.pathname !== '/drive/v3/files' || options.method) throw Error('Unexpected request: ' + url);
+    const q = parsed.searchParams.get('q');
+    if (q.includes('application/vnd.google-apps.folder')) {
+      return new Response(JSON.stringify({ files: [{ id: folderId }] }));
+    }
+    assert.ok(q.includes(folderId));
+    assert.equal(parsed.searchParams.get('orderBy'), 'createdTime desc');
+    return new Response(JSON.stringify({
+      files: [
+        { id: olderId, name: 'LNReader-older.zip', createdTime: '2025-02-01T12:00:00Z', size: 1024 },
+        { id: 'other123456', name: 'secret.docx', createdTime: '2026-12-01T12:00:00Z', size: 99 },
+        { id: newestId, name: 'LNReader-newer.zip', createdTime: '2026-11-03T12:00:00Z', size: 2048 },
+      ],
+    }));
+  };
+  try {
+    const cloud = makeCloud(directory, mock);
+    cloud.cachedToken = { value: 'test-access', expires: Date.now() + 600000 };
+    await cloud.vault.write({ refreshToken: 'token' });
+    const files = await cloud.list();
+    assert.deepEqual(files.map(file => file.id), [newestId, olderId]);
+    assert.deepEqual(files.map(file => file.size), [2048, 1024]);
+  } finally {
+    await fsp.rm(directory, { recursive: true, force: true });
+  }
+});
