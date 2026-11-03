@@ -136,7 +136,7 @@ export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
             <button disabled={blocked} onClick={() => action(async () => {
               await refresh();
             })}>
-              {t('Atualizar')}
+              {t('Atualizar lista')}
             </button>
           </div>
           <p className="settings-note">
