@@ -547,7 +547,7 @@ header {
 .book {
   padding: 0;
   border: none;
-  border-radius: 6px;
+  border-radius: 9px;
   background: transparent;
   text-align: left;
   align-self: start;
