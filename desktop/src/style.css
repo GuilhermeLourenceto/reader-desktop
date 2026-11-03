@@ -21,6 +21,11 @@
   background: var(--background, #1b1b1f);
   --surfaceContainer: #24252c;
   --surfaceContainerHigh: #2d2e36;
+  /* Shared motion scale; no durations scattered across UI controls. */
+  --motion-fast: 160ms;
+  --motion-progress: 180ms;
+  --motion-standard: 220ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
 }
 * {
   box-sizing: border-box;
@@ -42,7 +47,7 @@ button {
   background: var(--surfaceContainer);
   font-size: 14px;
   font-weight: 600;
-  transition: background 0.15s;
+  transition: background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
 }
 /* Keep this fallback hover intentionally low-specificity: selected tabs,
    primary actions and pressed chapter buttons must retain their theme colors. */
@@ -563,7 +568,7 @@ header {
   position: relative;
   overflow: hidden;
   border-radius: 9px;
-  transition: box-shadow 0.16s ease;
+  transition: box-shadow var(--motion-fast) var(--motion-ease);
 }
 .book img,
 .placeholder {
@@ -1041,7 +1046,7 @@ footer {
   height: 18px;
   background: var(--outline);
   border-radius: 50%;
-  transition: transform 0.15s;
+  transition: transform var(--motion-fast) var(--motion-ease);
 }
 .setting-switch.checked {
   background: var(--primary);
@@ -1465,7 +1470,7 @@ footer {
   height: 100%;
   border-radius: inherit;
   background: var(--primary);
-  transition: width 180ms ease;
+  transition: width var(--motion-progress) var(--motion-ease);
 }
 .chapter-download-track.is-indeterminate > span {
   width: 35%;
@@ -1986,7 +1991,7 @@ footer {
   position: absolute;
   left: 0;
   right: 0;
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition: opacity var(--motion-standard) var(--motion-ease), transform var(--motion-standard) var(--motion-ease);
   z-index: 2;
 }
 .reader-view header {
@@ -2152,7 +2157,7 @@ footer {
   background: var(--surfaceContainerHigh);
   color: var(--onSurface);
   font-size: 13px;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease);
 }
 .palette-swatch:not(:disabled):hover {
   border-color: var(--primary);
@@ -2178,9 +2183,14 @@ footer {
   background: var(--swatch-light);
 }
 @media (prefers-reduced-motion: reduce) {
-  .cover-wrap,
-  .palette-swatch {
-    transition: none;
+  :root {
+    --motion-fast: 0ms;
+    --motion-progress: 0ms;
+    --motion-standard: 0ms;
+  }
+  /* Progress remains identifiable without quick sweeping movement. */
+  .chapter-download-track.is-indeterminate > span {
+    animation-duration: 2.4s;
   }
 }
 

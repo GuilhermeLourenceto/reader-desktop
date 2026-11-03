@@ -73,18 +73,59 @@ app.on('browser-window-created', (_event, win) => {
       await js("document.getElementById('spinner-animation-test').remove()");
     }
 
+    async function verifyMotion(reduced) {
+      const metrics = await js(`(() => {
+        const container = document.createElement('div');
+        container.id = 'motion-test';
+        container.innerHTML = '<button>Test</button><div class="cover-wrap"></div><button class="palette-swatch">Palette</button><div class="setting-switch"><span></span></div><div class="chapter-download-track"><span></span></div><div class="chapter-download-track is-indeterminate"><span></span></div><div class="reader-view"><header></header><footer></footer></div>';
+        document.body.append(container);
+        const duration = selector => getComputedStyle(container.querySelector(selector)).transitionDuration;
+        const track = container.querySelector('.chapter-download-track.is-indeterminate > span');
+        return {
+          button: duration('button'),
+          cover: duration('.cover-wrap'),
+          palette: duration('button.palette-swatch'),
+          toggle: duration('.setting-switch > span'),
+          progress: duration('.chapter-download-track:not(.is-indeterminate) > span'),
+          chrome: duration('.reader-view > header'),
+          indeterminate: getComputedStyle(track).animationDuration,
+          name: getComputedStyle(track).animationName,
+          transform: getComputedStyle(track).transform,
+        };
+      })()`);
+      const quick = reduced ? '0s' : '0.16s';
+      const standard = reduced ? '0s' : '0.22s';
+      const progress = reduced ? '0s' : '0.18s';
+      for (const name of ['button', 'cover', 'palette', 'toggle'])
+        assert.ok(metrics[name].split(',').every(value => value.trim() === quick), name + ': ' + JSON.stringify(metrics));
+      assert.ok(metrics.chrome.split(',').every(value => value.trim() === standard), 'Reader chrome transition');
+      assert.equal(metrics.progress, progress, 'Progress transition');
+      assert.equal(metrics.name, 'chapter-download-indeterminate', 'Progress animation must be defined');
+      assert.equal(metrics.indeterminate, reduced ? '2.4s' : '1.2s', 'Indeterminate progress uses accessible speed');
+      let moved = false;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        await sleep(140);
+        const transform = await js("getComputedStyle(document.querySelector('#motion-test .is-indeterminate > span')).transform");
+        if (transform !== metrics.transform) moved = true;
+      }
+      assert.ok(moved, 'Download progress must move across real renderer frames');
+      await js("document.getElementById('motion-test').remove()");
+    }
+
     let attached = false;
     try {
       win.showInactive(); // A visible renderer is needed to test real frames.
       await probe(false, false);
       await probe(true, false);
+      await verifyMotion(false);
       win.webContents.debugger.attach('1.3');
       attached = true;
       await win.webContents.debugger.sendCommand('Emulation.setEmulatedMedia', {
         features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
       });
       await probe(false, true);
-      console.log('PASS: regular/small and reduced-motion loading spinners rotate on real Electron frames');
+      await verifyMotion(true);
+      console.log('PASS: spinner, progress bar, buttons, palette, toggle and reader chrome animations across regular and reduced motion');
       finish(0);
     } catch (error) {
       console.error('SPINNER ANIMATION FAILURE', error);
