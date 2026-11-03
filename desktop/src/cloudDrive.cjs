@@ -214,6 +214,10 @@ class CloudDrive {
     });
     if (!token.refresh_token) throw new Error('Google não forneceu autorização de acesso offline. Reconecte a conta.');
     await this.vault.write({ refreshToken: token.refresh_token });
+    // Never carry an old account's automatic-backup opt-in to a new login.
+    this.preferences.automatic = false;
+    this.preferences.lastBackupAt = null;
+    await this.savePreferences();
     this.cachedToken = { value: token.access_token, expires: Date.now() + (token.expires_in || 3500) * 1000 };
     return this.status();
   }

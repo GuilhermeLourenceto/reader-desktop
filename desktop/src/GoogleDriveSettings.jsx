@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { t } from './i18n.cjs';
+import { t, getLocale } from './i18n.cjs';
 
 export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
   const [status, setStatus] = useState(null);
@@ -58,6 +58,9 @@ export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
       <h3 className="settings-section-title">{t('Google Drive')}</h3>
       <p className="settings-note">
         {t('Salve e restaure backups ZIP do LNReader na sua conta Google.')}
+      </p>
+      <p className="settings-note">
+        {t('Os backups usam espaço no Drive e não possuem criptografia de ponta a ponta.')}
       </p>
       {!status && !error && <p role="status">{t('Carregando backups…')}</p>}
       {status && !status.configured && (
@@ -123,7 +126,7 @@ export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
           </div>
           <p className="settings-note">
             {status.lastBackupAt
-              ? t('Último envio: {v0}', { v0: new Date(status.lastBackupAt).toLocaleString() })
+              ? t('Último envio: {v0}', { v0: new Date(status.lastBackupAt).toLocaleString(getLocale()) })
               : t('Nenhum envio automático realizado.')}
           </p>
           <h3 className="settings-section-title">{t('Backups disponíveis')}</h3>
@@ -136,7 +139,7 @@ export default function GoogleDriveSettings({ onBackup, onRestore, disabled }) {
                 <span className="cloud-file-name" title={file.name}>
                   <strong>{file.name}</strong>
                   <small>
-                    {file.createdTime ? new Date(file.createdTime).toLocaleString() : ''}
+                    {file.createdTime ? new Date(file.createdTime).toLocaleString(getLocale()) : ''}
                     {file.size ? ' · ' + Math.ceil(file.size / 1024 / 1024) + ' MB' : ''}
                   </small>
                 </span>
