@@ -347,6 +347,9 @@ server.listen(0, '127.0.0.1', () => {
           for (let index = 0; index < 9; index++) {
             await execute(`document.querySelectorAll('.palette-swatch')[${index}].click()`);
             await wait(`document.querySelectorAll('.palette-swatch')[${index}].getAttribute('aria-pressed')==='true'`);
+            // Palette buttons animate border and background for 150 ms. Wait
+            // for the final computed colors, not an intermediate frame.
+            await wait(`(()=>{const swatch=document.querySelectorAll('.palette-swatch')[${index}];const probe=document.createElement('span');probe.style.borderColor='var(--primary)';probe.style.backgroundColor='var(--surfaceContainerHigh)';document.body.append(probe);const matches=getComputedStyle(swatch).borderTopColor===getComputedStyle(probe).borderTopColor&&getComputedStyle(swatch).backgroundColor===getComputedStyle(probe).backgroundColor;probe.remove();return matches})()`);
             const result = await execute(`(()=>{
               const root=document.documentElement;
               const all=document.querySelectorAll('.palette-swatch');
