@@ -43,7 +43,8 @@ app.on('browser-window-created', (_event, win) => {
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     async function wait(predicate) {
       for (let i = 0; i < 160; i++) {
-        if (await js(predicate)) return;
+        // Return a primitive, never a DOM element (not cloneable across Electron IPC).
+        if (await js('Boolean(' + predicate + ')')) return;
         await sleep(50);
       }
       throw new Error('Timed out: ' + predicate);
@@ -75,6 +76,9 @@ app.on('browser-window-created', (_event, win) => {
       await click('Filtrar e ordenar capítulos');
       await wait("document.querySelectorAll('.chapter-filters select').length === 3");
       await audit('.chapter-filters select', 'chapter filter Todos / ordering');
+      await click('Fontes');
+      await wait("document.querySelector('.source-language-row select')");
+      await audit('.source-language-row select', 'source-language Todos os idiomas');
       await click('Mais');
       await wait("document.querySelector('[data-settings-page=more]')");
       await click('Configurações');
