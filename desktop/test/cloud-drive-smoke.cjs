@@ -34,7 +34,7 @@ app.on('browser-window-created', (_event, win) => {
       assert.equal(typeof status.secure, 'boolean');
       if (!status.configured) {
         assert.ok(await js("document.querySelector('.cloud-settings').textContent.includes('Google Drive is not enabled')"));
-        assert.equal(await js("Array.from(document.querySelectorAll('.cloud-settings button')).some(b=>b.textContent.includes('Connect Google account')&&!b.disabled)"), false);
+        assert.equal(await js("Array.from(document.querySelectorAll('.cloud-settings button')).some(b=>b.textContent.includes('Connect Google')&&!b.disabled)"), false);
       }
       await click('Back in settings');
       assert.equal(await js("document.querySelector('.settings-screen').dataset.settingsPage"), 'backup');
@@ -66,19 +66,19 @@ app.on('browser-window-created', (_event, win) => {
       await wait("document.querySelector('.cloud-latest') && document.querySelector('.cloud-latest').textContent.includes('LNReader-newest.zip')");
       assert.equal(await js("document.querySelectorAll('.cloud-choice input').length"), 0, 'Choices start collapsed');
       assert.equal(await js("document.querySelector('.cloud-latest button').disabled"), false);
-      await click('Choose another backup');
+      await click('Choose backup');
       await wait("document.querySelectorAll('.cloud-choice input[type=radio]').length===2");
       assert.equal(await js("document.querySelector('.cloud-restore-selected').disabled"), true);
       assert.deepEqual(await js("Array.from(document.querySelectorAll('.cloud-choice input')).map(el=>el.value)"), [newest, older]);
 
       await js("document.querySelectorAll('.cloud-choice input')[1].click()");
       await wait("!document.querySelector('.cloud-restore-selected').disabled");
-      await click('Restore selected backup');
+      await click('Restore selected');
       for (let attempt = 0; requested.length < 1 && attempt < 200; attempt++)
         await new Promise(resolve => setTimeout(resolve, 30));
       assert.deepEqual(requested, [older], 'Manual choice must restore exactly the selected older ID');
       await wait("!document.querySelector('.cloud-latest button').disabled");
-      await click('Restore latest backup');
+      await click('Restore latest');
       for (let attempt = 0; requested.length < 2 && attempt < 200; attempt++)
         await new Promise(resolve => setTimeout(resolve, 30));
       assert.deepEqual(requested, [older, newest], 'Latest shortcut must choose newest ID by date');

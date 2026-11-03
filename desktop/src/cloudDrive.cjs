@@ -251,12 +251,25 @@ class CloudDrive {
     return token.access_token;
   }
   async request(url, options = {}) {
-    const token = await this.accessToken();
-    const response = await this.fetchImpl(url, {
-      ...options,
-      headers: { ...options.headers, Authorization: 'Bearer ' + token },
-      signal: options.signal || AbortSignal.timeout(60000),
-    });
+    const send = async () => {
+      const token = await this.accessToken();
+      return this.fetchImpl(url, {
+        ...options,
+        headers: { ...options.headers, Authorization: 'Bearer ' + token },
+        signal: options.signal || AbortSignal.timeout(60000),
+      });
+    };
+    let response = await send();
+    if (response.status === 401) {
+      // Google can invalidate cached access tokens before their expiration.
+      // Retry one READ after refreshing. Do not automatically replay uploads
+      // or mutations: streaming request bodies may already be consumed.
+      this.cachedToken = null;
+      if (!options.method || options.method.toUpperCase() === 'GET') {
+        await response.body?.cancel().catch(() => {});
+        response = await send();
+      }
+    }
     if (!response.ok) await responseError(response, 'Google Drive');
     return response;
   }

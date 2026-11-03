@@ -245,3 +245,57 @@ test('Google Drive list is sorted by creation date, not by API result ordering',
     await fsp.rm(directory, { recursive: true, force: true });
   }
 });
+
+test('expired or revoked cached access token refreshes and retries one read safely', async () => {
+  const directory = temp();
+  const authorizations = [];
+  let refreshCount = 0;
+  try {
+    const fetchImpl = async (url, options = {}) => {
+      if (url === 'https://oauth2.googleapis.com/token') {
+        refreshCount++;
+        assert.equal(new URLSearchParams(options.body).get('refresh_token'), 'secure-refresh');
+        return new Response(JSON.stringify({
+          access_token: 'fresh-access', expires_in: 3600,
+        }), { status: 200 });
+      }
+      authorizations.push(options.headers.Authorization);
+      if (authorizations.length === 1) return new Response('expired', { status: 401 });
+      return new Response(JSON.stringify({ ok: true }));
+    };
+    const cloud = makeCloud(directory, fetchImpl);
+    await cloud.vault.write({ refreshToken: 'secure-refresh' });
+    cloud.cachedToken = { value: 'stale-access', expires: Date.now() + 3600000 };
+    const result = await cloud.json('https://www.googleapis.com/drive/v3/files');
+    assert.equal(result.ok, true);
+    assert.deepEqual(authorizations, ['Bearer stale-access', 'Bearer fresh-access']);
+    assert.equal(refreshCount, 1);
+  } finally { await fsp.rm(directory, { recursive: true, force: true }); }
+});
+
+test('401 does not replay POST or stream upload bodies; next manual attempt refreshes access', async () => {
+  const directory = temp();
+  let calls = 0, refreshes = 0;
+  try {
+    const fetchImpl = async (url, options = {}) => {
+      if (url === 'https://oauth2.googleapis.com/token') {
+        refreshes++;
+        return new Response(JSON.stringify({ access_token: 'renewed', expires_in: 3600 }));
+      }
+      calls++;
+      return new Response('invalid token', { status: 401 });
+    };
+    const cloud = makeCloud(directory, fetchImpl);
+    await cloud.vault.write({ refreshToken: 'secure-refresh' });
+    cloud.cachedToken = { value: 'stale', expires: Date.now() + 3600000 };
+    await assert.rejects(
+      cloud.request('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST', body: JSON.stringify({ name: 'test' }),
+      }),
+      /HTTP 401/,
+    );
+    assert.equal(calls, 1, 'Non-idempotent POST must never replay automatically');
+    assert.equal(refreshes, 0);
+    assert.equal(cloud.cachedToken, null, 'An invalid cached token is cleared');
+  } finally { await fsp.rm(directory, { recursive: true, force: true }); }
+});
