@@ -11,6 +11,8 @@ const {
   net,
   session,
   Menu,
+  shell,
+  safeStorage,
 } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -23,6 +25,7 @@ const {
 } = require('./storage.cjs');
 const { emptyState, safePath } = require('./backup.cjs');
 const { backupJob } = require('./backupJobs.cjs');
+const { CloudDrive } = require('./cloudDrive.cjs');
 const { validateNetworkUrl } = require('./networkPolicy.cjs');
 const { installFullscreenShortcut } = require('./fullscreenShortcut.cjs');
 const primaryInstance = !app.isPackaged || app.requestSingleInstanceLock();
@@ -38,6 +41,7 @@ let state;
 let mainWindow;
 let stateFile;
 let diskFiles;
+let cloudDrive;
 const commit = (next) => {
   writeState(stateFile, next);
   state = next;
@@ -529,16 +533,11 @@ app
       });
       return exported;
     });
-    register('restore', async () => {
-      const result = await dialog.showOpenDialog(mainWindow, {
-        properties: ['openFile'],
-        filters: [{ name: 'Backup LNReader', extensions: ['zip'] }],
-      });
-      if (result.canceled) return null;
+    const restoreFromFile = async (filename) => {
       const restored = await backupJob({
         action: 'import',
         contentDirectory: diskFiles.directory,
-        filename: result.filePaths[0],
+        filename,
       });
       const confirmation = await dialog.showMessageBox(mainWindow, {
         type: 'question',
@@ -589,7 +588,37 @@ app
         }));
       commit(validateState(next));
       return publicState(true);
+    };
+    register('restore', async () => {
+      const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openFile'],
+        filters: [{ name: 'Backup LNReader', extensions: ['zip'] }],
+      });
+      return result.canceled ? null : restoreFromFile(result.filePaths[0]);
     });
+    cloudDrive = new CloudDrive({
+      directory: app.getPath('userData'),
+      clientId: process.env.LNREADER_GOOGLE_CLIENT_ID,
+      safeStorage,
+      openExternal: (url) => shell.openExternal(url),
+      contentDirectory: diskFiles.directory,
+      readState: () => state,
+      restoreFile: restoreFromFile,
+    });
+    register('drive-status', () => cloudDrive.status());
+    register('drive-connect', () => cloudDrive.connect());
+    register('drive-disconnect', () => cloudDrive.disconnect());
+    register('drive-list', () => cloudDrive.list());
+    register('drive-backup', () => cloudDrive.backup());
+    register('drive-restore', (fileId) => cloudDrive.restore(fileId));
+    register('drive-automatic', (enabled) => cloudDrive.setAutomatic(enabled));
+    // Opt-in: only back up while LNReader is open and internet is available.
+    const checkCloudBackup = () =>
+      void cloudDrive.automaticBackup().catch((error) =>
+        console.warn('Google Drive automatic backup:', error.message),
+      );
+    setTimeout(checkCloudBackup, 3 * 60000).unref?.();
+    setInterval(checkCloudBackup, 60 * 60000).unref?.();
     return mainWindow.loadURL('lnreader://app/index.html');
   })
   .catch((error) => {

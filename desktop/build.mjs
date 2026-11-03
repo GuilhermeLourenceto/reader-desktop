@@ -80,6 +80,13 @@ await build({
   outfile: 'dist/main.cjs',
   external: ['electron', 'adm-zip'],
   nodePaths: [resolve('node_modules')],
+  define: {
+    // Desktop OAuth client IDs are public identifiers. Configure once on
+    // the developer's build; users only click "Connect Google account".
+    'process.env.LNREADER_GOOGLE_CLIENT_ID': JSON.stringify(
+      process.env.LNREADER_GOOGLE_CLIENT_ID || '',
+    ),
+  },
 });
 await build({
   entryPoints: ['src/backup.cjs'],

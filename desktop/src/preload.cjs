@@ -16,5 +16,12 @@ contextBridge.exposeInMainWorld('desktop', {
   cancelRequests: () => ipcRenderer.invoke('cancel-requests'),
   backup: state => ipcRenderer.invoke('backup', state),
   restore: () => ipcRenderer.invoke('restore'),
+  driveStatus: () => ipcRenderer.invoke('drive-status'),
+  driveConnect: () => ipcRenderer.invoke('drive-connect'),
+  driveDisconnect: () => ipcRenderer.invoke('drive-disconnect'),
+  driveList: () => ipcRenderer.invoke('drive-list'),
+  driveBackup: () => ipcRenderer.invoke('drive-backup'),
+  driveRestore: (id) => ipcRenderer.invoke('drive-restore', id),
+  driveAutomatic: (enabled) => ipcRenderer.invoke('drive-automatic', enabled),
   sourceLogin: id => ipcRenderer.invoke('source-login', id),
 });
