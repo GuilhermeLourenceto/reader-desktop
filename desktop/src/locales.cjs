@@ -243,12 +243,6 @@ rows.push(
     .map((row) => row.split('|')),
 );
 rows.push(
-  ...require('./locale-cloud.cjs')
-    .trim()
-    .split('\n')
-    .map((row) => row.split('|')),
-);
-rows.push(
   ...require('./locale-library-ux.cjs')
     .trim()
     .split('\n')

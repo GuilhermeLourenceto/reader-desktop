@@ -1,6 +1,4 @@
 name: Desktop builds
-env:
-  LNREADER_GOOGLE_CLIENT_ID: ${{ vars.LNREADER_GOOGLE_CLIENT_ID }}
 on:
   workflow_dispatch:
     inputs:
@@ -117,14 +115,6 @@ jobs:
         if: runner.os == 'Linux'
         timeout-minutes: 3
         run: xvfb-run -a npx electron --no-sandbox test/default-language-smoke.cjs --visual-preview
-      - name: Google Drive settings, no end-user API key (Windows)
-        if: runner.os == 'Windows'
-        timeout-minutes: 2
-        run: npx electron test/cloud-drive-smoke.cjs
-      - name: Google Drive settings, no end-user API key (Linux)
-        if: runner.os == 'Linux'
-        timeout-minutes: 2
-        run: xvfb-run -a npx electron --no-sandbox test/cloud-drive-smoke.cjs --visual-preview
       - name: Real public DNS and source-session HTTP probe
         if: runner.os == 'Windows'
         run: npx electron test/dns-public-smoke.cjs

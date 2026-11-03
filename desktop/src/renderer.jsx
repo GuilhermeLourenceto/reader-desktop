@@ -331,18 +331,6 @@ function App() {
       setBusy(activeTasks.current > 0);
     }
   };
-  // Cloud controls display their own errors and need the operation result.
-  const runCloud = async (task) => {
-    if (activeTasks.current) throw new Error('Conclua a operação atual antes de usar o Google Drive.');
-    activeTasks.current++;
-    setBusy(true);
-    try {
-      return await task();
-    } finally {
-      activeTasks.current--;
-      setBusy(activeTasks.current > 0);
-    }
-  };
   useEffect(() => {
     const onNotice = (event) => setNotice(String(event.detail));
     const onSourceActivity = (event) => setSourceWorking(Boolean(event.detail));
@@ -1480,7 +1468,7 @@ function App() {
       setUpdatesProgress(null);
     }
   };
-  const restore = async (cloudId) => {
+  const restore = async () => {
     if (downloading.current) {
       setNotice(
         'Aguarde ou pare a fila de downloads antes de restaurar um backup.',
@@ -1490,9 +1478,7 @@ function App() {
     cancelSourceOperations();
     browseSession.current = null;
     await persistNow();
-    const restored = cloudId
-      ? await window.desktop.driveRestore(cloudId)
-      : await window.desktop.restore();
+    const restored = await window.desktop.restore();
     if (!restored) return;
     hydrate(restored);
     update(restored);
@@ -1513,7 +1499,6 @@ function App() {
       JSON.stringify(restored.plugins),
     );
     await persistNow();
-    return restored;
   };
   if (!state)
     return (
@@ -2506,11 +2491,6 @@ function App() {
               })
             }
             onRestore={() => run(restore)}
-            onDriveBackup={() => runCloud(async () => {
-              await persistNow();
-              return window.desktop.driveBackup();
-            })}
-            onDriveRestore={(id) => runCloud(() => restore(id))}
           />
         )}
       </main>
