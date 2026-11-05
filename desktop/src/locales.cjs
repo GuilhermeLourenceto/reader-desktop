@@ -248,6 +248,7 @@ rows.push(
     .split('\n')
     .map((row) => row.split('|')),
 );
+rows.push(...require('./locale-reader-desktop.cjs').trim().split('\n').map(row => row.split('|')));
 const messages = Object.fromEntries(
   rows.map((row) => [
     row[0],

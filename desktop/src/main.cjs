@@ -557,8 +557,8 @@ app
     mainWindow.webContents.on('destroyed', () => requests.cancelAll());
     register('backup', async (input) => {
       const result = await dialog.showSaveDialog(mainWindow, {
-        defaultPath: `LNReader-${new Date().toISOString().slice(0, 10)}.zip`,
-        filters: [{ name: 'Backup LNReader', extensions: ['zip'] }],
+        defaultPath: `ReaderDesktop-${new Date().toISOString().slice(0, 10)}.zip`,
+        filters: [{ name: 'Backup Reader Desktop', extensions: ['zip'] }],
       });
       if (result.canceled) return false;
       merge(input);
@@ -573,7 +573,7 @@ app
     register('restore', async () => {
       const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openFile'],
-        filters: [{ name: 'Backup LNReader', extensions: ['zip'] }],
+        filters: [{ name: 'Backup Reader Desktop', extensions: ['zip'] }],
       });
       if (result.canceled) return null;
       const restored = await backupJob({
