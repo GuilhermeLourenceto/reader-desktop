@@ -32,9 +32,21 @@ app.on('browser-window-created', (_event, win) => {
       win.webContents.reload();
     });
     try {
-      assert.equal(fs.existsSync(path.join(directory, 'library.json')), false, 'New install must not require seeded settings');
+      // An entirely new profile now writes a pending-onboarding marker and
+      // must show the real three-step first-run wizard, not a seeded library.
+      assert.equal(fs.existsSync(path.join(directory, 'library.json')), true, 'New install creates a recoverable first-run marker');
+      await wait("document.documentElement.lang==='en' && document.querySelector('.first-run') && !document.querySelector('nav')");
+      assert.equal((await js("window.desktop.load({metadataOnly:true})")).settings.desktopOnboardingCompleted, false);
+      assert.equal(await js("document.querySelector('#first-run-language').value"), 'en');
+      await click('Next');
+      await wait("document.querySelector('.first-run[data-step=2]') !== null");
+      await click('Next');
+      await wait("document.querySelector('.first-run[data-step=3]') !== null");
+      await js("(()=>{const s=document.querySelector('#first-run-frequency');s.value='off';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+      await click('Finish');
       await wait("document.documentElement.lang==='en' && document.querySelector('nav') && !document.querySelector('.busy')");
       assert.equal(await js("document.querySelector('nav button:last-child').textContent.trim()"), 'More');
+      assert.equal((await js("window.desktop.load({metadataOnly:true})")).settings.desktopOnboardingCompleted, true);
       assert.equal((await js("window.desktop.load({metadataOnly:true})")).settings.desktopInterfaceLanguage, undefined);
       await click('More');
       await click('Settings');
