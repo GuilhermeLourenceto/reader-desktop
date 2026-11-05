@@ -29,6 +29,51 @@ O funcionamento de fontes externas e do Linux ainda depende de validação.
 
 ## Compilar
 
+### Windows — clonar e gerar o instalador de uma vez (PowerShell)
+
+Pré-requisitos: **Git** e **Node.js 24** com npm instalados. Abra o **PowerShell**
+na pasta em que deseja baixar o projeto e cole o bloco inteiro abaixo.
+Funciona também no Windows PowerShell 5.1 (não depende de `&&`).
+
+```powershell
+& {
+    git clone https://github.com/GuilhermeLourenceto/lnreader-desktop.git
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao clonar. Verifique o Git, a conexão ou se a pasta lnreader-desktop já existe." }
+
+    Push-Location .\lnreader-desktop\desktop
+    try {
+        npm.cmd ci
+        if ($LASTEXITCODE -ne 0) { throw "Falha ao instalar dependências (npm ci)." }
+
+        npm.cmd run setup
+        if ($LASTEXITCODE -ne 0) { throw "Falha ao preparar o Electron." }
+
+        npm.cmd run dist:win
+        if ($LASTEXITCODE -ne 0) { throw "Falha ao gerar o instalador." }
+
+        Write-Host "Compilação concluída! Arquivos em: $((Resolve-Path .\release).Path)"
+    }
+    finally { Pop-Location }
+}
+```
+
+O instalador **.exe** será criado em
+`lnreader-desktop/desktop/release/` (a pasta `release` fica **dentro** de
+`desktop/`). `dist/` contém os arquivos intermediários de compilação; não
+é o instalador. A execução não apaga outras pastas, porém o `git clone`
+falhará caso já exista uma pasta `lnreader-desktop` no local.
+
+Para **recompilar depois**, sem clonar novamente, entre em
+`lnreader-desktop/desktop` e execute:
+
+```powershell
+npm.cmd ci
+npm.cmd run setup
+npm.cmd run dist:win
+```
+
+### Executar o código sem criar instalador
+
 Requer Node.js 24 e npm. **Todo o projeto está em `desktop/`**:
 
 ```sh
