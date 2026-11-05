@@ -46,6 +46,7 @@ import { withSourceDeadline, validateFilters } from './sourceGuards.cjs';
 import { INSTALLED_PLUGINS_KEY } from '../vendor/lnreader/src/plugins/constants';
 import { defaultTheme } from '../vendor/lnreader/src/theme/md3/defaultTheme';
 import Settings from './Settings';
+import Onboarding from './Onboarding';
 import { restoreDesktopDefaults } from './defaultSettings.cjs';
 import Spinner from './Spinner';
 import { appTheme } from './appThemes';
@@ -1478,11 +1479,32 @@ function App() {
   if (!state)
     return (
       <div className="loading">
-        <Spinner label="Carregando LNReader" />
-        <p>Carregando LNReader…</p>
+        <Spinner label="Carregando Reader Desktop" />
+        <p>Carregando Reader Desktop…</p>
         {notice && <p className="loading-note">{notice}</p>}
       </div>
     );
+  if (state.settings?.desktopOnboardingCompleted === false) {
+    return <Onboarding
+      settings={preferences}
+      onChange={changes => {
+        if (changes.desktopInterfaceLanguage) setLocale(changes.desktopInterfaceLanguage);
+        update({ ...current.current, settings: { ...current.current.settings, ...changes } });
+      }}
+      onChooseFolder={() => window.desktop.chooseBackupDirectory()}
+      onRestore={() => run(restore)}
+      onFinish={async () => {
+        const next = { ...current.current, settings: {
+          ...current.current.settings,
+          desktopOnboardingCompleted: true,
+        } };
+        clearTimeout(saveTimer.current);
+        await window.desktop.save(snapshot(next));
+        current.current = next;
+        setState(next);
+      }}
+    />;
+  }
   const installed = JSON.parse(
     localStorage.getItem(INSTALLED_PLUGINS_KEY) || '[]',
   );
@@ -2449,6 +2471,7 @@ function App() {
               setSourceQuery('');
               setView('sources');
             }}
+            onChooseBackupFolder={() => window.desktop.chooseBackupDirectory()}
             onBackup={() =>
               run(async () => {
                 await persistNow();

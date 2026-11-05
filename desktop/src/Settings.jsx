@@ -130,6 +130,7 @@ export default function Settings({
   onChange,
   onBackup,
   onRestore,
+  onChooseBackupFolder,
   onSources,
   onReset,
   busy,
@@ -143,7 +144,7 @@ export default function Settings({
     ['library', 'Biblioteca', 'Tamanho das capas e contadores'],
     ['reader', 'Leitor', 'Fonte, espaçamento e cores da leitura'],
     ['backup', 'Backups', 'Exportar e restaurar sua biblioteca'],
-    ['about', 'Sobre', 'LNReader Desktop e informações da versão'],
+    ['about', 'Sobre', 'Reader Desktop e informações da versão'],
   ];
   const row = (key, title, description, action) => (
     <button
@@ -207,7 +208,7 @@ export default function Settings({
         <>
           <div className="settings-brand">
             <img src="logo.png" alt="" />
-            <h3>LNReader</h3>
+            <h3>Reader Desktop</h3>
             <span>Desktop · {version || '…'}</span>
           </div>
           <div className="settings-group">{quick}</div>
@@ -429,7 +430,7 @@ export default function Settings({
           <h3 className="settings-section-title">Backup local</h3>
           <p className="settings-note">
             Biblioteca, categorias, capítulos, progresso, configurações e fontes
-            no formato ZIP do LNReader.
+            no formato ZIP do Reader Desktop.
           </p>
           <div className="settings-group">
             {row(
@@ -441,10 +442,47 @@ export default function Settings({
             {row(
               'backup-restore',
               'Restaurar backup',
-              'Importar um backup do LNReader',
+              'Importar um backup do Reader Desktop',
               onRestore,
             )}
           </div>
+          <h3 className="settings-section-title">Backup automático</h3>
+          <div className="settings-group">
+            <Choice title="Frequência"
+              description="Verificar ao abrir e enquanto o aplicativo estiver funcionando"
+              value={String(settings.desktopBackupFrequency ?? 'off')}
+              options={[
+                ['off', 'Desativado'],
+                ['launch', 'A cada inicialização'],
+                ['6', 'A cada 6 horas'],
+                ['12', 'A cada 12 horas'],
+                ['24', 'Diariamente'],
+                ['48', 'A cada 2 dias'],
+                ['168', 'Semanalmente'],
+              ]}
+              onChange={value => change('desktopBackupFrequency', value)}
+            />
+            <button type="button" className="setting-row setting-link"
+              onClick={async () => {
+                const folder = await onChooseBackupFolder();
+                if (folder) change('desktopBackupDirectory', folder);
+              }}>
+              <SettingIcon name="backup" />
+              <span className="setting-copy">
+                <strong>Pasta dos backups automáticos</strong>
+                <small>{settings.desktopBackupDirectory || 'Nenhuma pasta selecionada'}</small>
+              </span>
+            </button>
+            <Toggle title="Incluir capítulos baixados"
+              description="Preserva o conteúdo offline e aumenta o tamanho do backup"
+              value={settings.desktopBackupIncludeDownloads !== false}
+              onChange={value => change('desktopBackupIncludeDownloads', value)}
+            />
+          </div>
+          <p className="settings-note">
+            Os backups automáticos são criados enquanto o aplicativo está aberto e somente quando existem alterações.
+            Os últimos cinco backups automáticos são mantidos.
+          </p>
           {busy && (
             <p className="settings-status" role="status">
               <Spinner small label="Processando backup" />
@@ -461,11 +499,11 @@ export default function Settings({
         <>
           <div className="settings-brand">
             <img src="logo.png" alt="" />
-            <h3>LNReader Desktop</h3>
+            <h3>Reader Desktop</h3>
             <span>{version || '…'} · Versão experimental para Windows e Linux</span>
           </div>
           <div className="settings-group">
-            <p>Leitor de novels com o motor original de fontes do LNReader.</p>
+            <p>Leitor de novels com o motor original de fontes do Reader Desktop.</p>
             <p>
               Backups ZIP locais e leitura offline dos capítulos armazenados.
             </p>

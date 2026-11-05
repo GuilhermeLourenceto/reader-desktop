@@ -2,7 +2,7 @@
   "name": "lnreader-desktop",
   "version": "0.4.5",
   "private": true,
-  "description": "LNReader for Windows and Linux",
+  "description": "Reader Desktop for Windows and Linux",
   "author": "LNReader contributors",
   "homepage": "https://github.com/GuilhermeLourenceto/lnreader-desktop",
   "desktopName": "lnreader-desktop",
@@ -48,7 +48,7 @@
   },
   "build": {
     "appId": "app.lnreader.desktop",
-    "productName": "LNReader Desktop",
+    "productName": "Reader Desktop",
     "directories": {
       "output": "release"
     },
@@ -77,7 +77,7 @@
       "category": "Office",
       "icon": "build/icon-256.png",
       "syncDesktopName": true,
-      "maintainer": "LNReader Desktop <191923327+GuilhermeLourenceto@users.noreply.github.com>",
+      "maintainer": "Reader Desktop <191923327+GuilhermeLourenceto@users.noreply.github.com>",
       "synopsis": "Leitor de novels com fontes e leitura offline"
     }
   }

@@ -23,8 +23,18 @@ const {
 } = require('./storage.cjs');
 const { emptyState, safePath } = require('./backup.cjs');
 const { backupJob } = require('./backupJobs.cjs');
+const { createAutoBackupManager } = require('./autoBackup.cjs');
 const { validateNetworkUrl } = require('./networkPolicy.cjs');
 const { installFullscreenShortcut } = require('./fullscreenShortcut.cjs');
+// Keep existing libraries when the displayed app name changes.
+const defaultProfile = path.join(app.getPath('appData'), app.getName());
+if (app.getPath('userData') === defaultProfile) {
+  const previousProfile = path.join(app.getPath('appData'), 'LNReader Desktop');
+  if (fs.existsSync(path.join(previousProfile, 'library.json')) ||
+      fs.existsSync(path.join(previousProfile, 'library.json.bak'))) {
+    app.setPath('userData', previousProfile);
+  }
+}
 const primaryInstance = !app.isPackaged || app.requestSingleInstanceLock();
 if (!primaryInstance) app.quit();
 app.on('second-instance', () => {
@@ -38,6 +48,7 @@ let state;
 let mainWindow;
 let stateFile;
 let diskFiles;
+let automaticBackup;
 const commit = (next) => {
   writeState(stateFile, next);
   state = next;
@@ -90,9 +101,28 @@ app
   .then(() => {
     if (!primaryInstance) return;
     stateFile = path.join(app.getPath('userData'), 'library.json');
+    const existingProfile = [stateFile, stateFile + '.bak', stateFile + '.tmp'].some(filename => fs.existsSync(filename));
     const loaded = readState(stateFile, emptyState);
     state = loaded.state;
+    if (!existingProfile) {
+      // An unfinished first run remains unfinished after an app restart.
+      commit({ ...state, settings: {
+        ...state.settings,
+        desktopOnboardingCompleted: false,
+        desktopBackupFrequency: '24',
+        desktopBackupIncludeDownloads: true,
+      } });
+    } else if (state.settings.desktopOnboardingCompleted == null) {
+      // Existing installations must keep opening directly into the library.
+      commit({ ...state, settings: { ...state.settings, desktopOnboardingCompleted: true } });
+    }
     diskFiles = new DiskFiles(path.join(app.getPath('userData'), 'content'));
+    automaticBackup = createAutoBackupManager({
+      dataDirectory: app.getPath('userData'),
+      getState: () => state,
+      contentDirectory: diskFiles.directory,
+      exportBackup: backupJob,
+    });
     const migrated = diskFiles.import(state.files);
     if (
       Object.entries(migrated).some(
@@ -194,7 +224,7 @@ app
       autoHideMenuBar: true,
       backgroundColor: '#1b1b1f',
       icon: path.join(__dirname, 'logo.png'),
-      title: 'LNReader Desktop',
+      title: 'Reader Desktop',
       webPreferences: {
         preload: path.join(__dirname, 'preload.cjs'),
         contextIsolation: true,
@@ -226,7 +256,7 @@ app
             defaultId: 0,
             cancelId: 0,
             message: ui(
-              'O LNReader ainda não conseguiu concluir o fechamento.',
+              'O Reader Desktop ainda não conseguiu concluir o fechamento.',
             ),
             detail: ui(
               'A biblioteca já salva será mantida. Fechar agora pode perder o progresso mais recente.',
@@ -283,7 +313,7 @@ app
         dialog.showErrorBox(
           ui('Não foi possível recuperar a interface'),
           ui(
-            'O LNReader falhou repetidamente e será fechado. A biblioteca salva foi mantida.',
+            'O Reader Desktop falhou repetidamente e será fechado. A biblioteca salva foi mantida.',
           ),
         );
         mainWindow.destroy();
@@ -293,7 +323,7 @@ app
         dialog.showErrorBox(
           ui('A interface foi reiniciada'),
           ui(
-            'O LNReader precisou recarregar a interface depois de uma falha. A biblioteca salva será restaurada.',
+            'O Reader Desktop precisou recarregar a interface depois de uma falha. A biblioteca salva será restaurada.',
           ),
         );
       recoveringRenderer = false;
@@ -331,7 +361,18 @@ app
       version: require('../package.json').version,
       platform: process.platform,
     }));
-    register('save', merge);
+    register('save', input => {
+      const finishedNow = state.settings.desktopOnboardingCompleted !== true &&
+        input?.settings?.desktopOnboardingCompleted === true;
+      merge(input);
+      if (finishedNow) void automaticBackup.check({ launch: true });
+    });
+    register('choose-backup-directory', async () => {
+      const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory', 'createDirectory'],
+      });
+      return result.canceled ? null : result.filePaths[0];
+    });
     register('file', (action, name, content) => {
       safePath(name);
       if (!/^(Plugins|Novels|Covers)\/.+/.test(name))
@@ -562,7 +603,7 @@ app
         next.novels = restored.state.novels;
         next.categories = restored.state.categories;
       }
-      if (restored.sections.settings) next.settings = restored.state.settings;
+      if (restored.sections.settings) next.settings = { ...restored.state.settings, desktopOnboardingCompleted: true };
       if (restored.sections.plugins) next.plugins = restored.state.plugins;
       for (const name of Object.keys(next.files)) {
         if (
@@ -590,10 +631,14 @@ app
       commit(validateState(next));
       return publicState(true);
     });
-    return mainWindow.loadURL('lnreader://app/index.html');
+    const backupTimer = setInterval(() => void automaticBackup.check(), 5 * 60 * 1000);
+    mainWindow.on('closed', () => clearInterval(backupTimer));
+    return mainWindow.loadURL('lnreader://app/index.html').then(() => {
+      void automaticBackup.check({ launch: true });
+    });
   })
   .catch((error) => {
-    dialog.showErrorBox(ui('Não foi possível abrir o LNReader'), error.message);
+    dialog.showErrorBox(ui('Não foi possível abrir o Reader Desktop'), error.message);
     app.exit(1);
   });
 app.on('window-all-closed', () => app.quit());

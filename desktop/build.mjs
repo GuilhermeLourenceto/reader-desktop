@@ -1,10 +1,12 @@
 import { build } from 'esbuild';
 import { localization } from './scripts/localize-build.mjs';
-import { mkdir, copyFile } from 'node:fs/promises';
+import { mkdir, copyFile, appendFile } from 'node:fs/promises';
+import generateIcon from './build/make-icon.cjs';
 import { resolve } from 'node:path';
 import { readFile } from 'node:fs/promises';
 
 await mkdir('dist', { recursive: true });
+generateIcon();
 const adapter = resolve('src/adapters.js');
 const { dependencies } = JSON.parse(await readFile('package.json', 'utf8'));
 const sourceAliases = {
@@ -106,4 +108,6 @@ await copyFile(
 );
 await copyFile('vendor/lnreader/assets/reader/fonts/noto-sans.ttf', 'dist/noto-sans.ttf');
 await copyFile('vendor/lnreader/assets/reader/fonts/pt-serif.ttf', 'dist/pt-serif.ttf');
-await copyFile('vendor/lnreader/assets/native/ic_launcher.png', 'dist/logo.png');
+// The new book icon is generated locally; the original source assets remain intact.
+await copyFile('build/icon-256.png', 'dist/logo.png');
+await appendFile('dist/style.css', await readFile('src/onboarding.css', 'utf8'));
