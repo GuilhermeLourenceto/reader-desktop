@@ -1,0 +1,325 @@
+
+.updates-page > header,
+.update-group-heading,
+.updates-progress,
+.updates-filters,
+.update-group-actions,
+.update-chapter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.updates-page > header {
+  justify-content: space-between;
+}
+.updates-filters > input {
+  flex: 1;
+}
+.updates-filters label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.updates-filters input[type='checkbox'] {
+  min-width: 0;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+.updates-last-check {
+  font-size: 13px;
+}
+.updates-progress,
+.updates-errors {
+  background: var(--surfaceContainer);
+  padding: 14px;
+  border-radius: 12px;
+  margin: 16px 0;
+  overflow-wrap: anywhere;
+}
+/* Keep the updates status compact. Never let a flex rule stretch its spinner:
+   a very wide rotating ellipse draws the diagonal streak seen in the UI. */
+.updates-progress {
+  width: fit-content;
+  max-width: min(100%, 900px);
+}
+.updates-progress > .spinner {
+  flex: 0 0 18px;
+  min-width: 18px;
+}
+.updates-progress > .updates-progress-text {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.updates-errors summary {
+  cursor: pointer;
+  color: var(--error);
+}
+.update-group {
+  border-bottom: 1px solid var(--outlineVariant);
+  padding: 12px 0 20px;
+}
+.update-date {
+  color: var(--primary);
+  font-size: 15px;
+}
+.update-novel {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: var(--onSurface);
+  padding: 8px;
+}
+.update-novel > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.update-novel strong,
+.update-novel small,
+.update-chapter small {
+  display: block;
+}
+.update-novel small {
+  margin-top: 6px;
+}
+.update-group-actions {
+  margin: 12px 0;
+}
+.update-group-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 8px 12px;
+}
+.update-chapter {
+  flex-wrap: nowrap;
+  border-top: 1px solid var(--outlineVariant);
+}
+.update-chapter-open {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--onSurface);
+  padding: 14px 10px;
+  overflow-wrap: anywhere;
+}
+.update-chapter.is-read .update-chapter-open {
+  color: var(--onSurfaceVariant);
+}
+.update-chapter small {
+  margin-top: 5px;
+}
+.history-page header button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.history-page > input {
+  width: 100%;
+  margin-bottom: 20px;
+}
+.history-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--outlineVariant);
+}
+.history-open {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  border: 0;
+  border-radius: 10px;
+  padding: 16px;
+  color: var(--onSurface);
+}
+.history-open strong {
+  font-size: 16px;
+  font-weight: 500;
+}
+.history-open span {
+  font-size: 14px;
+  font-weight: 400;
+}
+.history-open small {
+  font-size: 12px;
+  font-weight: 400;
+}
+.reader-controls {
+  background: var(--surfaceContainer);
+  border-bottom: 1px solid var(--outlineVariant);
+  padding: 16px 24px;
+  max-height: 42vh;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.reader-control-grid {
+  display: grid;
+  gap: 14px 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.reader-control-grid label {
+  font-size: 12px;
+  margin: 0;
+}
+.reader-control-grid select {
+  width: 100%;
+  display: block;
+  padding: 8px;
+  margin-top: 8px;
+}
+.reader-control-grid input[type='range'] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  margin-top: 14px;
+  accent-color: var(--primary);
+}
+.reader-control-grid output {
+  float: right;
+  color: var(--primary);
+}
+.reader-chapter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+.reader-chapter-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 8px 12px;
+}
+.view-reader .reader-view header {
+  flex-shrink: 0;
+}
+.history-row .history-open {
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+}
+.reader-preview-section .reader-preview-frame {
+  padding: 0;
+  margin: 0;
+  background: var(--readerBackground);
+  color: var(--readerText);
+}
+.reader-settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+@media (min-width: 1150px) {
+  .reader-settings-layout {
+    grid-template-columns: minmax(270px, 360px) minmax(0, 1fr);
+    align-items: start;
+  }
+  .reader-settings-layout .reader-preview-section {
+    position: sticky;
+    top: 0;
+  }
+  .reader-settings-layout .choice-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .reader-settings-layout .choice-row select {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+@media (max-width: 900px) {
+  nav {
+    gap: 12px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  nav button {
+    min-width: 100px;
+  }
+  .reader-control-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* Settings choices stack at compact widths rather than crowd the label. */
+  .choice-row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .choice-row select {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .chapter-actions button {
+    padding: 7px;
+  }
+  .novel-page .novel-cover {
+    width: 125px;
+  }
+}
+@media (min-width: 1100px) {
+  .novel-layout {
+    grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+    gap: 32px;
+  }
+  .novel-chapters-column {
+    position: sticky;
+    top: 0;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+    border-left: 1px solid var(--outlineVariant);
+    padding-left: 28px;
+    scrollbar-color: var(--outlineVariant) transparent;
+  }
+}
+.reader-error {
+  border: 1px solid var(--error);
+  background: var(--errorContainer);
+  color: var(--onErrorContainer);
+  border-radius: 12px;
+  margin: 16px;
+  padding: 16px;
+}
+.reader-error p {
+  color: inherit;
+}
+.reader-error button {
+  margin: 4px;
+  color: inherit;
+}
+.source-toolbar {
+  margin-bottom: 16px;
+}
+.source-toolbar [aria-pressed='true'] {
+  color: var(--onSecondaryContainer);
+  background: var(--secondaryContainer);
+}
+.source-filter-panel {
+  padding: 16px;
+  background: var(--surfaceContainer);
+  border: 1px solid color-mix(in srgb, var(--outlineVariant) 60%, transparent);
+  border-radius: 14px;
+  margin: 16px 0;
+}

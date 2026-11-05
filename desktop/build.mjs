@@ -1,6 +1,6 @@
 import { build } from 'esbuild';
 import { localization } from './scripts/localize-build.mjs';
-import { mkdir, copyFile, appendFile } from 'node:fs/promises';
+import { mkdir, copyFile, writeFile } from 'node:fs/promises';
 import generateIcon from './build/make-icon.cjs';
 import { resolve } from 'node:path';
 import { readFile } from 'node:fs/promises';
@@ -98,7 +98,7 @@ await build({
   external: ['adm-zip'],
   nodePaths: [resolve('node_modules')],
 });
-for (const file of ['index.html', 'style.css', 'preload.cjs']) {
+for (const file of ['index.html', 'preload.cjs']) {
   await copyFile(`src/${file}`, `dist/${file}`);
 }
 await copyFile('vendor/lnreader/LICENSE', 'dist/LICENSE');
@@ -110,4 +110,7 @@ await copyFile('vendor/lnreader/assets/reader/fonts/noto-sans.ttf', 'dist/noto-s
 await copyFile('vendor/lnreader/assets/reader/fonts/pt-serif.ttf', 'dist/pt-serif.ttf');
 // The new book icon is generated locally; the original source assets remain intact.
 await copyFile('build/icon-256.png', 'dist/logo.png');
-await appendFile('dist/style.css', await readFile('src/onboarding.css', 'utf8'));
+// Preserve the exact original cascade order; the onboarding CSS still comes last.
+const styleParts = ["00-foundation.css","10-navigation-and-library.css","20-reader-and-settings.css","30-novel-and-chapters.css","40-history-and-updates.css","50-filters-and-responsive.css"];
+const css = (await Promise.all(styleParts.map(part => readFile('src/styles/' + part, 'utf8')))).join('');
+await writeFile('dist/style.css', css + await readFile('src/onboarding.css', 'utf8'));

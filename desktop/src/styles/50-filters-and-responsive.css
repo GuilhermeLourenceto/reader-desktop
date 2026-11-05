@@ -1,0 +1,372 @@
+
+.source-filters {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-bottom: 16px;
+}
+.source-filters fieldset {
+  border: 1px solid var(--outlineVariant);
+  border-radius: 12px;
+  min-width: 0;
+}
+.source-filters select,
+.source-filters input:not([type='checkbox']) {
+  width: 100%;
+}
+.source-filters legend {
+  color: var(--primary);
+  padding: 0 8px;
+}
+.source-filters label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+.source-filters input[type='checkbox'] {
+  min-width: 0;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+.filter-choices {
+  max-height: 210px;
+  overflow-y: auto;
+}
+.loading-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--outlineVariant);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  /* Keep the loader on its own compositor layer during expensive renders. */
+  transform: translateZ(0);
+  will-change: transform;
+  animation: loading-spin 0.8s linear infinite;
+}
+@keyframes loading-spin {
+  from {
+    transform: translateZ(0) rotate(0deg);
+  }
+  to {
+    transform: translateZ(0) rotate(360deg);
+  }
+}
+.reader-theme-picker {
+  min-width: 0;
+}
+.reader-theme-picker label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.reader-theme-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 3px 3px;
+}
+.reader-theme-swatches button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--outline);
+  border-radius: 50%;
+  font: 18px 'PT Serif', serif;
+}
+.reader-theme-swatches button[aria-pressed='true'] {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+.chapter-ordinal {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.chapter-release {
+  display: block;
+  margin-top: 4px;
+}
+.reader-chapter-position {
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* A bolinha continua girando: parar a animação a transforma em um ponto
+     estático, que não comunica progresso. Apenas fica mais lenta. */
+  .spinner {
+    animation-duration: 1.6s;
+  }
+}
+@media (max-width: 900px) {
+  main {
+    padding: 16px;
+  }
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 16px 10px;
+  }
+  .source .row {
+    gap: 0;
+  }
+  .source button {
+    padding: 10px;
+  }
+  .reader-view header {
+    padding: 8px 12px;
+  }
+}
+
+/* ---------- Leitor: barras recolhíveis, páginas e carregamento ---------- */
+.reader-view {
+  position: relative;
+  overflow: hidden;
+}
+.reader-view header,
+.reader-view footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  transition: opacity var(--motion-standard) var(--motion-ease), transform var(--motion-standard) var(--motion-ease);
+  z-index: 2;
+}
+.reader-view header {
+  top: 0;
+}
+.reader-view footer {
+  bottom: 0;
+}
+.reader-view > .reader-controls {
+  position: absolute;
+  top: var(--readerHeaderHeight, 90px);
+  left: 0;
+  right: 0;
+  z-index: 3;
+  max-height: min(60vh, calc(100% - var(--readerHeaderHeight, 90px)));
+}
+.reader-view .reader-scroll {
+  outline: none;
+}
+.reader-page-buttons {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.reader-view.chrome-hidden header {
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+.reader-view.chrome-hidden footer {
+  opacity: 0;
+  transform: translateY(100%);
+  pointer-events: none;
+}
+.reader-scroll {
+  position: relative;
+}
+.reader-scroll.paged {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.reader-scroll.paged::-webkit-scrollbar {
+  display: none;
+}
+.reader-scroll.paged article.reader-page-flow {
+  position: absolute;
+  top: 24px;
+  margin: 0;
+  padding: 0;
+  column-fill: auto;
+}
+.reader-pages-track {
+  position: relative;
+  height: 100%;
+  min-width: 100%;
+}
+.reader-page-flow img {
+  max-height: var(--page-height);
+  object-fit: contain;
+}
+.reader-page-flow img,
+.reader-page-flow h1,
+.reader-page-flow h2,
+.reader-page-flow table {
+  break-inside: avoid;
+}
+.reader-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 25vh;
+  background: color-mix(
+    in srgb,
+    var(--readerBackground, #25252f) 72%,
+    transparent
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+.reader-page-indicator {
+  margin-left: auto;
+  align-self: center;
+  color: var(--onSurfaceVariant);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  padding-left: 16px;
+}
+.reader-toggle {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+}
+.reader-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+.reader-shortcuts {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--onSurfaceVariant);
+}
+.spinner {
+  display: inline-block;
+  flex: none;
+}
+.spinner-small {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+.reader-page .chapters-sentinel,
+.chapters-sentinel {
+  min-height: 10px;
+}
+.chapters-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 8px;
+  color: var(--onSurfaceVariant);
+  font-size: 13px;
+}
+.viewer-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 90px 24px;
+  color: var(--onSurfaceVariant);
+}
+.loading-note {
+  max-width: 520px;
+  text-align: center;
+}
+.palette-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  gap: 10px;
+}
+.palette-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--outlineVariant);
+  background: var(--surfaceContainerHigh);
+  color: var(--onSurface);
+  font-size: 13px;
+  transition: border-color var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease);
+}
+.palette-swatch:not(:disabled):hover {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--onSurface) 5%, var(--surfaceContainerHigh));
+}
+.palette-swatch[aria-pressed='true'] {
+  border-color: var(--primary);
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.palette-dots {
+  display: flex;
+  gap: 4px;
+}
+.palette-dots i {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--swatch-dark);
+}
+[data-app-theme='light'] .palette-dots i {
+  background: var(--swatch-light);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-progress: 0ms;
+    --motion-standard: 0ms;
+  }
+  /* Progress remains identifiable without quick sweeping movement. */
+  .chapter-download-track.is-indeterminate > span {
+    animation-duration: 2.4s;
+  }
+}
+
+.settings-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--onSurfaceVariant);
+  font-size: 13px;
+}
+
+.chapter-row:hover,
+.chapter-row:focus-within {
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--onSurface) 5%, transparent),
+    color-mix(in srgb, var(--onSurface) 5%, transparent)
+  );
+}
+
+/* Long lists load more items without flooding the DOM. Follow the active palette. */
+.history-more,
+.updates-more-chapters {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--outlineVariant);
+  border-radius: 10px;
+  background: var(--surfaceContainer);
+  color: var(--onSurface);
+  font-weight: 600;
+  text-align: center;
+}
+.history-more:not(:disabled):hover,
+.updates-more-chapters:not(:disabled):hover {
+  background: var(--secondaryContainer);
+  color: var(--onSecondaryContainer);
+}

@@ -1,0 +1,381 @@
+@font-face {
+  font-family: 'Noto Sans';
+  src: url('noto-sans.ttf');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'PT Sans';
+  src: url('pt-sans-bold.ttf');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'PT Serif';
+  src: url('pt-serif.ttf');
+  font-display: swap;
+}
+:root {
+  color-scheme: dark;
+  font-family: 'Noto Sans', system-ui, sans-serif;
+  color: var(--onSurface, #e4e2e6);
+  background: var(--background, #1b1b1f);
+  --surfaceContainer: #24252c;
+  --surfaceContainerHigh: #2d2e36;
+  /* Shared motion scale; no durations scattered across UI controls. */
+  --motion-fast: 160ms;
+  --motion-progress: 180ms;
+  --motion-standard: 220ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+  border: 1px solid var(--outlineVariant);
+  border-radius: 24px;
+  padding: 10px 20px;
+  color: var(--primary);
+  background: var(--surfaceContainer);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease);
+}
+/* Keep this fallback hover intentionally low-specificity: selected tabs,
+   primary actions and pressed chapter buttons must retain their theme colors. */
+button:where(:not(:disabled):hover) {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+select option {
+  background: var(--surfaceContainer);
+  color: var(--onSurface);
+}
+.text-button,
+.icon-button,
+.book,
+.source button,
+.history-open {
+  background: transparent;
+}
+.book-card {
+  position: relative;
+  min-width: 0;
+  border-radius: 10px;
+}
+.book-card .book {
+  width: 100%;
+}
+.book-card.is-selected {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+  background: var(--secondaryContainer);
+}
+.book-select {
+  position: absolute;
+  z-index: 1;
+  right: 8px;
+  top: 8px;
+  min-width: 0;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.library-selection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.library-selection > span {
+  font-size: 12px;
+  color: var(--onSurfaceVariant);
+  margin-right: auto;
+}
+.library-selection button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.book-context-menu {
+  position: fixed;
+  z-index: 30;
+  width: 260px;
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--surfaceContainerHigh);
+  color: var(--onSurface);
+  border: 1px solid var(--outlineVariant);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px #0005;
+}
+.book-context-menu strong {
+  display: block;
+  padding: 8px 12px 12px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--outlineVariant);
+  margin-bottom: 6px;
+}
+.book-context-menu button {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: left;
+  background: transparent;
+  color: var(--onSurface);
+  font-weight: 400;
+}
+.book-context-menu button:hover {
+  background: var(--secondaryContainer);
+  color: var(--onSecondaryContainer);
+}
+.book-context-menu button:focus-visible {
+  background: var(--secondaryContainer);
+  color: var(--onSecondaryContainer);
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+.history-open {
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+}
+.history-entry-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.history-cover {
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 99px;
+  background: var(--surfaceContainerHigh);
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.history-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reader-preview-frame {
+  padding: 0;
+  height: 360px;
+  overflow-y: auto;
+  background: var(--readerBackground);
+  color: var(--readerText);
+  margin: 0;
+}
+.reader-preview-frame article {
+  box-sizing: border-box;
+  width: 100%;
+}
+.reader-preview-section {
+  min-width: 0;
+  padding: 20px 0;
+}
+.preview-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.preview-heading h3 {
+  margin: 0;
+}
+.reader-preview-dialog {
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: var(--background);
+  color: var(--onSurface);
+}
+.reader-preview-dialog[open] {
+  display: flex;
+}
+.reader-preview-dialog .reader-view {
+  width: 100%;
+}
+.source-language-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 0 18px;
+}
+.source-language-row input {
+  flex: 1 1 230px;
+}
+.source-language-row label {
+  margin: 0;
+}
+.source-language-row select {
+  min-width: 175px;
+}
+.source-mode-tabs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 0 20px;
+}
+.source-mode-tabs [aria-pressed='true'] {
+  background: var(--secondaryContainer);
+  color: var(--onSecondaryContainer);
+  border-color: var(--secondaryContainer);
+}
+.global-search-form {
+  padding: 12px 0 20px;
+}
+.global-search-progress {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  color: var(--onSurfaceVariant);
+}
+.global-source-results header {
+  margin-bottom: 8px;
+}
+.global-source-results h3 {
+  margin: 0;
+}
+.global-source-results h3 small {
+  font-size: 12px;
+  margin-left: 10px;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+input,
+select {
+  padding: 12px 16px;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  max-width: 100%;
+  min-width: 0;
+}
+/* Rounded text fields without changing the native shapes of checkboxes/sliders. */
+input:not([type='checkbox']):not([type='radio']):not([type='range']),
+select {
+  border-radius: 12px;
+}
+/* Native dropdown arrows differ between Windows/Linux and can hug the edge.
+   Use a palette-aware chevron with a reserved text gutter and fixed inset. */
+select:not([multiple]) {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 44px;
+  padding-inline: 16px 44px;
+  background-color: transparent;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--onSurfaceVariant) 50%),
+    linear-gradient(135deg, var(--onSurfaceVariant) 50%, transparent 50%);
+  background-position:
+    calc(100% - 23px) calc(50% + 2px),
+    calc(100% - 17px) calc(50% + 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+select:disabled {
+  cursor: default;
+}
+input {
+  min-width: 220px;
+}
+input::placeholder {
+  color: var(--onSurfaceVariant);
+  opacity: 1;
+}
+h2 {
+  font-size: 24px;
+  font-weight: 500;
+  margin: 8px 0;
+}
+h3 {
+  font-size: 17px;
+  font-weight: 500;
+  margin: 24px 0 16px;
+}
+p {
+  color: var(--onSurfaceVariant);
+  line-height: 1.7;
+}
+small {
+  color: var(--onSurfaceVariant);
+}
+.icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 32px;
+  position: relative;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  scrollbar-color: var(--outlineVariant) transparent;
+}
+aside {
+  order: 2;
+  background: var(--surfaceContainer);
+  border-top: 1px solid
+    color-mix(in srgb, var(--outlineVariant) 45%, transparent);
+  flex-shrink: 0;
+}
