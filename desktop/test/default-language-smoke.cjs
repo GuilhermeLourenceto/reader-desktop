@@ -17,7 +17,17 @@ const deadline = setTimeout(() => {
 app.on('browser-window-created', (_event, win) => {
   win.webContents.setBackgroundThrottling(false);
   win.webContents.once('did-finish-load', async () => {
-    const js = source => win.webContents.executeJavaScript(source, true);
+    const js = async source => {
+      // Show the exact failing expression rather than Electron's generic
+      // "Script failed to execute" message.
+      const result = await win.webContents.executeJavaScript(
+        `(async () => { try { return await (${source}); } catch (error) { return { __testError: String(error) }; } })()`,
+        true,
+      );
+      if (result && result.__testError)
+        throw new Error('Renderer expression failed: ' + source + ' :: ' + result.__testError);
+      return result;
+    };
     const wait = async expression => {
       for (let i = 0; i < 300; i++) {
         if (await js(`Promise.resolve(${expression}).then(Boolean)`)) return;
