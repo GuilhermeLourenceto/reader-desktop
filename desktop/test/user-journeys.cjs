@@ -17,6 +17,8 @@ const scenarios = [
   { name: 'Fechamento enquanto o programa ainda salva', file: 'close-smoke.cjs', issues: ['LNReader#2091'] },
   { name: 'Fonte defeituosa sem travar a leitura', file: 'isolation-smoke.cjs', issues: ['LNReader#2106'] },
   { name: 'Leitura paginada, alteracao de tema e cancelar fonte presa', file: 'version01-smoke.cjs', issues: ['Mihon#4202', 'TachiyomiJ2K#1920'] },
+  { name: 'Retomar leitura no ponto salvo, testar tentativas e preservar downloads após atualização', file: 'reader-rules-smoke.cjs', issues: ['Readest#4838', 'Kavita#4400', 'LNReader#2074'] },
+  { name: 'Biblioteca com 10 mil obras e 200 mil capítulos sem renderizar tudo', file: 'huge-library-ui-smoke.cjs', issues: ['Suwayomi#2236', 'Mihon#705'], timeoutMs: 240000 },
 ];
 const results = [];
 const directory = path.join(__dirname, '../.tmp');
@@ -29,7 +31,7 @@ for (const test of scenarios) {
     env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
     encoding: 'utf8',
     maxBuffer: 6 * 1024 * 1024,
-    timeout: 120000,
+    timeout: test.timeoutMs || 120000,
     windowsHide: true,
   });
   const info = {
