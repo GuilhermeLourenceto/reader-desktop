@@ -187,7 +187,7 @@ app.on('browser-window-created',(_event,window)=>{
    await journey('30. ZIP real de 12 MiB restaura bytes, Unicode e progresso',async()=>{
     const f=fixture('off'),storage=new DiskFiles(path.join(f.dir,'content')),bytes=randomBytes(12*1024*1024);
     const html='<h2>雪 🪐 Café</h2><p>Conteúdo offline íntegro.</p>',s=emptyState();
-    s.novels=[{id:1,pluginId:'fixture',name:'雪 🪐 Café',inLibrary:true,chapters:[{id:11,novelId:1,name:'Capítulo 1',path:'/11',progress:83,isDownloaded:true}]}];
+    s.novels=[{id:1,pluginId:'fixture',name:'雪 🪐 Café',path:'/novel/1',inLibrary:true,chapters:[{id:11,novelId:1,name:'Capítulo 1',path:'/11',progress:83,isDownloaded:true}]}];
     s.files={'Covers/1':storage.write(bytes),'Novels/fixture/1/11/index.html':storage.write(Buffer.from(html))};
     const filename=path.join(f.folder,'Manual gigante.zip');
     const result=await workerJob({action:'export',state:s,filename,contentDirectory:storage.directory});

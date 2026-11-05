@@ -90,7 +90,7 @@ console.log('EXTREME USER JOURNEY GROUP '+JSON.stringify({
   passed: extraResults.filter(x => x.status === 'PASS').length,
   exitCode: extra.status, durationSeconds: (Date.now() - extraStart) / 1000,
 }));
-if (extraResults.length !== 18 || extra.status !== 0 || extra.error) {
+if (extraResults.length !== 18 || extra.error || (extra.status !== 0 && extraResults.every(x => x.status === 'PASS'))) {
   results.push({ scenario: 'Verificação de integridade das 18 jornadas adicionais',
     file: 'extreme-journeys-smoke.cjs', status: 'FAIL',
     reason: extra.error?.message || 'A suíte não concluiu todas as 18 verificações com sucesso' });
