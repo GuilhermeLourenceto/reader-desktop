@@ -4,8 +4,31 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { createAutoBackupManager } = require('../src/autoBackup.cjs');
-const { backupJob } = require('../src/backupJobs.cjs');
-const { emptyState, parseBackup } = require('../src/backup.cjs');
+const { Worker } = require('node:worker_threads');
+const { emptyState, parseBackup } = require('../dist/backup.cjs');
+// Use the production worker bundle; raw upstream TypeScript enums are only
+// supported by esbuild, not by Node's strip-only TypeScript loader.
+function backupJob(input) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(path.join(__dirname, '../dist/backup-worker.cjs'), {
+      workerData: input,
+    });
+    let settled = false;
+    const finish = (error, value) => {
+      if (settled) return;
+      settled = true;
+      if (error) reject(error);
+      else resolve(value);
+    };
+    worker.on('message', value => value.ok
+      ? finish(null, value.restored ?? value.result)
+      : finish(Error(value.message)));
+    worker.on('error', finish);
+    worker.on('exit', code => {
+      if (!settled) finish(Error('Worker exited: ' + code));
+    });
+  });
+}
 const { DiskFiles } = require('../src/storage.cjs');
 
 test('real ZIP worker: six automatic snapshots rotate to five; every ZIP imports; manual archive survives', async t => {
