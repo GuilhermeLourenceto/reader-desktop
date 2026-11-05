@@ -248,8 +248,26 @@ test('clock rollback still keeps the five most recently created automatic backup
 });
 
 test('real backup worker produces five restorable ZIPs; manual ZIP remains untouched', async t => {
-  const { backupJob } = require('../src/backupJobs.cjs');
-  const { emptyState, parseBackup, createBackup } = require('../src/backup.cjs');
+  const { Worker } = require('node:worker_threads');
+  const { emptyState, parseBackup, createBackup } = require('../dist/backup.cjs');
+  const backupJob = input => new Promise((resolve, reject) => {
+    const worker = new Worker(path.join(__dirname, '../dist/backup-worker.cjs'), {
+      workerData: input,
+    });
+    let settled = false;
+    worker.on('message', value => {
+      if (settled) return;
+      settled = true;
+      if (value.ok) resolve(value.restored ?? value.result);
+      else reject(new Error(value.message));
+    });
+    worker.on('error', error => {
+      if (!settled) { settled = true; reject(error); }
+    });
+    worker.on('exit', code => {
+      if (!settled) { settled = true; reject(new Error('Worker exited: ' + code)); }
+    });
+  });
   const f = fixture(t);
   const contentDirectory = path.join(f.root, 'content');
   fs.mkdirSync(contentDirectory, { recursive: true });
