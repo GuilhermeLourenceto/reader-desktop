@@ -165,18 +165,115 @@ test('frequency thresholds and folder switch are independent, downloaded chapter
   }
 });
 
-test('legacy metadata migrates only auto-named files from its recorded folder', async t => {
+test('legacy status never guesses ownership: manual lookalike ZIPs survive migration', async t => {
   const f = fixture(t);
-  const filenames = [];
-  for (let i = 1; i <= 5; i++) {
-    const filename = 'ReaderDesktop-auto-2026-10-0' + i + 'T00-00-00-000Z.zip';
-    filenames.push(filename);
-    fs.writeFileSync(path.join(f.folder, filename), 'old-auto-' + i);
-  }
+  const manual = 'ReaderDesktop-auto-2026-10-01T00-00-00-000Z.zip';
+  fs.writeFileSync(path.join(f.folder, manual), 'manual');
   fs.writeFileSync(path.join(f.root, 'automatic-backup-status.json'),
-    JSON.stringify({ at: 1, folder: f.folder, fingerprint: 'old' }));
-  f.setState({ ...f.state, settings: { ...f.state.settings, marker: 123 } });
+    JSON.stringify({ at: 1, folder: f.folder, fingerprint: 'previous' }));
   assert.equal(await f.make().check({ launch: true }), true);
-  assert.equal(fs.existsSync(path.join(f.folder, filenames[0])), false);
+  assert.equal(fs.readFileSync(path.join(f.folder, manual), 'utf8'), 'manual');
+  assert.equal(f.status().ownershipRegistryVersion, 2);
+  assert.equal(f.status().managed[f.folder].length, 1);
+});
+
+test('manual backup replacing an old automatic archive is protected on rotation', async t => {
+  const f = fixture(t);
+  let first;
+  for (let i = 0; i < 5; i++) {
+    f.setState({ ...f.state, settings: { ...f.state.settings, marker: i } });
+    assert.equal(await f.make().check({ launch: true }), true);
+    if (i === 0) first = f.listAuto()[0];
+    f.advance(86400000);
+  }
+  fs.writeFileSync(path.join(f.folder, first), 'manual replacement with longer content');
+  const edited = new Date('2026-11-20T00:00:00Z');
+  fs.utimesSync(path.join(f.folder, first), edited, edited);
+  f.setState({ ...f.state, settings: { ...f.state.settings, marker: 5 } });
+  assert.equal(await f.make().check({ launch: true }), true);
+  assert.equal(fs.readFileSync(path.join(f.folder, first), 'utf8'),
+    'manual replacement with longer content');
   assert.equal(f.status().managed[f.folder].length, 5);
+});
+
+test('partial worker result leaves previous five backups unchanged', async t => {
+  const f = fixture(t);
+  let result = { missingCount: 0 };
+  const make = () => createAutoBackupManager({
+    dataDirectory: f.root, contentDirectory: f.root,
+    getState: () => f.state,
+    now: () => Date.parse('2026-11-05T00:00:00Z') + f.jobs.length * 86400000,
+    exportBackup: async ({ filename }) => {
+      f.jobs.push(filename);
+      fs.writeFileSync(filename, 'zip bytes');
+      return result;
+    },
+  });
+  for (let i = 0; i < 5; i++) {
+    f.setState({ ...f.state, settings: { ...f.state.settings, marker: i } });
+    assert.equal(await make().check({ launch: true }), true);
+  }
+  const before = f.listAuto();
+  result = { missingCount: 1 };
+  f.setState({ ...f.state, settings: { ...f.state.settings, marker: 6 } });
+  assert.equal(await make().check({ launch: true }), false);
+  assert.deepEqual(f.listAuto(), before);
+  assert.equal(f.status().managed[f.folder].length, 5);
+});
+
+test('clock rollback still keeps the five most recently created automatic backups', async t => {
+  const f = fixture(t);
+  const times = [
+    '2026-11-10T00:00:00Z','2026-11-11T00:00:00Z','2026-11-12T00:00:00Z',
+    '2026-11-13T00:00:00Z','2026-11-14T00:00:00Z','2026-11-15T00:00:00Z',
+    '2026-11-01T00:00:00Z',
+  ].map(Date.parse);
+  const made = [];
+  for (let i = 0; i < times.length; i++) {
+    f.setState({ ...f.state, settings: { ...f.state.settings, marker: i } });
+    const manager = createAutoBackupManager({
+      dataDirectory: f.root, contentDirectory: f.root, getState: () => f.state,
+      now: () => times[i],
+      exportBackup: async ({ filename }) => {
+        fs.writeFileSync(filename, 'complete'); made.push(path.basename(filename));
+      },
+    });
+    assert.equal(await manager.check({ launch: true }), true);
+  }
+  const files = f.listAuto();
+  assert.equal(files.length, 5);
+  assert.equal(files.includes(made[6]), true);
+  assert.equal(files.includes(made[0]), false);
+  assert.equal(files.includes(made[1]), false);
+});
+
+test('real backup worker produces five restorable ZIPs; manual ZIP remains untouched', async t => {
+  const { backupJob } = require('../src/backupJobs.cjs');
+  const { emptyState, parseBackup, createBackup } = require('../src/backup.cjs');
+  const f = fixture(t);
+  const contentDirectory = path.join(f.root, 'content');
+  fs.mkdirSync(contentDirectory, { recursive: true });
+  const manual = path.join(f.folder, 'user-manual.zip');
+  fs.writeFileSync(manual, createBackup(emptyState()));
+  let time = Date.parse('2026-11-05T00:00:00Z');
+  let state = emptyState();
+  for (let i = 0; i < 7; i++) {
+    state = { ...state, settings: {
+      desktopOnboardingCompleted: true, desktopBackupDirectory: f.folder,
+      desktopBackupFrequency: 'launch', revision: i,
+    } };
+    const manager = createAutoBackupManager({
+      dataDirectory: f.root, contentDirectory, getState: () => state,
+      now: () => time, exportBackup: backupJob,
+    });
+    assert.equal(await manager.check({ launch: true }), true);
+    time += 86400000;
+  }
+  const status = f.status();
+  assert.equal(status.managed[f.folder].length, 5);
+  for (const record of status.managed[f.folder]) {
+    const restored = parseBackup(fs.readFileSync(path.join(f.folder, record.name)));
+    assert.equal(restored.state.settings.desktopOnboardingCompleted, true);
+  }
+  assert.ok(parseBackup(fs.readFileSync(manual)).state);
 });

@@ -24,35 +24,49 @@ function writeStatus(filename, status) {
   }
 }
 function managedFiles(status, folder) {
+  // Only records written by the versioned ownership register are trusted.
+  // Older status files identified backups by filename, which could mistake
+  // a manually named ZIP for an automatic one. Never guess ownership.
+  if (status.ownershipRegistryVersion !== 2) {
+    status.managed = {};
+    status.ownershipRegistryVersion = 2;
+  }
   if (!status.managed || typeof status.managed !== 'object' || Array.isArray(status.managed))
     status.managed = {};
-  if (!Array.isArray(status.managed[folder])) {
-    // Older releases kept the last-success metadata, not a file registry.
-    // Migrate only files using the reserved automatic name in that exact
-    // previously recorded directory. Ordinary manual ZIPs never match.
-    status.managed[folder] = status.folder === folder && Number.isFinite(status.at)
-      ? fs.readdirSync(folder).filter(name => FILENAME.test(name))
-      : [];
+  if (!Array.isArray(status.managed[folder])) status.managed[folder] = [];
+  const unique = [];
+  const seen = new Set();
+  for (const record of status.managed[folder]) {
+    if (!record || typeof record !== 'object' || Array.isArray(record)) continue;
+    const { name, size, mtimeMs } = record;
+    if (typeof name !== 'string' || !FILENAME.test(name) || seen.has(name) ||
+        !Number.isFinite(size) || size <= 0 || !Number.isFinite(mtimeMs)) continue;
+    try {
+      const stats = fs.lstatSync(path.join(folder, name));
+      // If an old automatic file was overwritten by the user, it is no
+      // longer the same managed file and must never be deleted by rotation.
+      if (!stats.isFile() || stats.size !== size || stats.mtimeMs !== mtimeMs)
+        continue;
+      seen.add(name);
+      unique.push(record);
+    } catch { /* Deleted or moved outside the application. */ }
   }
-  const unique = [...new Set(status.managed[folder].filter(name => typeof name === 'string' && FILENAME.test(name)))];
-  status.managed[folder] = unique.filter(name => {
-    try { return fs.statSync(path.join(folder, name)).isFile(); }
-    catch { return false; }
-  }).sort();
-  return status.managed[folder];
+  // Preserve the order in which backups were successfully made; changing
+  // the system clock must not cause the newest backup to be deleted.
+  status.managed[folder] = unique;
+  return unique;
 }
 function prune(status, folder) {
-  const names = managedFiles(status, folder);
-  const excess = Math.max(0, names.length - KEEP);
+  const entries = managedFiles(status, folder);
+  const excess = Math.max(0, entries.length - KEEP);
   if (!excess) return false;
   let changed = false;
-  for (const name of names.slice(0, excess)) {
+  for (const record of entries.slice(0, excess)) {
     try {
-      fs.unlinkSync(path.join(folder, name));
-      status.managed[folder] = status.managed[folder].filter(value => value !== name);
+      fs.unlinkSync(path.join(folder, record.name));
+      status.managed[folder] = status.managed[folder].filter(value => value.name !== record.name);
       changed = true;
     } catch (error) {
-      // Never remove an unrelated ZIP, and retry cleanup on later checks.
       console.warn('Could not remove old automatic backup:', error.message);
     }
   }
@@ -64,7 +78,7 @@ function availableName(folder, timestamp) {
   for (let offset = 0; offset < 10000; offset++) {
     const stamp = new Date(timestamp + offset).toISOString().replace(/[:.]/g, '-');
     const name = 'ReaderDesktop-auto-' + stamp + '.zip';
-    if (!fs.existsSync(path.join(folder, name))) return name;
+    if (!fs.existsSync(path.join(folder, name)) && !fs.existsSync(path.join(folder, name + '.tmp'))) return name;
   }
   throw new Error('No unique automatic backup filename available');
 }
@@ -92,7 +106,6 @@ function createAutoBackupManager({ dataDirectory, getState, contentDirectory, ex
     try { stats = fs.statSync(folder); } catch { return false; }
     if (!stats.isDirectory()) return false;
     if (frequency === 'launch' && (!launch || launchAttempted)) return false;
-    if (frequency === 'launch') launchAttempted = true;
 
     const status = readStatus(statusPath);
     busy = true;
@@ -100,16 +113,17 @@ function createAutoBackupManager({ dataDirectory, getState, contentDirectory, ex
     try {
       // Retry unfinished retention even when no new backup is due.
       const previouslyManaged = JSON.stringify(status.managed || {});
-      const managed = managedFiles(status, folder);
+      const previousRegistryVersion = status.ownershipRegistryVersion;
+      managedFiles(status, folder);
       const removed = prune(status, folder);
-      if (removed || JSON.stringify(status.managed) !== previouslyManaged)
+      if (removed || JSON.stringify(status.managed) !== previouslyManaged || previousRegistryVersion !== 2)
         writeStatus(statusPath, status);
 
       const instant = now();
       const fingerprint = createHash('sha256').update(JSON.stringify(state)).digest('hex');
       if (fingerprint === status.fingerprint && folder === status.folder) return false;
       if (frequency !== 'launch' && Number.isFinite(status.at) &&
-          instant - status.at < HOURS[frequency] * 60 * 60 * 1000 &&
+          instant >= status.at && instant - status.at < HOURS[frequency] * 60 * 60 * 1000 &&
           folder === status.folder) return false;
 
       const name = availableName(folder, instant);
@@ -121,15 +135,28 @@ function createAutoBackupManager({ dataDirectory, getState, contentDirectory, ex
           .filter(([key]) => !key.startsWith('Novels/'))),
       };
 
-      await exportBackup({
+      const result = await exportBackup({
         action: 'export', state: backupState, contentDirectory, filename,
       });
+      // A partial export (for example, missing offline chapters) must not
+      // replace or cause deletion of an older verified good backup.
+      const archived = fs.statSync(filename);
+      if (!archived.isFile() || archived.size === 0 ||
+          Number(result?.missingCount || 0) > 0) {
+        try { fs.unlinkSync(filename); } catch { /* Never rotate this file. */ }
+        throw new Error('Automatic backup export was incomplete.');
+      }
 
       // Record ownership before deleting anything. If recording fails, remove
       // only this new archive and preserve the previous valid five.
       const next = {
         ...status, at: instant, folder, fingerprint,
-        managed: { ...status.managed, [folder]: [...managed, name].sort() },
+        managed: {
+          ...status.managed,
+          [folder]: [...managedFiles(status, folder), {
+            name, size: archived.size, mtimeMs: archived.mtimeMs,
+          }],
+        },
       };
       try { writeStatus(statusPath, next); }
       catch (error) {
@@ -138,6 +165,7 @@ function createAutoBackupManager({ dataDirectory, getState, contentDirectory, ex
       }
       // Successful export only: remove the oldest app-created automatic ZIP.
       if (prune(next, folder)) writeStatus(statusPath, next);
+      if (frequency === 'launch') launchAttempted = true;
       return true;
     } catch (error) {
       // The ZIP worker writes to a temporary path before committing a ZIP.
