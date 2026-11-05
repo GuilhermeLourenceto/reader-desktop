@@ -60,7 +60,7 @@ app.on('browser-window-created',(_event,window)=>{
   const nav=async(label,view)=>{await click(label);await wait('!!document.querySelector(".app.view-'+view+'")')};
   try{
    await journey('13. Primeiro acesso interrompido continua em inglês',async()=>{
-    await wait('!!document.querySelector(".first-run[data-step=1]")');
+    await wait('!!document.querySelector(".first-run[data-step=\"1\"]")');
     assert.equal(await js('document.documentElement.lang'),'en');
     assert.equal(await js('document.querySelector("#first-run-language").value'),'en');
    });
@@ -68,21 +68,21 @@ app.on('browser-window-created',(_event,window)=>{
     await select('#first-run-language','ja');
     await wait('document.querySelector(".first-run h1")?.textContent==="ようこそ"');
     await js('document.querySelector(".first-run-primary").click()');
-    await wait('!!document.querySelector(".first-run[data-step=2]")');
+    await wait('!!document.querySelector(".first-run[data-step=\"2\"]")');
     assert.equal(await js('document.querySelector(".first-run h1").textContent'),'テーマを選択');
     await js('document.querySelector(".first-run-primary").click()');
-    await wait('!!document.querySelector(".first-run[data-step=3]")');
+    await wait('!!document.querySelector(".first-run[data-step=\"3\"]")');
     assert.equal(await js('document.querySelector(".first-run h1").textContent'),'バックアップの設定');
     await js('document.querySelector(".first-run-secondary").click()');
-    await wait('!!document.querySelector(".first-run[data-step=2]")');
+    await wait('!!document.querySelector(".first-run[data-step=\"2\"]")');
     await js('document.querySelector(".first-run-secondary").click()');
-    await wait('!!document.querySelector(".first-run[data-step=1]")');
+    await wait('!!document.querySelector(".first-run[data-step=\"1\"]")');
     await select('#first-run-language','pt-BR');
     await wait('document.documentElement.lang==="pt-BR"');
     await js('document.querySelector(".first-run-primary").click()');
-    await wait('!!document.querySelector(".first-run[data-step=2]")');
+    await wait('!!document.querySelector(".first-run[data-step=\"2\"]")');
     await js('document.querySelector(".first-run-primary").click()');
-    await wait('!!document.querySelector(".first-run[data-step=3]")');
+    await wait('!!document.querySelector(".first-run[data-step=\"3\"]")');
     await select('#first-run-frequency','off');
     await js('document.querySelector(".first-run-primary").click()');
     await wait('!!document.querySelector(".app.view-library") && document.querySelectorAll(".book").length===5',15000);
