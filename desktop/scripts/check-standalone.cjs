@@ -54,8 +54,14 @@ if (/resolve\(['"]\.\.\//.test(build) || /copyFile\(\s*['"]\.\.\//.test(build))
 // The standalone icon generator is not called by normal builds, but it must
 // also work from desktop/ alone when maintainers need to refresh icons.
 const iconMaker = fs.readFileSync(path.join(root, 'build/make-icon.cjs'), 'utf8');
-if (!iconMaker.includes('../vendor/lnreader/assets/native/ic_launcher.png'))
-  errors.push('Icon generator must use desktop/vendor/lnreader, not the external Android tree.');
+const legacyIcon = iconMaker.includes('../vendor/lnreader/assets/native/ic_launcher.png');
+const generatedIcon =
+  iconMaker.includes('function generate()') &&
+  iconMaker.includes('icon.ico') &&
+  iconMaker.includes('icon-256.png') &&
+  !iconMaker.includes('ic_launcher.png');
+if (!legacyIcon && !generatedIcon)
+  errors.push('Icon generator must produce desktop icons locally or use the vendored asset.');
 if (/\.\.\/\.\.\/assets\/|android-icons\/|ANDROID_HOME|react-native(?:\/|$)/.test(iconMaker))
   errors.push('Icon generator contains an Android-only or out-of-tree resource path.');
 const sdkSync = fs.readFileSync(path.join(root, 'scripts/sync-original-sdk.cjs'), 'utf8');
