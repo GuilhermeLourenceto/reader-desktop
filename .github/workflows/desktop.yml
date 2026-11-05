@@ -191,7 +191,7 @@ jobs:
             desktop/release/*.deb
 
   user-journeys:
-    name: Everyday reading scenarios (10 Electron journeys)
+    name: Everyday reading scenarios (12 Electron journeys)
     if: github.ref_name == 'seguranca-e-estabilidade' || github.ref_name == 'main' || github.event_name == 'pull_request'
     runs-on: windows-latest
     permissions:
@@ -209,7 +209,7 @@ jobs:
       - run: npm ci
       - run: npm run setup
       - run: npm run build
-      - name: Test 10 everyday user journeys from real reader issues
+      - name: Test 12 everyday user journeys from real reader issues
         run: npm run test:journeys
         timeout-minutes: 24
       - uses: actions/upload-artifact@v4
