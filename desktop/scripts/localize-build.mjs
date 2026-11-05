@@ -58,7 +58,7 @@ export const localization = {
       // JSX components may live in nested feature folders.
       // Resolve i18n relative to each file instead of assuming src/*.jsx.
       const relativeI18n = relative(dirname(args.path), resolve('src/i18n.cjs'))
-        .replaceAll('\\\\', '/');
+        .replace(/\\/g, '/');
       const i18nImport = relativeI18n.startsWith('.') ? relativeI18n : './' + relativeI18n;
       return {
         contents: `import { t as __uiT } from '${i18nImport}';\n${contents}`,
