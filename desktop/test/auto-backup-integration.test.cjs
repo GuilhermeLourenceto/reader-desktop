@@ -67,7 +67,7 @@ test('real ZIP worker: six automatic snapshots rotate to five; every ZIP imports
     });
     assert.equal(await manager.check({ launch: true }), true, 'real automatic ZIP export ' + n);
     const recorded = JSON.parse(fs.readFileSync(path.join(root, 'automatic-backup-status.json'), 'utf8'));
-    const latest = recorded.managed[folder].at(-1);
+    const latest = recorded.managed[folder].at(-1)?.name;
     assert.ok(latest);
     names.push(latest);
     const bytes = fs.readFileSync(path.join(folder, latest));
