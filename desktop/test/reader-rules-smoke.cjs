@@ -138,6 +138,13 @@ server.listen(0, '127.0.0.1', () => {
         await wait(
           "(()=>{const e=document.querySelector('.reader-scroll');if(!e)return false;const h=e.scrollHeight-e.clientHeight;const p=h>0?e.scrollTop/h*100:0;return p>45&&p<55;})()",
         );
+        // Offline-first regression: cached chapter content must not invoke the source.
+        // A source can be removed, blocked or offline after a chapter was saved.
+        assert.equal(
+          chapterRequests,
+          0,
+          'Opening a downloaded chapter must not fetch chapter HTML from the source',
+        );
         const percentage = await execute(
           "(()=>{const element=document.querySelector('.reader-scroll');return element.scrollTop/(element.scrollHeight-element.clientHeight)*100;})()",
         );
