@@ -38,7 +38,7 @@ dpkg-deb --extract "${debs[0]}" "$temp"
 launcher="$(find "$temp/usr/share/applications" -type f -name '*.desktop' -print -quit)"
 test -f "$launcher" || { echo "No .desktop launcher in Debian package" >&2; exit 1; }
 grep -q '^\[Desktop Entry\]' "$launcher"
-grep -q '^Name=LNReader Desktop' "$launcher"
+grep -Fxq 'Name=Reader Desktop' "$launcher"
 grep -q '^Exec=' "$launcher"
 grep -q '^Icon=' "$launcher"
 # A visible launcher and the running Chromium window must share their ID.
