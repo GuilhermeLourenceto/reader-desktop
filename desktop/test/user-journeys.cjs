@@ -55,9 +55,50 @@ for (const test of scenarios) {
   );
   console.log('USER JOURNEY RESULT ' + JSON.stringify(info));
 }
+
+/**
+ * Additional 18 journeys run in one Electron process for faster stress tests.
+ * The child emits one JSON result per real assertion sequence, never a
+ * fabricated PASS; a missing/aborted result is a suite failure.
+ */
+const extraStart = Date.now();
+const extra = spawnSync(electron, [path.join(__dirname, 'extreme-journeys-smoke.cjs'), '--visual-preview'], {
+  cwd: path.join(__dirname, '..'),
+  env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
+  encoding: 'utf8',
+  maxBuffer: 6 * 1024 * 1024,
+  timeout: 210000,
+  windowsHide: true,
+});
+const extraOutput = [extra.stdout, extra.stderr].filter(Boolean).join('\n');
+const extraResults = extraOutput.split(/\r?\n/).flatMap(line => {
+  const prefix = 'EXTREME JOURNEY RESULT ';
+  const at = line.indexOf(prefix);
+  if (at < 0) return [];
+  try {
+    const report = JSON.parse(line.slice(at + prefix.length));
+    return [{ scenario: report.scenario, file: 'extreme-journeys-smoke.cjs',
+      status: report.status, durationSeconds: report.seconds,
+      reason: report.error || null, category: 'adversarial-electron-or-backup' }];
+  } catch { return []; }
+});
+results.push(...extraResults);
+console.log('\n=== EXTREME USER JOURNEYS: 13–30 ===');
+console.log(extraOutput.slice(-12000));
+console.log('EXTREME USER JOURNEY GROUP '+JSON.stringify({
+  expected: 18, recorded: extraResults.length,
+  passed: extraResults.filter(x => x.status === 'PASS').length,
+  exitCode: extra.status, durationSeconds: (Date.now() - extraStart) / 1000,
+}));
+if (extraResults.length !== 18 || extra.status !== 0 || extra.error) {
+  results.push({ scenario: 'Verificação de integridade das 18 jornadas adicionais',
+    file: 'extreme-journeys-smoke.cjs', status: 'FAIL',
+    reason: extra.error?.message || 'A suíte não concluiu todas as 18 verificações com sucesso' });
+}
+
 const summary = {
-  source: 'Windows Electron, local synthetic fixtures, no third-party authentication',
-  total: scenarios.length,
+  source: 'Windows Electron, 30 independent journeys: UI, offline reading, backup/storage, local synthetic fixtures',
+  total: results.length,
   pass: results.filter(r => r.status === 'PASS').length,
   fail: results.filter(r => r.status === 'FAIL').length,
   results,

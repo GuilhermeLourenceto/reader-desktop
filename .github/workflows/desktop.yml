@@ -121,6 +121,10 @@ jobs:
         if: runner.os == 'Windows'
         timeout-minutes: 3
         run: npx electron test/default-language-smoke.cjs
+      - name: Run 18 adversarial Electron/UI/backup journeys on Linux
+        if: runner.os == 'Linux'
+        timeout-minutes: 5
+        run: xvfb-run -a npx electron --no-sandbox test/extreme-journeys-smoke.cjs --visual-preview
       - name: English first launch and English reset (Linux)
         if: runner.os == 'Linux'
         timeout-minutes: 3
@@ -191,7 +195,7 @@ jobs:
             desktop/release/*.deb
 
   user-journeys:
-    name: Everyday reading scenarios (12 Electron journeys)
+    name: 30 user journeys (Electron UI and backup stress)
     if: github.ref_name == 'seguranca-e-estabilidade' || github.ref_name == 'main' || github.event_name == 'pull_request'
     runs-on: windows-latest
     permissions:
