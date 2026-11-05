@@ -109,6 +109,8 @@ app
       commit({ ...state, settings: {
         ...state.settings,
         desktopOnboardingCompleted: false,
+        // The first-run language is explicitly English, never the OS locale.
+        desktopInterfaceLanguage: 'en',
         desktopBackupFrequency: '24',
         desktopBackupIncludeDownloads: true,
       } });

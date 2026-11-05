@@ -41,7 +41,7 @@ app.on('browser-window-created', (_event, win) => {
             JSON.parse(
               fs.readFileSync(path.join(profile, 'library.json'), 'utf8'),
             ).settings,
-            saved.settings,
+            { ...saved.settings, desktopOnboardingCompleted: true },
           );
           console.log(
             'PASS: missing renderer close acknowledgement offers wait/retry and explicit exit; saved library remains intact.',

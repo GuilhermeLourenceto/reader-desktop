@@ -38,6 +38,23 @@ app.on('browser-window-created', (_event, win) => {
       await wait("document.documentElement.lang==='en' && document.querySelector('.first-run') && !document.querySelector('nav')");
       assert.equal((await js("window.desktop.load({metadataOnly:true})")).settings.desktopOnboardingCompleted, false);
       assert.equal(await js("document.querySelector('#first-run-language').value"), 'en');
+      assert.equal(await js("document.querySelector('.first-run h1').textContent"), 'Welcome');
+      // Changing language immediately updates the current step and both
+      // subsequent onboarding steps, including palette and backup controls.
+      await js("(()=>{const select=document.querySelector('#first-run-language');select.value='ja';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
+      await wait("document.documentElement.lang==='ja' && document.querySelector('.first-run h1')?.textContent==='ようこそ'");
+      await click('次へ');
+      await wait("document.querySelector('.first-run[data-step=2] h1')?.textContent==='テーマを選択'");
+      assert.equal(await js("Array.from(document.querySelectorAll('.first-run-theme-name')).every(element=>!['Padrão','Crepúsculo','Turquesa'].includes(element.textContent))"), true);
+      await click('次へ');
+      await wait("document.querySelector('.first-run[data-step=3] h1')?.textContent==='バックアップの設定'");
+      assert.equal(await js("document.querySelector('#first-run-frequency option[value=off]').textContent"), '無効');
+      await click('戻る');
+      await wait("document.querySelector('.first-run[data-step=2] h1')?.textContent==='テーマを選択'");
+      await click('戻る');
+      await wait("document.querySelector('.first-run[data-step=1] h1')?.textContent==='ようこそ'");
+      await js("(()=>{const select=document.querySelector('#first-run-language');select.value='en';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
+      await wait("document.documentElement.lang==='en' && document.querySelector('.first-run h1')?.textContent==='Welcome'");
       await click('Next');
       await wait("document.querySelector('.first-run[data-step=2]') !== null");
       await click('Next');
@@ -47,7 +64,7 @@ app.on('browser-window-created', (_event, win) => {
       await wait("document.documentElement.lang==='en' && document.querySelector('nav') && !document.querySelector('.busy')");
       assert.equal(await js("document.querySelector('nav button:last-child').textContent.trim()"), 'More');
       assert.equal((await js("window.desktop.load({metadataOnly:true})")).settings.desktopOnboardingCompleted, true);
-      assert.equal((await js("window.desktop.load({metadataOnly:true})")).settings.desktopInterfaceLanguage, undefined);
+      assert.equal((await js("window.desktop.load({metadataOnly:true})")).settings.desktopInterfaceLanguage, 'en');
       await click('More');
       await click('Settings');
       await click('General');

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { appThemes } from './appThemes';
-import { languages } from './i18n.cjs';
+import { languages, t as translateMessage } from './i18n.cjs';
 import { resolveAppearance } from './appearance.cjs';
 
 const translations = {
@@ -73,7 +73,7 @@ export default function Onboarding({ settings, onChange, onChooseFolder, onResto
               <div className="first-run-mode-title"><div><strong>{t('appearance')}</strong></div><div className="first-run-mode" role="radiogroup" aria-label={t('appearance')}>{[['system',t('system')],['light',t('light')],['dark',t('dark')]].map(([value,label])=><button key={value} type="button" role="radio" aria-checked={mode===value} onClick={()=>update({desktopTheme:value})}>{mode===value && <span aria-hidden="true">✓</span>}{label}</button>)}</div></div>
               <div className="first-run-rule" />
               <div className="first-run-palettes-label"><strong>{t('palettes')}</strong><small>{t('nine')}</small></div>
-              <div className="first-run-theme-grid">{appThemes.map(theme=>{const colors=isDark?theme.dark:theme.light;const selected=(settings.desktopPalette||'default')===theme.id;return <button type="button" className="first-run-theme" key={theme.id} aria-pressed={selected} onClick={()=>update({desktopPalette:theme.id})}><span className="first-run-theme-preview" style={{'--p-bg':colors.background,'--p-primary':colors.primary,'--p-primary-on':colors.onPrimary,'--p-surface':colors.surfaceVariant,'--p-text':colors.onSurface,'--p-muted':colors.outlineVariant}}><i className="first-run-preview-toolbar"/><i className="first-run-preview-block"/><i className="first-run-preview-line"/><i className="first-run-preview-line shorter"/><i className="first-run-preview-nav"/>{selected && <span className="first-run-selected">✓</span>}</span><span className="first-run-theme-name">{theme.name}</span></button>})}</div>
+              <div className="first-run-theme-grid">{appThemes.map(theme=>{const colors=isDark?theme.dark:theme.light;const selected=(settings.desktopPalette||'default')===theme.id;return <button type="button" className="first-run-theme" key={theme.id} aria-pressed={selected} onClick={()=>update({desktopPalette:theme.id})}><span className="first-run-theme-preview" style={{'--p-bg':colors.background,'--p-primary':colors.primary,'--p-primary-on':colors.onPrimary,'--p-surface':colors.surfaceVariant,'--p-text':colors.onSurface,'--p-muted':colors.outlineVariant}}><i className="first-run-preview-toolbar"/><i className="first-run-preview-block"/><i className="first-run-preview-line"/><i className="first-run-preview-line shorter"/><i className="first-run-preview-nav"/>{selected && <span className="first-run-selected">✓</span>}</span><span className="first-run-theme-name">{translateMessage(theme.name, {}, lang)}</span></button>})}</div>
               <div className="first-run-rule" />
               <button className="first-run-switch-row" type="button" role="switch" aria-checked={oled} onClick={()=>update({desktopTheme:oled?'dark':'oled'})}><span><strong>{t('oled')}</strong><small>{t('oledDesc')}</small></span><span className={'first-run-toggle'+(oled?' checked':'')}><i/></span></button>
             </div>
