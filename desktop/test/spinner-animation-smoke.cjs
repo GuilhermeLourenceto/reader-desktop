@@ -9,6 +9,12 @@ const path = require('node:path');
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'lnreader-spinner-'));
 app.setPath('userData', profile);
 app.commandLine.appendSwitch('disable-gpu');
+// This visual test measures the existing main navigation and spinners.
+// A fresh profile would correctly show the new first-run wizard instead.
+const { emptyState } = require('../dist/backup.cjs');
+fs.writeFileSync(path.join(profile, 'library.json'), JSON.stringify({
+  ...emptyState(), settings: { desktopOnboardingCompleted: true },
+}));
 let mainWindow;
 let finished = false;
 
