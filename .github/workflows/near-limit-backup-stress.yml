@@ -3,9 +3,17 @@ name: Near-512MiB backup stress (Windows and Linux)
 # Explicit backup-volume validation. No release or installer and no user data.
 on:
   push:
-    branches: [linux/prepare-packaging-and-tests]
+    branches: [main, linux/prepare-packaging-and-tests]
     paths:
       - '.github/workflows/near-limit-backup-stress.yml'
+      - 'desktop/src/backup.cjs'
+      - 'desktop/src/backup-worker.cjs'
+      - 'desktop/src/storage.cjs'
+      - 'desktop/src/restorePlan.cjs'
+      - 'desktop/test/backup.test.cjs'
+      - 'desktop/test/backup-worker.test.cjs'
+      - 'desktop/test/restore-plan.test.cjs'
+      - 'desktop/test/heavy-backup-stress.cjs'
   workflow_dispatch:
 
 permissions:
