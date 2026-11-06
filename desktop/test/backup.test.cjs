@@ -256,3 +256,38 @@ test('v2 backup rejects tampered novel order without silently replacing the libr
   zip.updateFile('Version.json', Buffer.from(JSON.stringify(version)));
   assert.throws(() => parseBackup(zip.toBuffer()), /Ordem de obras inválida/);
 });
+
+test('Android v2 ZIP keeps its manifest and uses standard STORED for compressed chapter assets', () => {
+  const state = fixture();
+  const original = Buffer.from([0x89, 0x50, 0x4e, 0x47, ...Array.from({ length: 1024 }, (_, i) => i % 256)]);
+  state.files['Novels/test/7/9/photo.png'] = original.toString('base64');
+  const archive = createBackup(state);
+  const outer = new AdmZip(archive);
+  assert.deepEqual(
+    new Set(outer.getEntries().filter(e => !e.isDirectory).map(e => e.entryName)),
+    new Set(['Version.json', 'NovelAndChapters/7.json', 'Category.json',
+      'Setting.json', 'Plugins.json', 'plugins.zip', 'novel-files.zip', 'Covers/7']),
+  );
+  assert.equal(JSON.parse(outer.readAsText('Version.json')).formatVersion, 2);
+  const downloaded = new AdmZip(outer.readFile('novel-files.zip'));
+  assert.equal(downloaded.getEntry('test/7/9/photo.png').header.method, 0);
+  assert.equal(downloaded.getEntry('test/7/9/index.html').header.method, 8);
+  assert.deepEqual(downloaded.readFile('test/7/9/photo.png'), original);
+  assert.deepEqual(parseBackup(archive).state, state);
+});
+
+test('legacy download zip skips non-LNReader payloads while maintaining the file budget', () => {
+  const input = fixture();
+  const zip = new AdmZip();
+  zip.addFile('Version.json', Buffer.from(JSON.stringify({ version: '1.x' })));
+  zip.addFile('Category.json', Buffer.from(JSON.stringify(input.categories)));
+  zip.addFile('Setting.json', Buffer.from(JSON.stringify(input.settings)));
+  zip.addFile('NovelAndChapters/7.json', Buffer.from(JSON.stringify(input.novels[0])));
+  const inner = new AdmZip();
+  inner.addFile('Novels/test/7/9/index.html', Buffer.from(input.files['Novels/test/7/9/index.html'], 'base64'));
+  inner.addFile('Unused/large-cache.bin', Buffer.alloc(512 * 1024, 83));
+  zip.addFile('download.zip', inner.toBuffer());
+  const restored = parseBackup(zip.toBuffer());
+  assert.equal(restored.state.files['Novels/test/7/9/index.html'], input.files['Novels/test/7/9/index.html']);
+  assert.equal(Object.hasOwn(restored.state.files, 'Unused/large-cache.bin'), false);
+});

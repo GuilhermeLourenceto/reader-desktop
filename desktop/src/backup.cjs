@@ -24,7 +24,7 @@ function safePath(name) {
   }
   return name;
 }
-function readArchive(buffer, budget, outer = false, onFile) {
+function readArchive(buffer, budget, outer = false, onFile, shouldExtract = () => true) {
   const zip = new AdmZip(buffer);
   const entries = new Map();
   const names = new Set();
@@ -53,6 +53,9 @@ function readArchive(buffer, budget, outer = false, onFile) {
       if (names.has(entry.entryName))
         throw new Error('Entradas duplicadas no backup');
       names.add(entry.entryName);
+      // Legacy download.zip may include unrelated files. Count and validate
+      // every ZIP member, but do not inflate a payload that will be discarded.
+      if (!shouldExtract(entry.entryName)) continue;
       const data = entry.getData();
       if (onFile) onFile(entry.entryName, data);
       else entries.set(entry.entryName, data);
@@ -191,9 +194,8 @@ function parseBackup(
   const addFiles = (archive, prefix, select = () => true) => {
     if (!entries.has(archive)) throw new Error(`Backup sem ${archive}`);
     readArchive(entries.get(archive), budget, false, (name, data) => {
-      if (select(name))
-        state.files[safePath(prefix + name)] = storeFile(prefix + name, data);
-    });
+      state.files[safePath(prefix + name)] = storeFile(prefix + name, data);
+    }, select);
     entries.delete(archive);
   };
   if (version.formatVersion === 2) {
@@ -218,18 +220,24 @@ function createBackup(state) {
   const bytes = value =>
     Buffer.isBuffer(value) ? value : Buffer.from(value, 'base64');
   const { files, ...metadata } = state;
-  const size = Object.values(files).reduce(
-    (total, value) =>
-      total +
-      (Buffer.isBuffer(value)
-        ? value.length
-        : Buffer.byteLength(value, 'base64')),
-    Buffer.byteLength(JSON.stringify(metadata)) + 1024,
-  );
-  if (size > MAX_BYTES)
-    throw new Error(
-      'Os dados excedem o limite de 512 MB deste formato de backup.',
-    );
+  // A single pass validates paths, enforces the size budget, and groups files.
+  // The Android v2 manifest, entries, and nested ZIP layout remain unchanged.
+  const groups = { plugins: [], novels: [], covers: [] };
+  let size = Buffer.byteLength(JSON.stringify(metadata)) + 1024;
+  let entryCount = state.novels.length + 8;
+  for (const [name, value] of Object.entries(files)) {
+    safePath(name);
+    size += Buffer.isBuffer(value)
+      ? value.length
+      : Buffer.byteLength(value, 'base64');
+    entryCount++;
+    if (size > MAX_BYTES || entryCount > 100000)
+      throw new Error('O backup excede o limite de 512 MB ou 100000 entradas.');
+    if (name.startsWith('Plugins/')) groups.plugins.push([name, value]);
+    else if (name.startsWith('Novels/')) groups.novels.push([name, value]);
+    else if (name.startsWith(`${BackupEntryName.COVERS}/`))
+      groups.covers.push([name, value]);
+  }
   const zip = new AdmZip();
   const addJSON = (name, value) =>
     zip.addFile(name, Buffer.from(JSON.stringify(value)));
@@ -258,27 +266,32 @@ function createBackup(state) {
   addJSON(BackupEntryName.CATEGORY, state.categories);
   addJSON(BackupEntryName.SETTING, state.settings);
   addJSON(BackupEntryName.PLUGIN_METADATA, state.plugins);
-  for (const [prefix, archive] of [
-    ['Plugins/', ZipBackupName.PLUGINS],
-    ['Novels/', ZipBackupName.NOVEL_FILES],
+  for (const [prefix, archive, group] of [
+    ['Plugins/', ZipBackupName.PLUGINS, groups.plugins],
+    ['Novels/', ZipBackupName.NOVEL_FILES, groups.novels],
   ]) {
     const nested = new AdmZip();
-    for (const [name, content] of Object.entries(state.files)) {
-      safePath(name);
-      if (name.startsWith(prefix))
-        nested.addFile(name.slice(prefix.length), bytes(content));
+    for (const [name, content] of group) {
+      const relativeName = name.slice(prefix.length);
+      nested.addFile(relativeName, bytes(content));
+      // A standard ZIP STORED entry avoids wasting CPU deflating JPEG, PNG,
+      // WebP and other already-compressed assets. HTML, JS and text keep ZIP
+      // DEFLATE for compact Android-compatible chapter exports.
+      if (/\.(?:png|jpe?g|gif|webp|avif|heic|woff2?|mp3|m4a|ogg|mp4|webm|pdf|zip|epub|gz)$/i.test(relativeName))
+        nested.getEntry(relativeName).header.method = 0;
     }
-    // ZIP members are already compressed; storing the container avoids a second pass.
     zip.addFile(archive, nested.toBuffer());
+    // A ZIP inside a ZIP is already compressed.
     zip.getEntry(archive).header.method = 0;
   }
-  for (const [name, content] of Object.entries(state.files)) {
-    if (name.startsWith(`${BackupEntryName.COVERS}/`)) {
-      zip.addFile(safePath(name), bytes(content));
-      // Covers are image files, normally already compressed.
-      zip.getEntry(name).header.method = 0;
-    }
+  for (const [name, content] of groups.covers) {
+    zip.addFile(name, bytes(content));
+    zip.getEntry(name).header.method = 0;
   }
-  return zip.toBuffer();
+  const result = zip.toBuffer();
+  // Never emit a file that the Reader Desktop import worker itself refuses.
+  if (result.length > MAX_BYTES)
+    throw new Error('O arquivo ZIP excede o limite de 512 MB.');
+  return result;
 }
 module.exports = { safePath, emptyState, parseBackup, createBackup };

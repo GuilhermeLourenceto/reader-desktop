@@ -8,17 +8,13 @@ try {
     const exported = {},
       missing = [];
     let size = 0;
-    for (const value of Object.values(workerData.state.files)) {
-      try {
-        size += files.size(value);
-      } catch (error) {
-        if (error.code !== 'ENOENT') throw error;
-      }
-    }
-    if (size > 512 * 1024 * 1024)
-      throw new Error('Os arquivos excedem o limite de 512 MB do backup.');
+    // One pass instead of stat'ing the whole library and then reading it all
+    // again. Every included blob is still verified by DiskFiles.read(SHA-256).
     for (const [name, value] of Object.entries(workerData.state.files)) {
       try {
+        size += files.size(value);
+        if (size > 512 * 1024 * 1024)
+          throw new Error('Os arquivos excedem o limite de 512 MB do backup.');
         exported[name] = files.read(value);
       } catch (error) {
         if (!['ENOENT', 'CORRUPT_FILE'].includes(error.code)) throw error;
@@ -33,25 +29,44 @@ try {
     const full = {
       ...workerData.state,
       files: exported,
-      novels: workerData.state.novels.map(novel => ({
-        ...novel,
-        chapters: novel.chapters.map(chapter => {
+      novels: workerData.state.novels.map(novel => {
+        let changed = false;
+        const chapters = novel.chapters.map(chapter => {
           const prefix = `Novels/${novel.pluginId}/${novel.id}/${chapter.id}/`;
+          const downloaded = Boolean(
+            chapter.isDownloaded &&
+              Object.hasOwn(exported, prefix + 'index.html'),
+          );
+          const missingAssets = missingChapters.has(prefix);
+          if (chapter.isDownloaded === downloaded &&
+              (!missingAssets || chapter.desktopAssetsCached === false))
+            return chapter;
+          changed = true;
           return {
             ...chapter,
-            isDownloaded: Boolean(
-              chapter.isDownloaded &&
-                Object.hasOwn(exported, prefix + 'index.html'),
-            ),
-            ...(missingChapters.has(prefix)
-              ? { desktopAssetsCached: false }
-              : {}),
+            isDownloaded: downloaded,
+            ...(missingAssets ? { desktopAssetsCached: false } : {}),
           };
-        }),
-      })),
+        });
+        return changed ? { ...novel, chapters } : novel;
+      }),
     };
-    fs.writeFileSync(workerData.filename + '.tmp', createBackup(full));
-    fs.renameSync(workerData.filename + '.tmp', workerData.filename);
+    const temporary = workerData.filename + '.tmp';
+    try {
+      // Finish writing and flushing the archive before atomically publishing
+      // it. A failed export must not overwrite the last valid backup.
+      const archive = createBackup(full);
+      const handle = fs.openSync(temporary, 'w');
+      try {
+        fs.writeFileSync(handle, archive);
+        fs.fsyncSync(handle);
+      } finally {
+        fs.closeSync(handle);
+      }
+      fs.renameSync(temporary, workerData.filename);
+    } finally {
+      if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
+    }
     parentPort.postMessage({
       ok: true,
       result: { missingCount: missing.length },
