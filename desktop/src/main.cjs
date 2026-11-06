@@ -23,6 +23,7 @@ const {
 } = require('./storage.cjs');
 const { emptyState, safePath } = require('./backup.cjs');
 const { backupJob } = require('./backupJobs.cjs');
+const { planRestore } = require('./restorePlan.cjs');
 const { createAutoBackupManager } = require('./autoBackup.cjs');
 const { validateNetworkUrl } = require('./networkPolicy.cjs');
 const { installFullscreenShortcut } = require('./fullscreenShortcut.cjs');
@@ -596,41 +597,19 @@ app
         ),
       });
       if (confirmation.response !== 1) return null;
+      const { next, changed } = planRestore(
+        state,
+        restored,
+        files => diskFiles.import(files),
+      );
+      // A full no-op restore should not rewrite library.json or its recovery
+      // copy, reload the UI, or replace a useful before-restore.json.
+      if (!changed) return { unchanged: true };
       writeState(
         path.join(app.getPath('userData'), 'before-restore.json'),
         state,
       );
-      const next = { ...state, files: { ...state.files } };
-      if (restored.sections.library) {
-        next.novels = restored.state.novels;
-        next.categories = restored.state.categories;
-      }
-      if (restored.sections.settings) next.settings = { ...restored.state.settings, desktopOnboardingCompleted: true };
-      if (restored.sections.plugins) next.plugins = restored.state.plugins;
-      for (const name of Object.keys(next.files)) {
-        if (
-          (restored.sections.plugins && name.startsWith('Plugins/')) ||
-          (restored.sections.library &&
-            (name.startsWith('Novels/') || name.startsWith('Covers/')))
-        )
-          delete next.files[name];
-      }
-      Object.assign(next.files, diskFiles.import(restored.state.files));
-      if (restored.sections.library)
-        next.novels = next.novels.map((novel) => ({
-          ...novel,
-          chapters: novel.chapters.map((chapter) => ({
-            ...chapter,
-            isDownloaded: Boolean(
-              chapter.isDownloaded &&
-                Object.hasOwn(
-                  next.files,
-                  `Novels/${novel.pluginId}/${novel.id}/${chapter.id}/index.html`,
-                ),
-            ),
-          })),
-        }));
-      commit(validateState(next));
+      commit(next);
       return publicState(true);
     });
     const backupTimer = setInterval(() => void automaticBackup.check(), 5 * 60 * 1000);

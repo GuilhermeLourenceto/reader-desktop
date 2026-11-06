@@ -13,11 +13,18 @@ class DiskFiles {
   write(buffer) {
     const hash = createHash('sha256').update(buffer).digest('hex');
     const target = path.join(this.directory, hash);
-    if (
-      !fs.existsSync(target) ||
-      createHash('sha256').update(fs.readFileSync(target)).digest('hex') !==
-        hash
-    ) {
+    // The incoming buffer was already SHA-256 hashed to name the immutable
+    // blob. Comparing the existing bytes directly avoids re-hashing large
+    // downloaded chapters on every restore, while still repairing corruption.
+    const matchesStored = () => {
+      try {
+        return fs.readFileSync(target).equals(buffer);
+      } catch (error) {
+        if (error.code === 'ENOENT') return false;
+        throw error;
+      }
+    };
+    if (!matchesStored()) {
       const temporary = target + '.' + randomUUID() + '.tmp';
       try {
         const handle = fs.openSync(temporary, 'wx');
@@ -32,13 +39,7 @@ class DiskFiles {
         } catch (error) {
           // Another writer may already have published this immutable blob.
           // Windows can reject replacing it while that writer is reading it.
-          if (
-            !fs.existsSync(target) ||
-            createHash('sha256')
-              .update(fs.readFileSync(target))
-              .digest('hex') !== hash
-          )
-            throw error;
+          if (!matchesStored()) throw error;
         }
       } finally {
         if (fs.existsSync(temporary)) fs.unlinkSync(temporary);

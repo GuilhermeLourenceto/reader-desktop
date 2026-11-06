@@ -1402,6 +1402,10 @@ function App() {
     await persistNow();
     const restored = await window.desktop.restore();
     if (!restored) return;
+    if (restored.unchanged) {
+      setNotice(translateMessage('Backup restaurado.'));
+      return;
+    }
     hydrate(restored);
     update(restored);
     const missing = await reloadInstalledPlugins();

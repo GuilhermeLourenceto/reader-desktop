@@ -188,3 +188,30 @@ test('new reader options are validated before saving', () => {
     /desktopPagination/,
   );
 });
+
+test('writing an identical backup blob reuses it without replacing the file', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'lnreader-idempotent-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const store = new DiskFiles(root);
+  const data = Buffer.alloc(1024 * 1024, 77);
+  const reference = store.write(data);
+  const filename = path.join(root, reference.slice(6));
+  const original = fs.statSync(filename);
+  assert.equal(store.write(Buffer.from(data)), reference);
+  assert.deepEqual(fs.readdirSync(root), [reference.slice(6)]);
+  assert.equal(fs.statSync(filename).mtimeMs, original.mtimeMs);
+  assert.deepEqual(store.read(reference), data);
+});
+
+test('an existing blob with the right name but corrupted bytes is repaired', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'lnreader-repair-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const store = new DiskFiles(root);
+  const data = Buffer.from('valid chapter data');
+  const reference = store.write(data);
+  const filename = path.join(root, reference.slice(6));
+  // Same size: a stat-only optimization would accidentally trust this file.
+  fs.writeFileSync(filename, Buffer.alloc(data.length, 33));
+  assert.equal(store.write(data), reference);
+  assert.deepEqual(store.read(reference), data);
+});
