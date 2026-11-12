@@ -52,7 +52,7 @@ Inspirado pelo ecossistema do [LNReader](https://github.com/LNReader/lnreader), 
 - **Leitura offline:** baixe capítulos para ler sem conexão.
 - **Fontes e descoberta:** instale extensões compatíveis e pesquise obras em diferentes catálogos e idiomas.
 - **Temas e idiomas:** modo claro, escuro, preto OLED, diferentes paletas e interface em dez idiomas.
-- **Backups:** importe, exporte e programe cópias automáticas da sua biblioteca.
+- **Backups compatíveis com LNReader:** importe backups do aplicativo Android, exporte no formato baseado no LNReader e programe cópias automáticas.
 
 ## Download
 
@@ -77,9 +77,9 @@ Baixe a **[v0.4.5 Beta](https://github.com/GuilhermeLourenceto/lnreader-desktop/
 
 ## Compatibilidade com o LNReader
 
-Se você já usa o LNReader no Android, pode importar um **backup ZIP compatível** para trazer sua biblioteca, capítulos e progresso ao Reader Desktop. Também é possível criar backups para exportação.
+O Reader Desktop utiliza um **formato de backup baseado no LNReader** e aceita a **importação de backups ZIP do LNReader Android**. Assim, você pode trazer sua biblioteca, capítulos, categorias e progresso de leitura para o computador, conforme os dados presentes no backup.
 
-Recomendamos manter uma cópia dos seus dados antes de restaurar um backup. Saiba mais sobre a [compatibilidade](desktop/docs/COMPATIBILIDADE-ORIGINAL.md).
+Também é possível **exportar backups nesse formato**, facilitando a continuidade entre os dois aplicativos. Recomendamos guardar uma cópia do backup original antes de restaurá-lo. Veja os [detalhes de compatibilidade](desktop/docs/COMPATIBILIDADE-ORIGINAL.md).
 
 ## Compilar a partir do código
 
