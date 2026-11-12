@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./desktop/build/icon-256.png" width="112" alt="Ícone do Reader Desktop" />
+  <img src="./desktop/build/icon-256.png?v=20261105" width="112" alt="Ícone do Reader Desktop" />
 </p>
 
 <h1 align="center">Reader Desktop</h1>
