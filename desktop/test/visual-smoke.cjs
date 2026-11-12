@@ -196,6 +196,10 @@ server.listen(0, '127.0.0.1', () => {
         await wait("document.querySelector('[data-settings-page=settings]') !== null");
         await execute("Array.from(document.querySelectorAll('button')).find(b => b.getAttribute('aria-label')==='Leitor').click()");
         await wait("document.querySelector('[aria-label=\"Tempo para ocultar as barras\"]') !== null");
+        assert.deepEqual(
+          await execute("(()=>{const el=document.querySelector('[aria-label=\"Tempo para ocultar as barras\"]');return [el.value,el.min,el.max]})()"),
+          ['2.6', '1', '10'],
+        );
         win.setSize(800, 640);
         await capture('preview-settings-reader-small');
         console.log(

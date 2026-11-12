@@ -72,3 +72,13 @@ test('chapter action labels keep the source title and translate into every langu
     }
   }
 });
+
+test('waiting status is localized in all ten interface languages', () => {
+  const translations = messages['Aguardando…'];
+  assert.ok(translations, 'Missing waiting status translation');
+  for (const [locale] of languages) {
+    assert.equal(typeof translations[locale], 'string');
+    assert.ok(translations[locale].trim());
+  }
+  assert.equal(translations.en, 'Waiting…');
+});
