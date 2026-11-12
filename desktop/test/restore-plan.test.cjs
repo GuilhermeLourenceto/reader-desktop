@@ -98,3 +98,22 @@ test('imported disk file references are used, and an actually different file cha
   assert.equal(result.changed, true);
   assert.equal(result.next.files['Covers/4'], '@file:' + 'd'.repeat(64));
 });
+
+test('missing Android metadata preserves existing categories, settings and plugin bundles', () => {
+  const current = oldState();
+  const incoming = structuredClone(current);
+  incoming.novels[0].name = 'Imported book';
+  incoming.categories = [];
+  incoming.settings = {};
+  incoming.plugins = [];
+  delete incoming.files['Plugins/site/index.js'];
+  const result = planRestore(current, {
+    ...restore(incoming),
+    missingSections: ['categories', 'settings', 'plugins'],
+  });
+  assert.equal(result.next.novels[0].name, 'Imported book');
+  assert.deepEqual(result.next.categories, current.categories);
+  assert.deepEqual(result.next.settings, current.settings);
+  assert.deepEqual(result.next.plugins, current.plugins);
+  assert.equal(result.next.files['Plugins/site/index.js'], current.files['Plugins/site/index.js']);
+});

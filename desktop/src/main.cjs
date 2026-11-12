@@ -584,17 +584,28 @@ app
         contentDirectory: diskFiles.directory,
         filename: result.filePaths[0],
       });
+      const missingSectionNames = {
+        categories: ui('categorias'),
+        settings: ui('configurações'),
+        plugins: ui('fontes'),
+      };
+      const missingInfo = restored.missingSections?.length
+        ? '\n\n' + ui('Seções ausentes no backup; os dados atuais serão preservados:') +
+          ' ' + restored.missingSections.map(name => missingSectionNames[name] || name).join(', ')
+        : '';
       const confirmation = await dialog.showMessageBox(mainWindow, {
         type: 'question',
         buttons: [ui('Cancelar'), ui('Restaurar')],
         defaultId: 0,
         cancelId: 0,
-        message: ui('Restaurar {count} obras?', {
-          count: restored.state.novels.length,
-        }),
+        message: restored.sections.library
+          ? ui('Restaurar {count} obras?', {
+              count: restored.state.novels.length,
+            })
+          : ui('Restaurar seções selecionadas do backup?'),
         detail: ui(
           'As seções presentes no backup substituirão os dados atuais. Uma cópia do estado anterior será salva como before-restore.json na pasta de dados do aplicativo.',
-        ),
+        ) + missingInfo,
       });
       if (confirmation.response !== 1) return null;
       const { next, changed } = planRestore(

@@ -66,33 +66,35 @@ function readArchive(buffer, budget, outer = false, onFile, shouldExtract = () =
 function unwrapBackup(entries, budget) {
   if (entries.has(BackupEntryName.VERSION)) return entries;
 
-  const candidates = [];
-  for (const name of entries.keys()) {
-    const dataSuffix = `/${ZipBackupName.DATA}`;
-    if (name !== ZipBackupName.DATA && !name.endsWith(dataSuffix)) continue;
-    const prefix =
-      name === ZipBackupName.DATA ? '' : name.slice(0, -dataSuffix.length + 1);
-    const expected = [
-      `${prefix}${ZipBackupName.DATA}`,
-      `${prefix}${ZipBackupName.PLUGINS}`,
-      `${prefix}${ZipBackupName.NOVEL_FILES}`,
-    ];
-    if (expected.every(entryName => entries.has(entryName)))
-      candidates.push({ expected });
-  }
+  const candidates = [...entries.keys()].filter(
+    name => name === ZipBackupName.DATA || name.endsWith(`/${ZipBackupName.DATA}`),
+  );
   if (candidates.length === 0) return entries;
   if (candidates.length !== 1)
     throw new Error('Backup contém mais de uma estrutura de dados');
 
-  const [{ expected }] = candidates;
-  if (entries.size !== expected.length)
+  const dataName = candidates[0];
+  const prefix = dataName.slice(0, -ZipBackupName.DATA.length);
+  const archiveNames = [
+    ZipBackupName.DATA,
+    ZipBackupName.PLUGINS,
+    ZipBackupName.NOVEL_FILES,
+    ZipBackupName.DOWNLOAD,
+  ];
+  const allowed = new Set(archiveNames.map(name => prefix + name));
+  if ([...entries.keys()].some(name => !allowed.has(name)))
     throw new Error('Estrutura externa do backup inválida');
-  const [dataName, pluginsName, novelFilesName] = expected;
+
+  // Android includes only the archives selected in the backup options.
+  // A settings-only or plugins-only backup need not contain novel-files.zip.
   const normalized = readArchive(entries.get(dataName), budget);
-  normalized.set(ZipBackupName.PLUGINS, entries.get(pluginsName));
-  normalized.set(ZipBackupName.NOVEL_FILES, entries.get(novelFilesName));
+  for (const archiveName of archiveNames.slice(1)) {
+    if (entries.has(prefix + archiveName))
+      normalized.set(archiveName, entries.get(prefix + archiveName));
+  }
   return normalized;
 }
+
 function emptyState() {
   return {
     novels: [],
@@ -111,6 +113,7 @@ function parseBackup(
 ) {
   const budget = { size: 0, count: 0 };
   const entries = unwrapBackup(readArchive(buffer, budget, true), budget);
+  const missingSections = [];
   const json = (name, fallback) =>
     entries.has(name)
       ? JSON.parse(entries.get(name).toString('utf8'))
@@ -118,8 +121,10 @@ function parseBackup(
   const version = json(BackupEntryName.VERSION, {});
   if (version.formatVersion && ![1, 2].includes(version.formatVersion))
     throw new Error('Versão de backup não suportada');
+  // Android interprets v2 without a section manifest as a legacy backup.
+  const formatVersion = version.formatVersion === 2 && version.sections ? 2 : 1;
   const sections = resolveBackupOptions(
-    version.formatVersion === 2 ? version.sections : undefined,
+    formatVersion === 2 ? version.sections : undefined,
   );
   const state = emptyState();
   if (sections.library) {
@@ -129,7 +134,7 @@ function parseBackup(
         name.endsWith('.json'),
     );
     if (!entries.has(BackupEntryName.CATEGORY))
-      throw new Error('Backup sem Category.json');
+      missingSections.push('categories');
     const ids = new Set();
     for (const [, content] of novelEntries) {
       const novel = JSON.parse(content.toString('utf8'));
@@ -168,7 +173,11 @@ function parseBackup(
     if (!Array.isArray(state.categories))
       throw new Error('Categorias inválidas');
   }
-  if (sections.settings) state.settings = json(BackupEntryName.SETTING, {});
+  if (sections.settings) {
+    if (!entries.has(BackupEntryName.SETTING))
+      missingSections.push('settings');
+    state.settings = json(BackupEntryName.SETTING, {});
+  }
   if (
     !state.settings ||
     typeof state.settings !== 'object' ||
@@ -176,10 +185,12 @@ function parseBackup(
   )
     throw new Error('Configurações inválidas');
   if (sections.plugins) {
-    const registry = state.settings[INSTALLED_PLUGINS_KEY] || [];
+    const registry = state.settings[INSTALLED_PLUGINS_KEY];
+    if (!entries.has(BackupEntryName.PLUGIN_METADATA) && registry == null)
+      missingSections.push('plugins');
     state.plugins = json(
       BackupEntryName.PLUGIN_METADATA,
-      typeof registry === 'string' ? JSON.parse(registry) : registry,
+      typeof registry === 'string' ? JSON.parse(registry) : registry ?? [],
     );
     if (
       !Array.isArray(state.plugins) ||
@@ -198,7 +209,7 @@ function parseBackup(
     }, select);
     entries.delete(archive);
   };
-  if (version.formatVersion === 2) {
+  if (formatVersion === 2) {
     if (sections.plugins) addFiles(ZipBackupName.PLUGINS, 'Plugins/');
     if (sections.downloadedFiles)
       addFiles(ZipBackupName.NOVEL_FILES, 'Novels/');
@@ -214,7 +225,7 @@ function parseBackup(
       state.files[name] = storeFile(name, data);
   }
   validateState(state);
-  return { state, sections };
+  return { state, sections, missingSections };
 }
 function createBackup(state) {
   const bytes = value =>

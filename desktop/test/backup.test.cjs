@@ -291,3 +291,58 @@ test('legacy download zip skips non-LNReader payloads while maintaining the file
   assert.equal(restored.state.files['Novels/test/7/9/index.html'], input.files['Novels/test/7/9/index.html']);
   assert.equal(Object.hasOwn(restored.state.files, 'Unused/large-cache.bin'), false);
 });
+
+test('wrapped Android settings-only backup works without plugin and download archives', () => {
+  const data = new AdmZip();
+  data.addFile('Version.json', Buffer.from(JSON.stringify({
+    formatVersion: 2,
+    sections: { library: false, settings: true, plugins: false, downloadedFiles: false },
+  })));
+  data.addFile('Setting.json', Buffer.from('{"readerTheme":"dark"}'));
+  const wrapped = new AdmZip();
+  wrapped.addFile('mobile-backup/data.zip', data.toBuffer());
+  const restored = parseBackup(wrapped.toBuffer());
+  assert.deepEqual(restored.state.settings, { readerTheme: 'dark' });
+  assert.deepEqual(restored.missingSections, []);
+});
+
+test('wrapped Android plugin-only backup accepts its selected archives', () => {
+  const state = fixture();
+  const data = new AdmZip();
+  data.addFile('Version.json', Buffer.from(JSON.stringify({
+    formatVersion: 2,
+    sections: { library: false, settings: false, plugins: true, downloadedFiles: false },
+  })));
+  data.addFile('Plugins.json', Buffer.from(JSON.stringify(state.plugins)));
+  const plugins = new AdmZip();
+  plugins.addFile('test/index.js', Buffer.from(state.files['Plugins/test/index.js'], 'base64'));
+  const wrapped = new AdmZip();
+  wrapped.addFile('data.zip', data.toBuffer());
+  wrapped.addFile('plugins.zip', plugins.toBuffer());
+  const restored = parseBackup(wrapped.toBuffer());
+  assert.deepEqual(restored.state.plugins, state.plugins);
+  assert.equal(restored.state.files['Plugins/test/index.js'], state.files['Plugins/test/index.js']);
+  assert.deepEqual(restored.missingSections, []);
+});
+
+test('Android backup with missing metadata preserves the other selected sections', () => {
+  const zip = new AdmZip(createBackup(fixture()));
+  zip.deleteFile('Category.json');
+  zip.deleteFile('Setting.json');
+  zip.deleteFile('Plugins.json');
+  const restored = parseBackup(zip.toBuffer());
+  assert.equal(restored.state.novels.length, 1);
+  assert.deepEqual(restored.missingSections, ['categories', 'settings', 'plugins']);
+});
+
+test('a wrapped Android backup still rejects archives required by selected sections', () => {
+  const data = new AdmZip();
+  data.addFile('Version.json', Buffer.from(JSON.stringify({
+    formatVersion: 2,
+    sections: { library: false, settings: false, plugins: true, downloadedFiles: false },
+  })));
+  data.addFile('Plugins.json', Buffer.from('[]'));
+  const wrapped = new AdmZip();
+  wrapped.addFile('data.zip', data.toBuffer());
+  assert.throws(() => parseBackup(wrapped.toBuffer()), /plugins.zip/);
+});
