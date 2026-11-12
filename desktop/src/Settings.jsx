@@ -286,8 +286,8 @@ export default function Settings({
               />
               <Slider
                 title="Avanço por página (rolagem)"
-                value={settings.desktopPageStep ?? 50}
-                min={0}
+                value={Math.max(10, settings.desktopPageStep ?? 50)}
+                min={10}
                 max={100}
                 step={5}
                 suffix=" %"

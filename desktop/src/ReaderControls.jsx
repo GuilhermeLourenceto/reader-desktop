@@ -26,24 +26,28 @@ export default function ReaderControls({
       </select>
     </label>
   );
-  const slider = (key, title, value, min, max, step = 1, suffix = '') => (
-    <label key={key}>
-      {title}{' '}
-      <output>
-        {settings[key] ?? value}
-        {suffix}
-      </output>
-      <input
-        type="range"
-        aria-label={title}
-        min={min}
-        max={max}
-        step={step}
-        value={settings[key] ?? value}
-        onChange={(event) => onChange({ [key]: Number(event.target.value) })}
-      />
-    </label>
-  );
+  const slider = (key, title, value, min, max, step = 1, suffix = '') => {
+    // Libraries saved by older betas may still contain 0%.
+    const current = Math.max(min, settings[key] ?? value);
+    return (
+      <label key={key}>
+        {title}{' '}
+        <output>
+          {current}
+          {suffix}
+        </output>
+        <input
+          type="range"
+          aria-label={title}
+          min={min}
+          max={max}
+          step={step}
+          value={current}
+          onChange={(event) => onChange({ [key]: Number(event.target.value) })}
+        />
+      </label>
+    );
+  };
   return (
     <div
       className="reader-controls"
@@ -86,7 +90,7 @@ export default function ReaderControls({
           ['scroll', 'Rolagem contínua'],
           ['pages', 'Páginas horizontais'],
         ])}
-        {slider('desktopPageStep', 'Avanço por página', 50, 0, 100, 5, '%')}
+        {slider('desktopPageStep', 'Avanço por página', 50, 10, 100, 5, '%')}
         <label className="reader-toggle">
           <input
             type="checkbox"

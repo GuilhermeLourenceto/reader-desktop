@@ -151,7 +151,7 @@ app.on('browser-window-created', (_event, win) => {
       await click('Leitor');
       assert.deepEqual(
         await execute(`(()=>{const el=document.querySelector('input[aria-label="Avanço por página (rolagem)"]');return [el.value,el.min,el.max]})()`),
-        ['50', '0', '100'],
+        ['50', '10', '100'],
       );
       await range('Avanço por página (rolagem)', 50);
       await select('Fonte de leitura', 'sans');
