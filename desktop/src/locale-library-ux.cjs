@@ -36,4 +36,5 @@ Desmarcar obra|Deselect novel|Deseleccionar obra|Désélectionner le roman|Roman
 Filtros e ordenação da biblioteca|Library filters and sorting|Filtros y ordenación de la biblioteca|Filtres et tri de la bibliothèque|Bibliotheksfilter und Sortierung|Filtri e ordinamento della biblioteca|Фильтры и сортировка библиотеки|ライブラリの絞り込みと並び替え|서재 필터 및 정렬|书库筛选与排序
 {count} obra(s)|{count} novel(s)|{count} obra(s)|{count} roman(s)|{count} Romane|{count} opera/e|Книг: {count}|{count}作品|작품 {count}개|{count}部作品
 Tempo para ocultar as barras|Time before hiding reader bars|Tiempo para ocultar las barras|Délai avant de masquer les barres|Zeit bis zum Ausblenden der Leisten|Tempo prima di nascondere le barre|Задержка скрытия панелей|バーを隠すまでの時間|막대 자동 숨김 대기 시간|阅读工具栏隐藏延迟
+Aguardando…|Waiting…|Esperando…|En attente…|Warten…|In attesa…|Ожидание…|待機中…|대기 중…|等待中…
 `;

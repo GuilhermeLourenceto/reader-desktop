@@ -20,6 +20,15 @@ const sampleExemptions = {
   'renderer.jsx': new Set(['https://…/plugins.json', '×', 'A−', 'A+']),
 };
 
+// Check components in nested folders as well as the root of src/.
+function listJsxFiles(directory = sourceDir, prefix = '') {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+    const relative = path.join(prefix, entry.name);
+    if (entry.isDirectory()) return listJsxFiles(path.join(directory, entry.name), relative);
+    return entry.isFile() && entry.name.endsWith('.jsx') ? [relative] : [];
+  });
+}
+
 function collectSourceLabels(file) {
   const source = fs.readFileSync(path.join(sourceDir, file), 'utf8');
   const ast = parse(source, { sourceType: 'module', plugins: ['jsx'] });
@@ -48,7 +57,7 @@ function collectSourceLabels(file) {
 test('every visible literal JSX label in Desktop is localized, except sample novel text or branding', () => {
   const missing = [];
   let verified = 0;
-  for (const file of fs.readdirSync(sourceDir).filter(x => x.endsWith('.jsx'))) {
+  for (const file of listJsxFiles()) {
     for (const label of collectSourceLabels(file)) {
       if (sampleExemptions[file]?.has(label)) continue;
       if (!messages[label]) {

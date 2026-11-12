@@ -15,12 +15,14 @@ export default function SourceFilters({ schema, values, onChange }) {
             <legend>{field.label || key}</legend>
             {field.type === 'Text' && (
               <input
+                aria-label={field.label || key}
                 value={value || ''}
                 onChange={(event) => change(event.target.value)}
               />
             )}
             {field.type === 'Picker' && (
               <select
+                aria-label={field.label || key}
                 value={value || ''}
                 onChange={(event) => change(event.target.value)}
               >
@@ -35,6 +37,7 @@ export default function SourceFilters({ schema, values, onChange }) {
               <label>
                 <input
                   type="checkbox"
+                  aria-label={field.label || key}
                   checked={Boolean(value)}
                   onChange={(event) => change(event.target.checked)}
                 />
@@ -72,6 +75,7 @@ export default function SourceFilters({ schema, values, onChange }) {
                       <label key={mode}>
                         <input
                           type="checkbox"
+                          aria-label={`${field.label || key}: ${option.label} — ${mode === 'include' ? 'Incluir' : 'Excluir'}`}
                           checked={(value?.[mode] || []).includes(option.value)}
                           onChange={(event) =>
                             change({

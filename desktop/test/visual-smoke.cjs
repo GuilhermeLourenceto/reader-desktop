@@ -127,9 +127,9 @@ server.listen(0, '127.0.0.1', () => {
         await execute(
           'document.querySelector(\'[aria-label="Filtrar biblioteca"]\').click()',
         );
-        await wait("document.querySelector('#library-filter') !== null");
+        await wait("document.querySelector('#library-category') !== null");
         await capture('preview-filters');
-        await execute("document.querySelectorAll('[role=tab]')[2].click()");
+        await execute("(()=>{const el=document.querySelector('#library-category');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(el,'2');el.dispatchEvent(new Event('change',{bubbles:true}))})()");
         await wait("document.querySelectorAll('.book').length === 3");
         win.setSize(800, 640);
         await capture('preview-library-small');
@@ -179,8 +179,27 @@ server.listen(0, '127.0.0.1', () => {
           'none',
         );
         await capture('preview-reader');
+        // Verify Sources, Settings and compact layout using real screen elements.
+        await execute("document.querySelector('[aria-label=\"Voltar aos capítulos\"]').click()");
+        await wait("document.querySelector('.novel-page') !== null");
+        await execute("document.querySelector('[aria-label=\"Voltar à biblioteca\"]').click()");
+        await wait("document.querySelector('.library-toolbar') !== null");
+        await execute("Array.from(document.querySelectorAll('nav button')).find(b => b.textContent.trim()==='Fontes').click()");
+        await wait("document.querySelector('.source-mode-tabs') !== null");
+        await capture('preview-sources-search');
+        await execute("Array.from(document.querySelectorAll('.source-mode-tabs button')).find(b => b.textContent.trim()==='Gerenciar fontes').click()");
+        await wait("document.querySelector('[aria-label=\"Pesquisar fontes\"]') !== null");
+        await capture('preview-sources-manage');
+        await execute("Array.from(document.querySelectorAll('nav button')).find(b => b.textContent.trim()==='Mais').click()");
+        await wait("document.querySelector('[data-settings-page=more]') !== null");
+        await execute("Array.from(document.querySelectorAll('button')).find(b => b.getAttribute('aria-label')==='Configurações').click()");
+        await wait("document.querySelector('[data-settings-page=settings]') !== null");
+        await execute("Array.from(document.querySelectorAll('button')).find(b => b.getAttribute('aria-label')==='Leitor').click()");
+        await wait("document.querySelector('[aria-label=\"Tempo para ocultar as barras\"]') !== null");
+        win.setSize(800, 640);
+        await capture('preview-settings-reader-small');
         console.log(
-          'PASS: category and filter interaction, wide and compact layouts, novel view and distraction-free reader. Preview PNGs saved under desktop/docs/previews.',
+          'PASS: library filters, novel, reader, sources and settings at wide/compact sizes. Preview PNGs saved under desktop/docs/previews.',
         );
         clearTimeout(timeout);
         server.close();

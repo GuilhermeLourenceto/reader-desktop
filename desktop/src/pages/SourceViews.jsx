@@ -151,9 +151,10 @@ export default function SourceViews({
                     });
                   }}
                 >
-                  <label>URL do índice JSON do repositório original</label>
+                  <label htmlFor="source-repository-url">URL do índice JSON do repositório original</label>
                   <div className="row">
                     <input
+                      id="source-repository-url"
                       type="url"
                       required
                       value={repo}
@@ -318,6 +319,7 @@ export default function SourceViews({
                 }}
               >
                 <input
+                  aria-label="Buscar obras"
                   placeholder="Buscar obras"
                   value={novelQuery}
                   onChange={(e) => setNovelQuery(e.target.value)}
