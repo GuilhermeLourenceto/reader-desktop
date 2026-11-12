@@ -1,5 +1,10 @@
 import React from 'react';
 import ReaderThemes from './ReaderThemes';
+import {
+  READER_HIDE_DELAY_DEFAULT,
+  READER_HIDE_DELAY_MIN,
+  READER_HIDE_DELAY_MAX,
+} from './readerChromeDelay.cjs';
 export default function ReaderControls({
   settings,
   onChange,
@@ -26,7 +31,7 @@ export default function ReaderControls({
       </select>
     </label>
   );
-  const slider = (key, title, value, min, max, step = 1, suffix = '') => {
+  const slider = (key, title, value, min, max, step = 1, suffix = '', disabled = false) => {
     // Libraries saved by older betas may still contain 0%.
     const current = Math.max(min, settings[key] ?? value);
     return (
@@ -43,6 +48,7 @@ export default function ReaderControls({
           max={max}
           step={step}
           value={current}
+          disabled={disabled}
           onChange={(event) => onChange({ [key]: Number(event.target.value) })}
         />
       </label>
@@ -101,6 +107,16 @@ export default function ReaderControls({
           />
           Ocultar barras durante a leitura
         </label>
+        {slider(
+          'desktopReaderHideDelay',
+          'Tempo para ocultar as barras',
+          READER_HIDE_DELAY_DEFAULT,
+          READER_HIDE_DELAY_MIN,
+          READER_HIDE_DELAY_MAX,
+          0.2,
+          ' s',
+          settings.desktopReaderAutoHide === false,
+        )}
       </div>
       <p className="reader-shortcuts">
         Setas e espaço rolam a página. Home e End vão ao início e ao fim.

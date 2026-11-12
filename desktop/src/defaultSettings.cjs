@@ -1,3 +1,5 @@
+const { READER_HIDE_DELAY_DEFAULT } = require('./readerChromeDelay.cjs');
+
 // Only desktop display and reading preferences are reset. Library, progress,
 // installed sources, source settings and unrelated imported backup data survive.
 const DEFAULT_DESKTOP_SETTINGS = Object.freeze({
@@ -18,6 +20,7 @@ const DEFAULT_DESKTOP_SETTINGS = Object.freeze({
   desktopPagination: 'scroll',
   desktopPageStep: 50,
   desktopReaderAutoHide: true,
+  desktopReaderHideDelay: READER_HIDE_DELAY_DEFAULT,
 });
 
 function restoreDesktopDefaults(settings = {}) {

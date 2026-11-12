@@ -154,6 +154,12 @@ app.on('browser-window-created', (_event, win) => {
         ['50', '10', '100'],
       );
       await range('Avanço por página (rolagem)', 50);
+      assert.deepEqual(
+        await execute(`(()=>{const el=document.querySelector('input[aria-label="Tempo para ocultar as barras"]');return [el.value,el.min,el.max,el.step,el.disabled]})()`),
+        ['2.6', '1', '10', '0.2', false],
+      );
+      await range('Tempo para ocultar as barras', 4.2);
+      await wait('window.desktop.load().then(s=>s.settings.desktopReaderHideDelay===4.2)');
       await select('Fonte de leitura', 'sans');
       await range('Tamanho da fonte', 28);
       await range('Espaçamento entre linhas', 2.1);
@@ -268,12 +274,13 @@ app.on('browser-window-created', (_event, win) => {
       await execute('void(window.confirm = () => true)');
       await click('Restaurar configurações padrão');
       await wait(
-        "window.desktop.load().then(s=>s.settings.desktopFontSize===21 && s.settings.desktopPageStep===50 && s.settings.desktopIncognito===false && s.settings.desktopTheme==='dark')",
+        "window.desktop.load().then(s=>s.settings.desktopFontSize===21 && s.settings.desktopPageStep===50 && s.settings.desktopReaderHideDelay===2.6 && s.settings.desktopIncognito===false && s.settings.desktopTheme==='dark')",
       );
       const afterReset = await execute("window.desktop.load().then(s=>({novelCount:s.novels.length,progress:s.novels[0].chapters[0].progress,settings:s.settings}))");
       assert.equal(afterReset.novelCount, 2);
       assert.equal(afterReset.progress, 40);
       assert.equal(afterReset.settings.desktopReaderWidth, 820);
+      assert.equal(afterReset.settings.desktopReaderHideDelay, 2.6);
       assert.equal(afterReset.settings.desktopShowBadges, true);
       assert.equal(afterReset.settings.desktopPalette, 'default');
       assert.equal(afterReset.settings.desktopInterfaceLanguage, 'en', 'Reset must switch to English');

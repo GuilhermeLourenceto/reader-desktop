@@ -10,6 +10,7 @@ test('restore only desktop preferences, preserving unrelated settings and origin
   const next = restoreDesktopDefaults(old);
   assert.deepEqual(next, { ...old, ...DEFAULT_DESKTOP_SETTINGS });
   assert.equal(next.desktopPageStep, 50);
+  assert.equal(next.desktopReaderHideDelay, 2.6);
   assert.equal(next.desktopShowBadges, true);
   assert.equal(next.desktopInterfaceLanguage, 'en');
   assert.equal(old.desktopInterfaceLanguage, 'pt-BR', 'Existing saved language is not modified until reset');

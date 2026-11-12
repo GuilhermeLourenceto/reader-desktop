@@ -97,7 +97,7 @@ function Choice({ title, description, value, options, onChange }) {
     </label>
   );
 }
-function Slider({ title, value, min, max, step = 1, suffix = '', onChange }) {
+function Slider({ title, value, min, max, step = 1, suffix = '', disabled = false, onChange }) {
   return (
     <label className="setting-slider">
       <span>
@@ -114,6 +114,7 @@ function Slider({ title, value, min, max, step = 1, suffix = '', onChange }) {
         min={min}
         max={max}
         step={step}
+        disabled={disabled}
         onChange={(event) => onChange(Number(event.target.value))}
       />
     </label>

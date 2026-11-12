@@ -215,3 +215,13 @@ test('an existing blob with the right name but corrupted bytes is repaired', t =
   assert.equal(store.write(data), reference);
   assert.deepEqual(store.read(reference), data);
 });
+
+test('reader chrome delay accepts 1 to 10 seconds and remains optional for older profiles', () => {
+  for (const seconds of [1, 2.6, 4.2, 10]) {
+    assert.equal(validateState({ ...empty(), settings: { desktopReaderHideDelay: seconds } }).settings.desktopReaderHideDelay, seconds);
+  }
+  assert.deepEqual(validateState({ ...empty(), settings: {} }).settings, {});
+  for (const seconds of [0, -1, 10.2, Infinity, '2.6']) {
+    assert.throws(() => validateState({ ...empty(), settings: { desktopReaderHideDelay: seconds } }), /desktopReaderHideDelay/);
+  }
+});

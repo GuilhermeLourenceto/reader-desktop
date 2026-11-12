@@ -5,6 +5,11 @@ import ReaderThemes from './ReaderThemes';
 import Spinner from './Spinner';
 import { languages } from './i18n.cjs';
 import { DEFAULT_DESKTOP_SETTINGS } from './defaultSettings.cjs';
+import {
+  READER_HIDE_DELAY_MIN,
+  READER_HIDE_DELAY_MAX,
+  readerHideDelaySeconds,
+} from './readerChromeDelay.cjs';
 
 import { PalettePicker, SettingIcon, Toggle, Choice, Slider } from './settings/Controls';
 
@@ -298,6 +303,16 @@ export default function Settings({
                 description="Aparecem ao aproximar o mouse das bordas ou clicar na página."
                 value={settings.desktopReaderAutoHide !== false}
                 onChange={(value) => change('desktopReaderAutoHide', value)}
+              />
+              <Slider
+                title="Tempo para ocultar as barras"
+                value={readerHideDelaySeconds(settings.desktopReaderHideDelay)}
+                min={READER_HIDE_DELAY_MIN}
+                max={READER_HIDE_DELAY_MAX}
+                step={0.2}
+                suffix=" s"
+                disabled={settings.desktopReaderAutoHide === false}
+                onChange={(value) => change('desktopReaderHideDelay', value)}
               />
             </div>
             <ReaderPreview settings={settings} />

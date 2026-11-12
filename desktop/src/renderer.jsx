@@ -62,6 +62,7 @@ import {
   validateNovelDetails,
 } from './domain.cjs';
 import { readerProgress, pageAmplitude } from './readerPaging.cjs';
+import { readerHideDelayMilliseconds } from './readerChromeDelay.cjs';
 import { installElectronFetch } from './services/installElectronFetch';
 
 // As paletas do app misturam `rgb(...)`, `#RRGGBB` e `rgba(...)`.
@@ -202,7 +203,7 @@ function App() {
       )
         readerRef.current?.focus({ preventScroll: true });
       setChromeVisible(false);
-    }, 2600);
+    }, readerHideDelayMilliseconds(settingsNow.desktopReaderHideDelay));
   };
   const revealChrome = () => {
     setChromeVisible(true);
@@ -321,7 +322,7 @@ function App() {
       return;
     }
     if (view === 'reader') hideChromeSoon();
-  }, [readerControls, view]);
+  }, [readerControls, view, preferences.desktopReaderHideDelay]);
   useLayoutEffect(() => {
     if (view !== 'reader') {
       chromePinned.current = false;

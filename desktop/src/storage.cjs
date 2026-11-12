@@ -1,6 +1,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash, randomUUID } = require('node:crypto');
+const {
+  READER_HIDE_DELAY_MIN,
+  READER_HIDE_DELAY_MAX,
+} = require('./readerChromeDelay.cjs');
 
 const isReference = value =>
   typeof value === 'string' && /^@file:[a-f0-9]{64}$/.test(value);
@@ -204,6 +208,7 @@ function validateState(input) {
     ['desktopLineHeight', 1.2, 2.6],
     ['desktopReaderWidth', 500, 1200],
     ['desktopPageStep', 0, 100],
+    ['desktopReaderHideDelay', READER_HIDE_DELAY_MIN, READER_HIDE_DELAY_MAX],
   ]) {
     const value = state.settings[key];
     if (
