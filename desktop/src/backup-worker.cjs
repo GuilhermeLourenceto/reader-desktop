@@ -10,7 +10,21 @@ try {
     let size = 0;
     // One pass instead of stat'ing the whole library and then reading it all
     // again. Every included blob is still verified by DiskFiles.read(SHA-256).
+    const includeDownloads = workerData.includeDownloads !== false;
     for (const [name, value] of Object.entries(workerData.state.files)) {
+      if (!includeDownloads && name.startsWith('Novels/')) {
+        // A local cover may live with chapters; save it as Covers/<id>.
+        const cover = /^Novels\/[^/]+\/(\d+)\/cover\.png$/.exec(name);
+        if (!cover || Object.hasOwn(workerData.state.files, `Covers/${cover[1]}`))
+          continue;
+        try {
+          exported[`Covers/${cover[1]}`] = files.read(value);
+        } catch (error) {
+          if (!['ENOENT', 'CORRUPT_FILE'].includes(error.code)) throw error;
+          missing.push(name);
+        }
+        continue;
+      }
       try {
         size += files.size(value);
         if (size > 512 * 1024 * 1024)
@@ -21,6 +35,11 @@ try {
         missing.push(name);
       }
     }
+    if (missing.length)
+      throw new Error(
+        `Backup não exportado: ${missing.length} arquivo(s) ausente(s) ou corrompido(s). ` +
+        'O backup anterior foi preservado.',
+      );
     const missingChapters = new Set(
       missing
         .filter(name => name.startsWith('Novels/'))
@@ -34,7 +53,7 @@ try {
         const chapters = novel.chapters.map(chapter => {
           const prefix = `Novels/${novel.pluginId}/${novel.id}/${chapter.id}/`;
           const downloaded = Boolean(
-            chapter.isDownloaded &&
+            includeDownloads && chapter.isDownloaded &&
               Object.hasOwn(exported, prefix + 'index.html'),
           );
           const missingAssets = missingChapters.has(prefix);
@@ -55,7 +74,7 @@ try {
     try {
       // Finish writing and flushing the archive before atomically publishing
       // it. A failed export must not overwrite the last valid backup.
-      const archive = createBackup(full);
+      const archive = createBackup(full, { downloadedFiles: includeDownloads });
       const handle = fs.openSync(temporary, 'w');
       try {
         fs.writeFileSync(handle, archive);
