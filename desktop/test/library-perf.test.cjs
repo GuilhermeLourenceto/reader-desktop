@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { nextNovelPage, nextChapterId, countChapterStatuses } = require('../src/libraryPerf.cjs');
+const { nextNovelPage, nextChapterId, countChapterStatuses } = require('../src/domain/libraryPerf.cjs');
 
 const oldLoadedPages = novel => [
   ...new Set([

@@ -1,7 +1,7 @@
 import { t as translateMessage } from '../../i18n.cjs';
 import { t } from '../../i18n.cjs';
 import React, { useMemo } from 'react';
-import { countChapterStatuses } from '../../libraryPerf.cjs';
+import { countChapterStatuses } from '../../domain/libraryPerf.cjs';
 export default function BookGrid({
   items,
   pluginId,

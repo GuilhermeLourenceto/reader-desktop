@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { gridGeometry, virtualWindow } = require('../src/virtualGrid.cjs');
+const { gridGeometry, virtualWindow } = require('../src/domain/virtualGrid.cjs');
 
 test('virtual book grid mirrors responsive auto-fill columns', () => {
   assert.equal(gridGeometry(760, 'normal', 14, 20).columns, 5);

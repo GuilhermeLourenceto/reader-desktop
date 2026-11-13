@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import BookGrid from './BookGrid';
-import { gridGeometry, virtualWindow } from '../../virtualGrid.cjs';
+import { gridGeometry, virtualWindow } from '../../domain/virtualGrid.cjs';
 
 // The parent <main> remains the only scroll container: no nested scrollbars,
 // no changes to category/search/selection behavior, and no extra dependencies.
