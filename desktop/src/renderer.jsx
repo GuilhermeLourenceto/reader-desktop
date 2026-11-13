@@ -40,15 +40,15 @@ import { restoreDesktopDefaults } from './defaultSettings.cjs';
 import Spinner from './Spinner';
 import { appTheme } from './appThemes';
 import { resolveAppearance, appearanceColors } from './appearance.cjs';
-import NovelDetails from './NovelDetails';
+import NovelDetails from './features/library/NovelDetails';
 import History from './History';
 import SourceViews from './pages/SourceViews';
 import Updates from './Updates';
 import { markNewChapters } from './updates.cjs';
 import ReaderControls from './features/reader/ReaderControls';
 import ReaderText, { readerPresentation } from './features/reader/ReaderText';
-import BookGrid from './BookGrid';
-import Library from './Library';
+import BookGrid from './features/library/BookGrid';
+import Library from './features/library/Library';
 import { getErrorChainMessages } from '../vendor/lnreader/src/utils/error';
 import {
   validateSourceItems,

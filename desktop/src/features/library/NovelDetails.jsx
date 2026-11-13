@@ -1,14 +1,14 @@
-import { t as translateMessage } from './i18n.cjs';
+import { t as translateMessage } from '../../i18n.cjs';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import sanitize from 'sanitize-html';
-import Spinner from './Spinner';
+import Spinner from '../../Spinner';
 import {
   chapterPercent,
   resumeChapter,
   chapterOrdinals,
   chapterReleaseLabel,
   chapterDirection,
-} from './domain.cjs';
+} from '../../domain.cjs';
 
 export default function NovelDetails({
   novel,

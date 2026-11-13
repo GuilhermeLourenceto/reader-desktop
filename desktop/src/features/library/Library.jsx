@@ -1,7 +1,7 @@
-import { t as translateMessage } from './i18n.cjs';
+import { t as translateMessage } from '../../i18n.cjs';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import VirtualBookGrid from './VirtualBookGrid';
-import { categoryDisplayName } from './libraryCategoryLabels.cjs';
+import { categoryDisplayName } from '../../libraryCategoryLabels.cjs';
 export default function Library({
   novels,
   categories,
