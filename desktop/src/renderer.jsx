@@ -41,9 +41,7 @@ import ReaderControls from './features/reader/ReaderControls';
 import ReaderText, { readerPresentation } from './features/reader/ReaderText';
 import BookGrid from './features/library/BookGrid';
 import Library from './features/library/Library';
-import { getErrorChainMessages } from '../vendor/lnreader/src/utils/error';
 import {
-  validateSourceItems,
   chapterPercent,
   recordProgress,
   chapterOrdinals,
