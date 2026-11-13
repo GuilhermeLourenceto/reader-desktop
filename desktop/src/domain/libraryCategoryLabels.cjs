@@ -1,4 +1,4 @@
-const { t } = require('./i18n.cjs');
+const { t } = require('../i18n.cjs');
 
 // These names are the stock categories shown by imported LNReader libraries.
 // Translate only their DISPLAY labels. Never rewrite category names or IDs in

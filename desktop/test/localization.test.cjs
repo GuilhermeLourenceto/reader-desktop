@@ -59,7 +59,7 @@ test('palette and reader theme options have localized labels for all ten interfa
 });
 
 test('saved stock category tabs are translated without rewriting names or custom categories', () => {
-  const { categoryDisplayName } = require('../src/libraryCategoryLabels.cjs');
+  const { categoryDisplayName } = require('../src/domain/libraryCategoryLabels.cjs');
   const original = [
     { id: 1, name: 'Padrão', novelIds: [123] },
     { id: 2, name: 'Localização', novelIds: [] },
