@@ -358,21 +358,46 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
       // Android also accepts unwrapped legacy v1 archives without Version.json.
     }
     const metadataEntries = new Map();
+    const preparsedNovels = [];
     let metadataTotal = 0;
-    const permitted = name => name === 'Version.json' ||
-      name === 'Category.json' || name === 'Setting.json' ||
-      name === 'Plugins.json' || /^NovelAndChapters\/[^/]+\.json$/.test(name);
+    // Read the small manifest first. The Android format explicitly selects
+    // sections, so skip unrelated JSON rather than wasting RAM or CPU.
+    let version = {};
+    const versionEntry = metadata.get('Version.json');
+    if (versionEntry) {
+      if (versionEntry.uncompressedSize > MAX_METADATA_ENTRY)
+        throw new Error('Manifesto do backup grande demais');
+      const bytes = await copyEntry(versionEntry, null, MAX_METADATA_ENTRY, progress, true);
+      metadataTotal += bytes.length;
+      try {
+        const candidate = JSON.parse(bytes.toString('utf8'));
+        if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+          version = candidate;
+          metadataEntries.set('Version.json', bytes);
+        }
+      } catch {
+        // LNReader Android treats a missing/invalid Version.json as legacy v1.
+      }
+    }
+    const isV2 = version.formatVersion === 2 && version.sections;
+    const sections = resolveBackupOptions(isV2 ? version.sections : undefined);
     for (const [name, entry] of metadata) {
-      if (!permitted(name)) continue;
+      if (name === 'Version.json') continue;
+      const isNovel = /^NovelAndChapters\/[^/]+\.json$/.test(name);
+      const selected =
+        (sections.library && (isNovel || name === 'Category.json')) ||
+        (sections.settings && name === 'Setting.json') ||
+        (sections.plugins && name === 'Plugins.json');
+      if (!selected) continue;
       metadataTotal += entry.uncompressedSize;
       if (metadataTotal > MAX_METADATA_TOTAL)
         throw new Error('Metadados grandes demais para serem processados com segurança');
-      const data = await copyEntry(entry, null, MAX_METADATA_ENTRY, progress, true);
-      metadataEntries.set(name, data);
+      const bytes = await copyEntry(entry, null, MAX_METADATA_ENTRY, progress, true);
+      if (isNovel) {
+        // Retain only parsed objects, not a second copy of every book JSON.
+        preparsedNovels.push(JSON.parse(bytes.toString('utf8')));
+      } else metadataEntries.set(name, bytes);
     }
-    const version = JSON.parse(metadataEntries.get('Version.json')?.toString('utf8') || '{}');
-    const isV2 = version.formatVersion === 2 && version.sections;
-    const sections = resolveBackupOptions(isV2 ? version.sections : undefined);
     const required = isV2
       ? [
           ...(sections.plugins ? ['plugins.zip'] : []),
@@ -385,7 +410,9 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
       // The in-memory parser only processes metadata, never actual downloaded data.
       metadataEntries.set(archive, Buffer.alloc(0));
     }
-    const restored = parseBackupEntries(metadataEntries, { streamedArchives: true });
+    const restored = parseBackupEntries(metadataEntries, {
+      streamedArchives: true, preparsedNovels,
+    });
     const store = async (name, entry) => {
       safePath(name);
       const tmp = path.join(workspace, randomUUID());

@@ -115,7 +115,8 @@ function parseBackup(buffer, options = {}) {
 // Streamed imports pass CRC-verified metadata directly, without another ZIP in RAM.
 function parseBackupEntries(
   entries,
-  { storeFile = (_name, data) => data.toString('base64'), streamedArchives = false } = {},
+  { storeFile = (_name, data) => data.toString('base64'),
+    streamedArchives = false, preparsedNovels } = {},
   budget = { size: 0, count: 0 },
 ) {
   const missingSections = [];
@@ -151,21 +152,20 @@ function parseBackupEntries(
     state.progressUnit = value.progressUnit || 'percent';
   }
   if (sections.library) {
-    const novelEntries = [...entries].filter(
+    const importedNovels = preparsedNovels ?? [...entries].filter(
       ([name]) =>
         name.startsWith(`${BackupEntryName.NOVEL_AND_CHAPTERS}/`) &&
         name.endsWith('.json'),
-    );
+    ).map(([, content]) => JSON.parse(content.toString('utf8')));
     if (
       version.desktopNovelCount !== undefined &&
       (!Number.isSafeInteger(version.desktopNovelCount) ||
-        version.desktopNovelCount !== novelEntries.length)
+        version.desktopNovelCount !== importedNovels.length)
     ) throw new Error('Backup incompleto: quantidade de obras divergente');
     if (!entries.has(BackupEntryName.CATEGORY))
       missingSections.push('categories');
     const ids = new Set();
-    for (const [, content] of novelEntries) {
-      const novel = JSON.parse(content.toString('utf8'));
+    for (const novel of importedNovels) {
       if (
         !Number.isSafeInteger(novel.id) ||
         typeof novel.name !== 'string' ||
