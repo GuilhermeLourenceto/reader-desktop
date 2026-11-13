@@ -10,7 +10,7 @@ const { pipeline } = require('node:stream/promises');
 const unzipper = require('unzipper');
 const { safePath, parseBackupEntries } = require('./backup.cjs');
 const { validateState, DiskFiles } = require('./storage.cjs');
-const { chapterPercent } = require('./domain.cjs');
+const { chapterPercent } = require('./domain/novels.cjs');
 const { BackupEntryName, ZipBackupName } = require('../vendor/lnreader/src/services/backup/types.ts');
 const { resolveBackupOptions } = require('../vendor/lnreader/src/services/backup/options.ts');
 

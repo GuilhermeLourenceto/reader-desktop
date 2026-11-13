@@ -1,7 +1,7 @@
 import { getErrorChainMessages } from '../vendor/lnreader/src/utils/error';
 import { loadPlugin } from './sourceClient';
 import { withSourceDeadline, validateFilters } from './sourceGuards.cjs';
-import { validateSourceItems } from './domain.cjs';
+import { validateSourceItems } from './domain/novels.cjs';
 
 export const errorText = (error) =>
   [...new Set(getErrorChainMessages(error))].join(' — ');

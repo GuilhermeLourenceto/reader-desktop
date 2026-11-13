@@ -1,7 +1,7 @@
 import { t as translateMessage } from '../../i18n.cjs';
 import { getLocale } from '../../i18n.cjs';
 import React, { useMemo, useState } from 'react';
-import { chapterPercent } from '../../domain.cjs';
+import { chapterPercent } from '../../domain/novels.cjs';
 export default function History({
   novels,
   busy,

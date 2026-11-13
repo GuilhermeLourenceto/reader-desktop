@@ -8,7 +8,7 @@ const {
 const {
   validateSourceItems,
   validateNovelDetails,
-} = require('../src/domain.cjs');
+} = require('../src/domain/novels.cjs');
 test('unresolved async extension methods time out and thrown strings remain contained', async () => {
   await assert.rejects(
     withSourceDeadline(() => new Promise(() => {}), 5),

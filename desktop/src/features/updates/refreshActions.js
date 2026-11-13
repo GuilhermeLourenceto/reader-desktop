@@ -3,7 +3,7 @@ import { t as translateMessage } from '../../i18n.cjs';
 import { loadPlugin, fetchNovel } from '../../sourceClient';
 import { errorText } from '../../sourceRuntime';
 import { withSourceDeadline } from '../../sourceGuards.cjs';
-import { validateNovelDetails, mergeChapters } from '../../domain.cjs';
+import { validateNovelDetails, mergeChapters } from '../../domain/novels.cjs';
 import { loadedPages, nextChapterId } from '../../state/libraryState';
 import { markNewChapters } from '../../domain/updates.cjs';
 

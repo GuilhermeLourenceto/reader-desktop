@@ -48,7 +48,7 @@ import {
   chapterReleaseLabel,
   chapterDirection,
   readingChapters,
-} from './domain.cjs';
+} from './domain/novels.cjs';
 import { readerProgress, pageAmplitude } from './domain/readerPaging.cjs';
 import { readerHideDelayMilliseconds } from './domain/readerChromeDelay.cjs';
 import { installElectronFetch } from './services/installElectronFetch';

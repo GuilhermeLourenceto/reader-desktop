@@ -8,7 +8,7 @@ import {
   chapterOrdinals,
   chapterReleaseLabel,
   chapterDirection,
-} from '../../domain.cjs';
+} from '../../domain/novels.cjs';
 
 export default function NovelDetails({
   novel,

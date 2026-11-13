@@ -1,5 +1,5 @@
 const AdmZip = require('adm-zip');
-const { chapterPercent } = require('./domain.cjs');
+const { chapterPercent } = require('./domain/novels.cjs');
 const { validateState } = require('./storage.cjs');
 const {
   BackupEntryName,

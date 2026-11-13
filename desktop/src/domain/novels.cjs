@@ -1,4 +1,4 @@
-const { getLocale } = require('./i18n.cjs');
+const { getLocale } = require('../i18n.cjs');
 function validateSourceItems(items, kind = 'obras') {
   if (
     !Array.isArray(items) ||

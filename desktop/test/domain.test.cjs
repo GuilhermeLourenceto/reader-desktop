@@ -11,7 +11,7 @@ const {
   chapterReleaseLabel,
   chapterDirection,
   readingChapters,
-} = require('../src/domain.cjs');
+} = require('../src/domain/novels.cjs');
 const { getLocale, setLocale } = require('../src/i18n.cjs');
 test('source order stays intact while chronological numbering and resume begin at the oldest chapter', () => {
   const novel = {

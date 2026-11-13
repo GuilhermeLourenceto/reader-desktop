@@ -2,7 +2,7 @@ import { t as translateMessage } from '../../i18n.cjs';
 import { getLocale, t } from '../../i18n.cjs';
 import React, { useMemo, useState } from 'react';
 import { updateGroups } from '../../domain/updates.cjs';
-import { chapterOrdinals, chapterDirection } from '../../domain.cjs';
+import { chapterOrdinals, chapterDirection } from '../../domain/novels.cjs';
 import Spinner from '../../components/Spinner';
 function dateLabel(day) {
   const today = new Date();
