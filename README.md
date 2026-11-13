@@ -101,7 +101,7 @@ npm run dist:linux  # Linux
 
 Os arquivos gerados ficam em `desktop/release/`. Não é necessário instalar o Android SDK.
 
-Para desenvolvedores: [arquitetura](desktop/docs/ARCHITECTURE.md) · [histórico de versões](desktop/CHANGELOG.md) · [guia de contribuição](CONTRIBUTING.md).
+Para desenvolvedores: [como começar](desktop/docs/DEVELOPMENT.md) · [arquitetura](desktop/docs/ARCHITECTURE.md) · [histórico de versões](desktop/CHANGELOG.md) · [como contribuir](CONTRIBUTING.md).
 
 ## Contribua
 

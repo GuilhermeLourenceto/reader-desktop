@@ -20,7 +20,7 @@ body:
     id: version
     attributes:
       label: Versão / commit do Desktop
-      placeholder: "0.2.0 ou SHA do commit"
+      placeholder: "0.4.5 Beta ou SHA do commit"
     validations:
       required: true
   - type: textarea

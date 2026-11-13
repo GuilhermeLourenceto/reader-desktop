@@ -1,62 +1,45 @@
-# Como contribuir para o LNReader Desktop
+# Contribuindo para o Reader Desktop
 
-Obrigado pelo interesse em melhorar o leitor. Esta adaptação é **experimental**,
-não é uma distribuição oficial do LNReader Android. A versão Windows é a mais
-testada; o suporte Linux continua em desenvolvimento.
+O Reader Desktop é um projeto independente do LNReader Android. Contribuições de código, documentação, testes, acessibilidade e traduções são bem-vindas.
 
-## Antes de alterar o código
+## Comece por aqui
 
-1. Abra uma issue para bugs reproduzíveis ou mudanças maiores, evitando
-   duplicações. Para correções pequenas, descreva o problema no pull request.
-2. Crie uma branch de trabalho a partir da `main` e envie pull requests
-   para ela. A branch `seguranca-e-estabilidade` é uma referência anterior;
-   o Android original continua disponível no histórico Git.
-3. Leia [a arquitetura](desktop/docs/ARCHITECTURE.md) e
-   [os testes conhecidos](desktop/docs/COMPATIBILIDADE-SEGURANCA.md).
-4. Não adicione dados pessoais, backups reais, cookies, credenciais, tokens,
-   arquivos `.env` ou binários de compilação ao Git.
+1. Consulte as [issues](https://github.com/GuilhermeLourenceto/lnreader-desktop/issues) para evitar trabalho duplicado. Para mudanças grandes, discuta o desenho antes do pull request.
+2. Leia o [guia de desenvolvimento](desktop/docs/DEVELOPMENT.md) e a [arquitetura](desktop/docs/ARCHITECTURE.md).
+3. Crie sua branch de trabalho a partir de `main` em seu fork; envie um **pull request para `main`**. Não é necessário criar ou depender das branches históricas do proprietário.
+4. Mantenha mudanças pequenas e focadas, preferencialmente com teste de regressão.
 
-## Ambiente de desenvolvimento
+## Instalação e verificações
 
-Requisitos: Node.js 24, npm e Windows 10/11 para os testes Electron do Windows.
+Requisitos: Git, **Node.js 24** e npm. No Windows e no Linux, use:
 
-```sh
+```bash
 cd desktop
 npm ci
 npm run setup
 npm run build
 npm run check
-npm run test:smoke
-npm run test:pagination
-npm run test:reader
 ```
 
-A compilação não depende de Android SDK, Expo ou React Native. Há testes
-específicos de integração e cenários de usuário em `desktop/test/`, executados
-pelo [CI](.github/workflows/desktop.yml).
+Para iniciar: `npm start`. Os testes gráficos e de integração estão em `desktop/test/`; consulte os comandos por área no guia de desenvolvimento. Android SDK, Expo e React Native **não são necessários**.
 
-## Organização das alterações
+## Organização do código
 
-- Coloque código Electron/React em `desktop/src/`, testes em
-  `desktop/test/` e documentos em `desktop/docs/`.
-- Evite ampliar ainda mais `src/renderer.jsx`; prefira componentes e
-  funções com responsabilidade bem delimitada.
-- `desktop/vendor/lnreader/` contém código e recursos originais, com licença
-  e procedência. **Não** formate ou edite silenciosamente o snapshot:
-  alterações nessa pasta exigem justificativa, diff isolado e testes de
-  compatibilidade com plugins e backups.
-- Execute `npm run format:check` nos módulos com cobertura de formatação
-  incremental. `npm run format` formata o código próprio: revise as diferenças
-  antes de enviar commits para evitar mudanças cosméticas desnecessárias.
+- `desktop/src/features/`: biblioteca, leitor, fontes, downloads, histórico, atualizações, configurações e primeiro acesso.
+- `desktop/src/components/`: componentes reutilizáveis.
+- `desktop/src/domain/`: cálculos e regras de negócio compartilhadas.
+- `desktop/src/state/`: hidratação/serialização do estado da interface.
+- `desktop/src/infrastructure/`: política de rede e diagnósticos.
+- `desktop/src/main.cjs` e `desktop/src/preload.cjs`: acesso privilegiado e ponte IPC.
+- `desktop/vendor/lnreader/`: código original e arquivos com procedência; **não modificar silenciosamente**.
+- `desktop/test/`: testes unitários e jornadas Electron.
 
-## Pull requests
+Não acrescente uma nova responsabilidade grande ao `renderer.jsx`. Separe módulos sem alterar regras, formatos de backup ou contratos públicos na mesma mudança.
 
-Explique o problema resolvido, os arquivos afetados, como testou, riscos de
-compatibilidade, capturas de tela (se houver mudança visual) e eventuais
-limitações. Não marque testes como concluídos se não foram executados.
-Não altere diretamente a branch padrão sem revisão; prefira pull requests.
+## Enviando o pull request
 
-## Questões de segurança
+Informe o problema resolvido, quais áreas foram afetadas, o risco de regressão e **os comandos realmente executados**. Adicione captura de tela para alterações visuais; para bugs, descreva passos de reprodução sem dados pessoais.
 
-Não publique prova de conceito, tokens, cookies ou dados de sessão em uma
-issue. Leia [SECURITY.md](SECURITY.md) antes de relatar vulnerabilidades.
+**Segurança e privacidade:** não envie `.env`, cookies, tokens, credenciais, backups reais, arquivos de usuário, caminhos privados ou logs sem revisão. Para vulnerabilidades, siga [SECURITY.md](SECURITY.md), em vez de publicar detalhes sensíveis numa issue.
+
+Se a CI falhar antes de executar os comandos, registre isso no PR; não presuma que o código está aprovado nem que a falha ocorreu por sua alteração.

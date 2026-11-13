@@ -1,6 +1,6 @@
 # Arquitetura do Reader Desktop
 
-O aplicativo é independente do código Android externo: a compilação usa os arquivos em `desktop/`, Electron, React e esbuild. O SDK original do LNReader está versionado em `vendor/lnreader/`.
+Para começar a contribuir, consulte [DEVELOPMENT.md](DEVELOPMENT.md). O aplicativo é independente do código Android externo: a compilação usa os arquivos em `desktop/`, Electron, React e esbuild. O SDK original do LNReader está versionado em `vendor/lnreader/`.
 
 ## Organização do código
 
@@ -21,18 +21,21 @@ desktop/
 │   │   ├── history/            # Histórico de leitura
 │   │   ├── settings/           # Configurações e diagnósticos
 │   │   └── onboarding/         # Primeiro acesso e traduções do assistente
+│   ├── domain/                 # Regras puras de biblioteca, leitura e fontes
+│   ├── state/                  # Hidratação e snapshot da biblioteca
+│   ├── infrastructure/         # Política de rede e diagnósticos
 │   ├── services/               # Adaptações de APIs do navegador
 │   ├── i18n/                   # Catálogo original e tabelas de tradução
 │   │   └── catalogs/          # Traduções adicionais por área
 │   ├── styles/                 # Estilos agrupados por tela
-│   └── ...                     # Serviços de domínio, dados e segurança
+│   └── ...                     # Entrypoints, persistência e backups
 ├── vendor/lnreader/            # Snapshot original e licença
 ├── test/                       # Testes Node e jornadas Electron
 ├── scripts/                    # Verificações e manutenção
 └── build.mjs
 ```
 
-Os arquivos de entrada `main.cjs`, `preload.cjs`, `renderer.jsx` e `plugin-worker.js` permanecem em seus caminhos originais para preservar o empacotamento. Os serviços centrais de persistência, rede e backup também não foram movidos nesta etapa: os testes existentes e os contratos do Electron dependem deles.
+Os arquivos de entrada `main.cjs`, `preload.cjs`, `renderer.jsx` e `plugin-worker.js` permanecem em seus caminhos originais para preservar o empacotamento. As regras compartilhadas ficam em `domain/`, a serialização da interface em `state/` e a política de rede/diagnósticos em `infrastructure/`. Os serviços centrais de backup e armazenamento em disco permanecem na raiz para preservar os contratos já exercitados pelos testes e pelo build.
 
 ## Limites e fluxo
 
