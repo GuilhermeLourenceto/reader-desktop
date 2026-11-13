@@ -119,6 +119,6 @@ await copyFile('vendor/lnreader/assets/reader/fonts/pt-serif.ttf', 'dist/pt-seri
 // The new book icon is generated locally; the original source assets remain intact.
 await copyFile('build/icon-256.png', 'dist/logo.png');
 // Preserve the exact original cascade order; the onboarding CSS still comes last.
-const styleParts = ["00-foundation.css","10-navigation-and-library.css","20-reader-and-settings.css","30-novel-and-chapters.css","40-history-and-updates.css","50-filters-and-responsive.css"];
+const styleParts = ["00-foundation.css","10-navigation-and-library.css","20-reader-and-settings.css","30-novel-and-chapters.css","40-history-and-updates.css","50-filters-and-responsive.css","60-diagnostics.css"];
 const css = (await Promise.all(styleParts.map(part => readFile('src/styles/' + part, 'utf8')))).join('');
 await writeFile('dist/style.css', css + await readFile('src/onboarding.css', 'utf8'));

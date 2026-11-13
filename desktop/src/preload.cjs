@@ -18,4 +18,12 @@ contextBridge.exposeInMainWorld('desktop', {
   chooseBackupDirectory: () => ipcRenderer.invoke('choose-backup-directory'),
   restore: () => ipcRenderer.invoke('restore'),
   sourceLogin: id => ipcRenderer.invoke('source-login', id),
+  diagnostics: {
+    list: options => ipcRenderer.invoke('diagnostics-list', options),
+    report: event => ipcRenderer.invoke('diagnostics-report', event),
+    export: () => ipcRenderer.invoke('diagnostics-export'),
+    clear: () => ipcRenderer.invoke('diagnostics-clear'),
+    copy: text => ipcRenderer.invoke('diagnostics-copy', text),
+    openIssue: () => ipcRenderer.invoke('diagnostics-open-issue'),
+  },
 });

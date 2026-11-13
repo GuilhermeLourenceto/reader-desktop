@@ -88,6 +88,8 @@ function App() {
   const [busy, setBusy] = useState(false);
   const [sourceWorking, setSourceWorking] = useState(false);
   const [notice, setNotice] = useState('');
+  const [lastDiagnostic, setLastDiagnostic] = useState(null);
+  const [diagnosticsRequest, setDiagnosticsRequest] = useState(0);
   const [available, setAvailable] = useState([]);
   const [sourceQuery, setSourceQuery] = useState('');
   const [sourceLanguage, setSourceLanguage] = useState('all');
@@ -245,10 +247,17 @@ function App() {
     activeTasks.current++;
     setBusy(true);
     setNotice('');
+    setLastDiagnostic(null);
     try {
       await task();
     } catch (error) {
-      setNotice(errorText(error));
+      const message = errorText(error);
+      setNotice(message);
+      void window.desktop.diagnostics.report({
+        level: 'error', code: 'UI-ACTION-FAILED', operation: 'interface', message,
+      }).then(result => {
+        if (result) setLastDiagnostic({ message, ...result });
+      }).catch(() => {});
     } finally {
       activeTasks.current--;
       setBusy(activeTasks.current > 0);
@@ -983,13 +992,18 @@ function App() {
         ),
       });
     } catch (error) {
-      if (loadId === chapterLoadId.current)
+      if (loadId === chapterLoadId.current) {
+        void window.desktop.diagnostics.report({
+          level: 'error', code: 'RDR-CHAPTER-FAILED', operation: 'reader',
+          message: errorText(error),
+        }).catch(() => {});
         setReaderError({
           bookId: book.id,
           chapterId: item.id,
           force,
           message: errorText(error),
         });
+      }
     } finally {
       if (loadId === chapterLoadId.current) setChapterLoading(false);
     }
@@ -1589,6 +1603,12 @@ function App() {
         {notice && (
           <div className="notice" role="status">
             {notice}
+            {lastDiagnostic?.message === notice && (
+              <button onClick={() => {
+                setView('settings');
+                setDiagnosticsRequest(value => value + 1);
+              }}>Ver diagnóstico ({lastDiagnostic.code})</button>
+            )}
             <button onClick={() => setNotice('')} aria-label="Fechar aviso">
               ×
             </button>
@@ -2001,6 +2021,7 @@ function App() {
         )}
         {view === 'settings' && (
           <Settings
+            openDiagnosticsRequest={diagnosticsRequest}
             settings={preferences}
             busy={busy}
             version={appVersion}

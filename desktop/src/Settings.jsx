@@ -1,5 +1,6 @@
 import { t as translateMessage } from './i18n.cjs';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import DiagnosticsPanel from './DiagnosticsPanel';
 import ReaderPreview from './ReaderPreview';
 import ReaderThemes from './ReaderThemes';
 import Spinner from './Spinner';
@@ -23,8 +24,12 @@ export default function Settings({
   onReset,
   busy,
   version,
+  openDiagnosticsRequest = 0,
 }) {
   const [page, setPage] = useState('more');
+  useEffect(() => {
+    if (openDiagnosticsRequest) setPage('diagnostics');
+  }, [openDiagnosticsRequest]);
   const change = (key, value) => onChange({ [key]: value });
   const entries = [
     ['general', 'Geral', 'Privacidade e opções de navegação'],
@@ -32,6 +37,7 @@ export default function Settings({
     ['library', 'Biblioteca', 'Tamanho das capas e contadores'],
     ['reader', 'Leitor', 'Fonte, espaçamento e cores da leitura'],
     ['backup', 'Backups', 'Exportar e restaurar sua biblioteca'],
+    ['diagnostics', 'Diagnósticos', 'Erros, atividades e relatórios para issues'],
     ['about', 'Sobre', 'Reader Desktop e informações da versão'],
   ];
   const row = (key, title, description, action) => (
@@ -107,6 +113,7 @@ export default function Settings({
               'Personalize o aplicativo e sua leitura',
             )}
             {row('backup', 'Backups', 'Crie ou restaure um backup local')}
+            {row('diagnostics', 'Diagnósticos', 'Consultar ou salvar relatório de erros')}
             {row('about', 'Sobre', 'Informações da versão')}
           </div>
         </>
@@ -393,6 +400,7 @@ export default function Settings({
           </p>
         </>
       )}
+      {page === 'diagnostics' && <DiagnosticsPanel />}
       {page === 'about' && (
         <>
           <div className="settings-brand">

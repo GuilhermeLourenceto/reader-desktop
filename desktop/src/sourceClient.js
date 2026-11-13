@@ -1,6 +1,11 @@
 import { INSTALLED_PLUGINS_KEY } from '../vendor/lnreader/src/plugins/constants';
 const entries = new Map();
 let callId = 0;
+const reportSourceFailure = (code, message) => {
+  void window.desktop.diagnostics.report({
+    level: 'warning', operation: 'source', code, message,
+  }).catch(() => {});
+};
 const activity = () =>
   window.dispatchEvent(
     new CustomEvent('source-activity', {
@@ -81,16 +86,12 @@ function call(entry, method, args = [], timeout = 45000) {
     );
   return new Promise((resolve, reject) => {
     const id = ++callId;
-    const timer = setTimeout(
-      () =>
-        dispose(
-          entry,
-          new Error(
-            'A fonte demorou demais e foi interrompida. Tente novamente ou atualize a extensão.',
-          ),
-        ),
-      timeout,
-    );
+    const timer = setTimeout(() => {
+      reportSourceFailure('SRC-TIMEOUT', 'A fonte excedeu o tempo de resposta.');
+      dispose(entry, new Error(
+        'A fonte demorou demais e foi interrompida. Tente novamente ou atualize a extensão.',
+      ));
+    }, timeout);
     entry.pending.set(id, { resolve, reject, timer });
     activity();
     try {
@@ -175,13 +176,13 @@ async function acquire(id) {
   };
   entry.worker.onerror = event => {
     event.preventDefault();
+    reportSourceFailure('SRC-WORKER-CRASH', 'O processo de uma fonte falhou.');
     dispose(entry, new Error(event.message || 'A fonte foi interrompida.'));
   };
-  entry.worker.onmessageerror = () =>
-    dispose(
-      entry,
-      new Error('A fonte retornou dados que não podem ser transferidos.'),
-    );
+  entry.worker.onmessageerror = () => {
+    reportSourceFailure('SRC-WORKER-MESSAGE', 'Uma fonte enviou dados inválidos.');
+    dispose(entry, new Error('A fonte retornou dados que não podem ser transferidos.'));
+  };
   const storage = Object.fromEntries(
     Object.entries(localStorage).filter(([key]) => ownStorage(id, key)),
   );

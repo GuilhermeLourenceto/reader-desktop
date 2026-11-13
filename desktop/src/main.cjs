@@ -11,6 +11,8 @@ const {
   net,
   session,
   Menu,
+  shell,
+  clipboard,
 } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -25,6 +27,7 @@ const { emptyState, safePath } = require('./backup.cjs');
 const { backupJob } = require('./backupJobs.cjs');
 const { planRestore } = require('./restorePlan.cjs');
 const { createAutoBackupManager } = require('./autoBackup.cjs');
+const { createDiagnostics } = require('./diagnostics.cjs');
 const { validateNetworkUrl } = require('./networkPolicy.cjs');
 const { installFullscreenShortcut } = require('./fullscreenShortcut.cjs');
 // Keep existing libraries when the displayed app name changes.
@@ -36,6 +39,12 @@ if (app.getPath('userData') === defaultProfile) {
     app.setPath('userData', previousProfile);
   }
 }
+const diagnostics = createDiagnostics({
+  directory: path.join(app.getPath('userData'), 'diagnostics'),
+});
+const report = (level, code, operation, message) => {
+  void diagnostics.record({ level, code, operation, message });
+};
 const primaryInstance = !app.isPackaged || app.requestSingleInstanceLock();
 if (!primaryInstance) app.quit();
 app.on('second-instance', () => {
@@ -88,13 +97,32 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 function register(name, handler) {
-  ipcMain.handle(name, (event, ...args) => {
+  ipcMain.handle(name, async (event, ...args) => {
     if (
       event.sender !== mainWindow.webContents ||
       !event.senderFrame?.url.startsWith('lnreader://app/')
     )
       throw new Error('Origem inválida');
-    return handler(...args);
+    try {
+      return await handler(...args);
+    } catch (error) {
+      const operations = {
+        backup: ['backup', 'BKP-EXPORT-FAILED'],
+        restore: ['restore', 'BKP-IMPORT-FAILED'],
+        save: ['storage', 'STO-SAVE-FAILED'],
+        load: ['storage', 'STO-LOAD-FAILED'],
+        'source-login': ['source', 'SRC-LOGIN-FAILED'],
+      };
+      const selected = operations[name] ||
+        (name === 'file' && ['write', 'writeBase64', 'remove', 'removeTree'].includes(args[0])
+          ? ['storage', 'STO-FILE-FAILED'] : null);
+      if (selected) {
+        const code = /CRC/i.test(error?.message || '') &&
+          ['backup', 'restore'].includes(name) ? 'BKP-CRC' : selected[1];
+        report('error', code, selected[0], error?.message || 'Falha na operação.');
+      }
+      throw error;
+    }
   });
 }
 app
@@ -125,6 +153,7 @@ app
       getState: () => state,
       contentDirectory: diskFiles.directory,
       exportBackup: backupJob,
+      report: event => { void diagnostics.record(event); },
     });
     const migrated = diskFiles.import(state.files);
     if (
@@ -280,6 +309,7 @@ app
     };
     mainWindow.webContents.on('unresponsive', async () => {
       if (recoveringRenderer || unresponsiveDialog || closeRequested) return;
+      report('warning', 'UI-UNRESPONSIVE', 'interface', 'A interface deixou de responder.');
       unresponsiveDialog = true;
       const answer = await dialog.showMessageBox(mainWindow, {
         type: 'warning',
@@ -302,6 +332,8 @@ app
       }
     });
     mainWindow.webContents.on('render-process-gone', (_event, details) => {
+      if (details.reason !== 'clean-exit')
+        report('error', 'UI-RENDER-GONE', 'interface', 'Processo da interface encerrado: ' + details.reason);
       if (closeRequested) {
         mayClose = true;
         mainWindow.destroy();
@@ -364,6 +396,43 @@ app
       version: require('../package.json').version,
       platform: process.platform,
     }));
+    register('diagnostics-list', options => diagnostics.list(options));
+    register('diagnostics-report', input => diagnostics.record({
+      level: input?.level, code: input?.code,
+      operation: input?.operation, message: input?.message,
+    }));
+    register('diagnostics-export', async () => {
+      const result = await dialog.showSaveDialog(mainWindow, {
+        defaultPath: 'ReaderDesktop-diagnostico-' + new Date().toISOString().slice(0, 10) + '.txt',
+        filters: [{ name: 'Relatório de diagnóstico', extensions: ['txt'] }],
+      });
+      if (result.canceled || !result.filePath) return null;
+      const saved = await diagnostics.exportReport(result.filePath, {
+        version: require('../package.json').version,
+        platform: process.platform,
+        arch: process.arch,
+      });
+      if (!saved.saved) throw new Error('Não foi possível salvar o relatório.');
+      return saved;
+    });
+    register('diagnostics-clear', async () => {
+      const answer = await dialog.showMessageBox(mainWindow, {
+        type: 'question',
+        message: ui('Apagar o histórico de diagnósticos?'),
+        detail: ui('Relatórios salvos manualmente não serão apagados.'),
+        buttons: [ui('Cancelar'), ui('Apagar histórico')],
+        defaultId: 0, cancelId: 0,
+      });
+      return answer.response === 1 ? diagnostics.clear() : false;
+    });
+    register('diagnostics-copy', text => {
+      if (typeof text !== 'string' || text.length > 180)
+        throw new Error('Código de diagnóstico inválido.');
+      clipboard.writeText(text);
+      return true;
+    });
+    register('diagnostics-open-issue', () =>
+      shell.openExternal('https://github.com/GuilhermeLourenceto/lnreader-desktop/issues/new'));
     register('save', input => {
       const finishedNow = state.settings.desktopOnboardingCompleted !== true &&
         input?.settings?.desktopOnboardingCompleted === true;
@@ -639,10 +708,12 @@ app
     const backupTimer = setInterval(() => void automaticBackup.check(), 5 * 60 * 1000);
     mainWindow.on('closed', () => clearInterval(backupTimer));
     return mainWindow.loadURL('lnreader://app/index.html').then(() => {
+      report('info', 'APP-START', 'app', 'Reader Desktop iniciado.');
       void automaticBackup.check({ launch: true });
     });
   })
-  .catch((error) => {
+  .catch(async (error) => {
+    await diagnostics.record({ level: 'error', code: 'APP-START-FAILED', operation: 'app', message: error?.message });
     dialog.showErrorBox(ui('Não foi possível abrir o Reader Desktop'), error.message);
     app.exit(1);
   });

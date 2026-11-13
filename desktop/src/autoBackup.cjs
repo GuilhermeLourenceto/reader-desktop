@@ -87,7 +87,7 @@ function availableName(folder, timestamp) {
  * Uses the existing ZIP worker. Automatic retention deletes only archives
  * registered as app-created. User-created manual backups are never managed.
  */
-function createAutoBackupManager({ dataDirectory, getState, contentDirectory, exportBackup, now = () => Date.now() }) {
+function createAutoBackupManager({ dataDirectory, getState, contentDirectory, exportBackup, now = () => Date.now(), report = () => {} }) {
   const statusPath = path.join(dataDirectory, 'automatic-backup-status.json');
   let busy = false;
   let launchAttempted = false;
@@ -160,6 +160,8 @@ function createAutoBackupManager({ dataDirectory, getState, contentDirectory, ex
       // Successful export only: remove the oldest app-created automatic ZIP.
       if (prune(next, folder)) writeStatus(statusPath, next);
       if (frequency === 'launch') launchAttempted = true;
+      try { report({ level: 'info', code: 'BKP-AUTO-OK', operation: 'backup',
+        message: 'Backup automático concluído.' }); } catch {}
       return true;
     } catch (error) {
       // The ZIP worker writes to a temporary path before committing a ZIP.
@@ -168,6 +170,8 @@ function createAutoBackupManager({ dataDirectory, getState, contentDirectory, ex
         try { fs.unlinkSync(filename + '.tmp'); } catch { /* No partial ZIP. */ }
       }
       console.warn('Automatic backup was not completed:', error.message);
+      try { report({ level: 'warning', code: 'BKP-AUTO-FAILED', operation: 'backup',
+        message: error.message }); } catch {}
       return false;
     } finally {
       busy = false;

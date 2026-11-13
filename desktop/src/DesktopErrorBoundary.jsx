@@ -6,6 +6,12 @@ export default class DesktopErrorBoundary extends React.Component {
   static getDerivedStateFromError(error) {
     return { error };
   }
+  componentDidCatch(error) {
+    void window.desktop?.diagnostics?.report({
+      level: 'error', code: 'UI-RENDER-CRASH', operation: 'interface',
+      message: error?.message || 'Falha ao renderizar a interface.',
+    })?.catch(() => {});
+  }
   render() {
     if (this.state.error)
       return (
@@ -14,6 +20,9 @@ export default class DesktopErrorBoundary extends React.Component {
           <p>{errorText(this.state.error)}</p>
           <button onClick={() => window.location.reload()}>
             Recarregar aplicativo
+          </button>
+          <button onClick={() => void window.desktop?.diagnostics?.export()?.catch(() => {})}>
+            Salvar relatório de diagnóstico
           </button>
         </div>
       );

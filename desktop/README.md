@@ -51,6 +51,22 @@ O total acompanha os capítulos
 carregados da fonte. A data de lançamento aparece quando fornecida pelo plugin;
 uma atualização sem data mantém a informação já salva.
 
+## Diagnósticos e relatórios de erro
+
+Em **Mais → Configurações → Diagnósticos**, consulte erros de backups,
+fontes, leitura e interface. É possível filtrar por severidade, copiar
+o código de um evento e **Salvar relatório (.txt)** para anexar a uma issue.
+O botão **Relatar bug no GitHub** abre a página de issues, mas não envia
+dados automaticamente.
+
+Os logs são locais e independentes de `library.json` e dos backups ZIP.
+Eles são limitados a **três arquivos de 5 MiB** (15 MiB no total) e
+**14 dias**, com rotação e descarte automático. Relatórios exportados
+manualmente não são apagados pelo aplicativo. Mensagens são reduzidas e
+caminhos, URLs, e-mails e credenciais comuns são ocultados; ainda assim,
+**revise o relatório antes de compartilhá-lo**, pois erros de fontes de
+terceiros podem conter informações inesperadas.
+
 ## Executar a partir do código
 
 Requer Node.js 24 e npm. Na pasta `desktop`:
