@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { appThemes } from './appThemes';
-import { languages, t as translateMessage } from './i18n.cjs';
-import { resolveAppearance } from './appearance.cjs';
+import { appThemes } from '../../appThemes';
+import { languages, t as translateMessage } from '../../i18n.cjs';
+import { resolveAppearance } from '../../appearance.cjs';
 
-import { translations, labels, freqOptions, freqKeys } from './onboarding/translations';
+import { translations, labels, freqOptions, freqKeys } from './translations';
 
 export default function Onboarding({ settings, onChange, onChooseFolder, onRestore, onFinish }) {
   const [step, setStep] = useState(0);

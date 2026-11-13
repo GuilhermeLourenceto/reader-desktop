@@ -16,7 +16,7 @@ const sampleExemptions = {
   ]),
   'ReaderThemes.jsx': new Set(['Aa']), // Typography specimen, not a phrase
   'features/settings/Settings.jsx': new Set(['LNReader', 'LNReader Desktop', 'Reader Desktop', 'Desktop ·']),
-  'Onboarding.jsx': new Set(['Reader Desktop']),
+  'features/onboarding/Onboarding.jsx': new Set(['Reader Desktop']),
   'renderer.jsx': new Set(['https://…/plugins.json', '×', 'A−', 'A+']),
 };
 
