@@ -1,9 +1,9 @@
-import { t as translateMessage } from './i18n.cjs';
-import { getLocale, t } from './i18n.cjs';
+import { t as translateMessage } from '../../i18n.cjs';
+import { getLocale, t } from '../../i18n.cjs';
 import React, { useMemo, useState } from 'react';
-import { updateGroups } from './updates.cjs';
-import { chapterOrdinals, chapterDirection } from './domain.cjs';
-import Spinner from './Spinner';
+import { updateGroups } from '../../updates.cjs';
+import { chapterOrdinals, chapterDirection } from '../../domain.cjs';
+import Spinner from '../../Spinner';
 function dateLabel(day) {
   const today = new Date();
   const yesterday = new Date();

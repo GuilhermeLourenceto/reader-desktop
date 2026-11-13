@@ -1,18 +1,18 @@
-import { t as translateMessage } from './i18n.cjs';
+import { t as translateMessage } from '../../i18n.cjs';
 import React, { useEffect, useState } from 'react';
 import DiagnosticsPanel from './DiagnosticsPanel';
-import ReaderPreview from './features/reader/ReaderPreview';
-import ReaderThemes from './features/reader/ReaderThemes';
-import Spinner from './Spinner';
-import { languages } from './i18n.cjs';
-import { DEFAULT_DESKTOP_SETTINGS } from './defaultSettings.cjs';
+import ReaderPreview from '../reader/ReaderPreview';
+import ReaderThemes from '../reader/ReaderThemes';
+import Spinner from '../../Spinner';
+import { languages } from '../../i18n.cjs';
+import { DEFAULT_DESKTOP_SETTINGS } from '../../defaultSettings.cjs';
 import {
   READER_HIDE_DELAY_MIN,
   READER_HIDE_DELAY_MAX,
   readerHideDelaySeconds,
-} from './readerChromeDelay.cjs';
+} from '../../readerChromeDelay.cjs';
 
-import { PalettePicker, SettingIcon, Toggle, Choice, Slider } from './settings/Controls';
+import { PalettePicker, SettingIcon, Toggle, Choice, Slider } from './Controls';
 
 export default function Settings({
   settings,

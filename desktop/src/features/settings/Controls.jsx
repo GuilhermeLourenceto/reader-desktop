@@ -1,6 +1,6 @@
 import React from 'react';
-import { t as translateMessage } from '../i18n.cjs';
-import { appThemes } from '../appThemes';
+import { t as translateMessage } from '../../i18n.cjs';
+import { appThemes } from '../../appThemes';
 
 function PalettePicker({ value = 'default', onChange }) {
   return (

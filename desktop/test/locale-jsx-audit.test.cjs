@@ -15,7 +15,7 @@ const sampleExemptions = {
     'Ela sorriu e continuou a leitura. Algumas histórias não precisavam de pressa; precisavam apenas de espaço para acontecer.',
   ]),
   'ReaderThemes.jsx': new Set(['Aa']), // Typography specimen, not a phrase
-  'Settings.jsx': new Set(['LNReader', 'LNReader Desktop', 'Reader Desktop', 'Desktop ·']),
+  'features/settings/Settings.jsx': new Set(['LNReader', 'LNReader Desktop', 'Reader Desktop', 'Desktop ·']),
   'Onboarding.jsx': new Set(['Reader Desktop']),
   'renderer.jsx': new Set(['https://…/plugins.json', '×', 'A−', 'A+']),
 };
