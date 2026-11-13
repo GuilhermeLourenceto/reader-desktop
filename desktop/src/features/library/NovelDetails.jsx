@@ -1,7 +1,7 @@
 import { t as translateMessage } from '../../i18n.cjs';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import sanitize from 'sanitize-html';
-import Spinner from '../../Spinner';
+import Spinner from '../../components/Spinner';
 import {
   chapterPercent,
   resumeChapter,

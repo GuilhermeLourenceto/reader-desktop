@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import DiagnosticsPanel from './DiagnosticsPanel';
 import ReaderPreview from '../reader/ReaderPreview';
 import ReaderThemes from '../reader/ReaderThemes';
-import Spinner from '../../Spinner';
+import Spinner from '../../components/Spinner';
 import { languages } from '../../i18n.cjs';
 import { DEFAULT_DESKTOP_SETTINGS } from '../../defaultSettings.cjs';
 import {
