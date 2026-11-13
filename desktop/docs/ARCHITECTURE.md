@@ -22,7 +22,8 @@ desktop/
 │   │   ├── settings/           # Configurações e diagnósticos
 │   │   └── onboarding/         # Primeiro acesso e traduções do assistente
 │   ├── services/               # Adaptações de APIs do navegador
-│   ├── i18n/                   # Catálogo original de textos
+│   ├── i18n/                   # Catálogo original e tabelas de tradução
+│   │   └── catalogs/          # Traduções adicionais por área
 │   ├── styles/                 # Estilos agrupados por tela
 │   └── ...                     # Serviços de domínio, dados e segurança
 ├── vendor/lnreader/            # Snapshot original e licença
@@ -42,9 +43,11 @@ Os arquivos de entrada `main.cjs`, `preload.cjs`, `renderer.jsx` e `plugin-worke
 5. A importação e exportação ZIP são processadas por workers, com streaming e verificações de integridade.
 6. `renderer.jsx` coordena as telas, mas delega operações complexas às funcionalidades:
    - `features/downloads/downloadActions.js`: downloads, remoção e progresso da fila.
+   - `features/library/libraryActions.js`: operações em lote da biblioteca.
    - `features/sources/useSourceBrowse.js`: resultados e paginação de fontes.
    - `features/updates/refreshActions.js`: verificação de obras e atualizações.
    - `features/reader/chapterActions.js`: busca, cache e preparação de capítulos.
+   - `features/reader/novelPagingActions.js`: paginação e navegação entre capítulos.
 
 ## Regras de manutenção
 
