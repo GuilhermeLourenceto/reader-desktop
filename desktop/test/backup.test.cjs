@@ -367,7 +367,7 @@ test('desktop novel-count marker detects a missing book in the ZIP', () => {
 test('metadata-only ZIP reports Android download section as absent and preserves progress', () => {
   const zip = new AdmZip(createBackup(fixture(), { downloadedFiles: false }));
   assert.equal(JSON.parse(zip.readAsText('Version.json')).sections.downloadedFiles, false);
-  assert.equal(zip.getEntry('novel-files.zip'), null);
+  assert.equal(Boolean(zip.getEntry('novel-files.zip')), false);
   const parsed = parseBackup(zip.toBuffer());
   assert.equal(parsed.state.novels[0].chapters[0].isDownloaded, false);
   assert.equal(parsed.state.novels[0].chapters[0].progress, 0.4);
