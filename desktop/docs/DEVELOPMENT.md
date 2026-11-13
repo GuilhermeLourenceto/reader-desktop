@@ -38,7 +38,7 @@ No Linux, os testes que abrem janelas precisam de um servidor gráfico; em ambie
 ## Regras de dependências
 
 - **Features** podem importar componentes, regras de domínio e o estado exposto pelo aplicativo. Prefira funções com dependências explícitas a acrescentar lógica ao `renderer.jsx`.
-- **Domain** deve manter cálculos determinísticos sempre que possível; não acessar DOM, React ou IPC. A exceção documentada é a tradução de rótulos de categorias, que consulta `i18n.cjs`.
+- **Domain** deve manter cálculos determinísticos sempre que possível; não acessar DOM, React ou IPC. As exceções atuais são `domain/libraryCategoryLabels.cjs` e `domain/novels.cjs`, que consultam `i18n.cjs` para apresentação localizada.
 - **State** faz a ponte entre metadados React e `localStorage`, sem definir regras visuais.
 - **Infrastructure** e módulos do processo principal validam rede, logs e operações privilegiadas; não importe módulos Node diretamente na interface.
 - **Vendor** contém o snapshot do LNReader: nunca reformatar ou modificar junto com mudanças de interface. As alterações de compatibilidade precisam ser revisadas separadamente.
