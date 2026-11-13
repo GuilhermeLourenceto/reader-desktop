@@ -12,48 +12,48 @@ const languages = [
 ];
 const rows = require('./i18n/core.cjs').trim().split('\n').map(row => row.split('|'));
 rows.push(
-  ...require('./locale-details.cjs')
+  ...require('./i18n/catalogs/locale-details.cjs')
     .trim()
     .split('\n')
     .map((row) => row.split('|')),
 );
 rows.push(
-  ...require('./locale-help.cjs')
+  ...require('./i18n/catalogs/locale-help.cjs')
     .trim()
     .split('\n')
     .map((row) => row.split('|')),
 );
 rows.push(
-  ...require('./locale-errors.cjs')
+  ...require('./i18n/catalogs/locale-errors.cjs')
     .trim()
     .split('\n')
     .map((row) => row.split('|')),
 );
 rows.push(
-  ...require('./locale-dynamic.cjs')
+  ...require('./i18n/catalogs/locale-dynamic.cjs')
     .trim()
     .split('\n')
     .map((row) => row.split('|')),
 );
 rows.push(
-  ...require('./locale-theme-labels.cjs')
+  ...require('./i18n/catalogs/locale-theme-labels.cjs')
     .trim()
     .split('\n')
     .map((row) => row.split('|')),
 );
 rows.push(
-  ...require('./locale-dialogs.cjs')
+  ...require('./i18n/catalogs/locale-dialogs.cjs')
     .trim()
     .split('\n')
     .map((row) => row.split('|')),
 );
 rows.push(
-  ...require('./locale-library-ux.cjs')
+  ...require('./i18n/catalogs/locale-library-ux.cjs')
     .trim()
     .split('\n')
     .map((row) => row.split('|')),
 );
-rows.push(...require('./locale-reader-desktop.cjs').trim().split('\n').map(row => row.split('|')));
+rows.push(...require('./i18n/catalogs/locale-reader-desktop.cjs').trim().split('\n').map(row => row.split('|')));
 const messages = Object.fromEntries(
   rows.map((row) => [
     row[0],
