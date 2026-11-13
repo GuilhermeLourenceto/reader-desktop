@@ -1,10 +1,10 @@
-import Icon from '../Icon';
-import GlobalSearch from '../GlobalSearch';
-import SourceFilters from '../SourceFilters';
-import { fetchSourcePage } from '../sourceRuntime';
-import { sourceLanguageOptions, matchesSourceLanguage, matchesSourceSearch } from '../sourceLanguages.cjs';
-import { fetchDesktopPlugins as fetchPlugins, installDesktopPlugin as installPlugin, uninstallDesktopPlugin as uninstallPlugin } from '../sources';
-import { INSTALLED_PLUGINS_KEY } from '../../vendor/lnreader/src/plugins/constants';
+import Icon from '../../Icon';
+import GlobalSearch from './GlobalSearch';
+import SourceFilters from './SourceFilters';
+import { fetchSourcePage } from '../../sourceRuntime';
+import { sourceLanguageOptions, matchesSourceLanguage, matchesSourceSearch } from '../../sourceLanguages.cjs';
+import { fetchDesktopPlugins as fetchPlugins, installDesktopPlugin as installPlugin, uninstallDesktopPlugin as uninstallPlugin } from '../../sources';
+import { INSTALLED_PLUGINS_KEY } from '../../../vendor/lnreader/src/plugins/constants';
 
 // Presentation of the existing Sources and source-browsing screens.
 // Side effects and state transitions still come from the original App props.

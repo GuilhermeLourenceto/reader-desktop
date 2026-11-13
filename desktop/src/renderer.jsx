@@ -42,7 +42,7 @@ import { appTheme } from './appThemes';
 import { resolveAppearance, appearanceColors } from './appearance.cjs';
 import NovelDetails from './features/library/NovelDetails';
 import History from './History';
-import SourceViews from './pages/SourceViews';
+import SourceViews from './features/sources/SourceViews';
 import Updates from './Updates';
 import { markNewChapters } from './updates.cjs';
 import ReaderControls from './features/reader/ReaderControls';

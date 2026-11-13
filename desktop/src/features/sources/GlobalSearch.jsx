@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Spinner from './Spinner';
-import { t } from './i18n.cjs';
-import { orderGlobalSearchRows } from './globalSourceOrder.cjs';
+import Spinner from '../../Spinner';
+import { t } from '../../i18n.cjs';
+import { orderGlobalSearchRows } from '../../globalSourceOrder.cjs';
 export default function GlobalSearch({ plugins, fetchPage, cards }) {
   const [term, setTerm] = useState(''),
     [rows, setRows] = useState([]),
