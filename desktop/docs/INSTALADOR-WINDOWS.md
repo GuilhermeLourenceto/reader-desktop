@@ -1,4 +1,12 @@
-# Instalador Windows 0.2.0
+# Instalador Windows — histórico da versão 0.2.0
+
+> **Registro histórico.** As observações abaixo se referem à implementação
+> do instalador da versão 0.2.0 e não certificam a versão atual.
+> Atualmente o build usa `electron-builder` com NSIS, conforme
+> `desktop/package.json`. Para gerar e testar um instalador no Windows,
+> execute `cd desktop`, `npm ci`, `npm run setup` e `npm run dist:win`;
+> rode `test/installer-smoke.ps1` em ambiente apropriado antes de distribuir.
+
 
 A detecção prioriza o caminho da instalação com PowerShell/CIM. Se esse recurso não estiver disponível, verifica o nome do executável apenas na sessão do usuário atual; uma cópia com o mesmo nome em outra pasta ou sessão não deve bloquear a instalação.
 

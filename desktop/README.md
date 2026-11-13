@@ -14,7 +14,7 @@ Versão atual: **0.4.5 Beta (Windows e Linux)**. Consulte as [notas de lançamen
 A interface utiliza uma cópia versionada da paleta original,
 em `vendor/lnreader/src/theme/md3/defaultTheme.ts`, e as fontes
 Noto Sans, PT Sans e PT Serif armazenadas dentro de `vendor/lnreader/assets/`.
-Esse conjunto é independente da pasta Android na compilação. A navegação inferior, abas de categorias, contadores nas
+Esse conjunto é independente da pasta Android na compilação. A navegação, filtros de categorias, contadores nas
 capas, ícones das fontes e leitor em tela inteira seguem o visual do Android.
 Os backups ficam em **Mais → Backups e ajustes**.
 A revisão das regras de funcionamento do Android está em
@@ -31,8 +31,10 @@ reiniciam a lista e descartam respostas atrasadas da pesquisa anterior.
 Em **Fontes → Buscar obras em todas as fontes**, a pesquisa consulta as fontes
 instaladas, com resultados agrupados, paginação e nova tentativa por fonte.
 O filtro por nome ou idioma em **Gerenciar fontes** é independente dessa busca.
-Na biblioteca, use o botão direito em uma capa ou as caixas de seleção para
-remover obras, resetar a leitura ou baixar capítulos pendentes em lote.
+Na biblioteca, use o botão direito nas capas, Ctrl/Cmd+clique e Shift+clique
+para selecionar obras; Ctrl/Cmd+A seleciona os itens correspondentes ao filtro,
+mesmo quando a grade é virtualizada. A seleção permite remover obras, zerar
+progresso ou baixar capítulos pendentes em lote.
 Resetar a leitura limpa progresso e histórico, preservando downloads e favoritos
 dos capítulos. Remover da biblioteca também preserva os arquivos baixados.
 O histórico mostra as capas, e as configurações do leitor oferecem uma prévia
@@ -80,8 +82,8 @@ npm start
 Não é necessário ter a pasta Android, instalar o Android SDK ou as
 dependências React Native da raiz. `setup` baixa o runtime do Electron,
 inclusive nas versões do npm que não executam automaticamente scripts de
-instalação de dependências. O CI verifica isso com checkout contendo **apenas**
-a pasta `desktop/`.
+instalação de dependências. Um job do CI verifica a independência em checkout contendo **apenas**
+a pasta `desktop/`; a presença do job não substitui a execução com sucesso.
 
 ## Gerar instaladores
 
@@ -102,19 +104,18 @@ produz `.AppImage` e `.deb`. Gere cada instalador no respectivo sistema.
 Para executar um AppImage, habilite a permissão de execução; algumas
 distribuições precisam do pacote de compatibilidade do FUSE.
 
-A automação `.github/workflows/desktop.yml` compila e testa Windows por padrão; para a release v0.4.3 e nas pull requests, também compila e testa Linux.
-Linux é opcional, habilitado por `include_linux` na execução manual. Na
-branch experimental `linux/prepare-packaging-and-tests`, há ainda o workflow
-separado `.github/workflows/linux-preparation.yml`, acionado apenas
-sob solicitação explícita (por mudança no marcador documentado no guia Linux
-ou `workflow_dispatch` via API): quando solicitado, executa testes no Ubuntu, produz
-AppImage e DEB e valida o lançador, a associação da janela e os recursos
-dos pacotes. **Pushes nesta branch não geram pacotes automaticamente.**
-Os arquivos desse workflow de preparação são artefatos de diagnóstico. A v0.4.3 passa a distribuir Linux beta pela CI da `main`, com AppImage e DEB gerados e inspecionados após a validação automatizada. A instalação em máquina Linux real ainda precisa de conferência manual.
-Acompanhe as pendências em
-[Preparação do Linux](docs/CONTINUAR-NO-LINUX.md). A execução local no Windows
-não valida o funcionamento em Linux. Os binários não possuem assinatura
-digital de distribuição.
+A automação [Desktop builds](../.github/workflows/desktop.yml) prevê lint,
+build independente do Android, testes Electron e uma matriz de empacotamento
+Windows/Ubuntu. A publicação de releases é condicionada a jobs específicos;
+artefatos de teste não equivalem a instaladores distribuídos. Há ainda
+workflows de portabilidade, preparação Linux e stress, com gatilhos próprios.
+
+**Estado em 13/11/2026:** as execuções mais recentes da `main` terminaram
+em falha após poucos segundos, sem passos de job disponíveis. Não há confirmação
+de que o código reorganizado tenha passado pelo build e por todos os testes.
+Consulte o [GitHub Actions](https://github.com/GuilhermeLourenceto/lnreader-desktop/actions)
+e o [guia Linux](docs/CONTINUAR-NO-LINUX.md). A instalação em Linux real
+continua exigindo testes em X11 e Wayland; os binários não são assinados.
 
 ## Estrutura independente e código original reaproveitado
 
@@ -176,8 +177,8 @@ virtualização de cartões: apenas as linhas visíveis e uma pequena margem
 ficam montadas no renderer. O grid mantém capas, badges, seleção, pesquisa,
 categorias e menus de contexto. Listas pequenas usam a renderização anterior.
 Os metadados das obras e capítulos permanecem em memória, portanto a
-virtualização não garante um tamanho fixo de RAM. A regressão é validada em
-Windows e Linux pelo teste gráfico com 10 mil obras/200 mil capítulos.
+virtualização não garante um tamanho fixo de RAM. O projeto possui um teste gráfico com 10 mil obras e 200 mil capítulos,
+mas seu resultado atual depende de executar novamente a suíte.
 
 ## Biblioteca, leitura e backups
 
@@ -238,7 +239,8 @@ Detalhes em [`docs/LEITOR.md`](./docs/LEITOR.md).
   capítulo**; Home/End vão ao início e ao fim. As teclas permanecem no capítulo
   atual; Anterior/Próximo trocam de capítulo.
 - **Modo de leitura** escolhe entre rolagem contínua (padrão) e páginas
-  horizontais; a amplitude do avanço na rolagem vai de 30% a 100%.
+  horizontais; a amplitude do avanço na rolagem vai de **10% a 100%**, com
+  valor padrão de **50%**.
 - A lista de capítulos carrega mais 100 sozinha ao chegar ao fim, com a bolinha
   girando; páginas de capítulos da fonte também são buscadas automaticamente.
 - **Aparência** oferece as nove paletas Material 3 do aplicativo Android
@@ -294,7 +296,13 @@ Falta ampliar a validação para outros computadores e versões do Windows.
 
 ```
 desktop/
-  src/            código da interface, processo principal, backup e leitor
+  src/            pontos de entrada do Electron, rede e backup
+  src/features/   biblioteca, leitor, fontes, histórico, downloads e configurações
+  src/components/ componentes compartilhados
+  src/domain/     regras de novels, leitura, filtros e grade
+  src/state/      estado da biblioteca e preferências
+  src/infrastructure/ validação de rede, diagnóstico e atalhos
+  src/i18n/       traduções
   test/           testes node e testes Electron de interface
   docs/           documentação (compatibilidade, estabilidade, leitor, isolamento)
   docs/screenshots/ capturas de apresentação do Desktop
@@ -313,9 +321,10 @@ Para conferir telas sem abrir o Electron, `node tools/ui-harness.cjs` gera
 páginas em `.tmp/` que carregam o bundle real com uma ponte `desktop` falsa; elas
 podem ser abertas no navegador ou capturadas com o Chrome headless.
 
-Ainda não disponíveis: backup em nuvem, rastreadores, TTS, EPUB, sincronização,
-gerenciamento de categorias e configurações avançadas de fontes,
-atualizações automáticas e tarefas executadas com o aplicativo fechado.
+Não assuma paridade com o LNReader Android: funcionalidades como sincronização
+em nuvem, rastreadores, TTS, exportação EPUB e tarefas com o aplicativo fechado
+não são oferecidas como recursos desktop confirmados nesta versão. Para diferenças
+conhecidas, consulte [COMPATIBILIDADE-ORIGINAL.md](docs/COMPATIBILIDADE-ORIGINAL.md).
 
 A janela usa isolamento de contexto, sandbox e Node desabilitado. O leitor
 sanitiza HTML. `unsafe-eval` permanece necessário para o carregador original
@@ -326,6 +335,7 @@ equivalente a um processo do sistema com memória independente.
 
 A estrutura de módulos e os limites entre Electron, React, armazenamento e
 código original estão descritos em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Quem deseja contribuir deve começar pelo [guia de desenvolvimento](docs/DEVELOPMENT.md).
 Para colaborar ou relatar problemas, consulte
 [CONTRIBUTING.md](../CONTRIBUTING.md) e [SECURITY.md](../SECURITY.md).
 
@@ -334,29 +344,29 @@ npm run lint          # Sintaxe Node e dependências fora de desktop/
 npm run format:check  # Formatação dos módulos novos (cobertura incremental)
 npm run format        # Formata código próprio (revise o diff antes de commitar)
 npm run check         # Lint + formatação incremental + testes unitários
-npm run test:journeys # 10 jornadas reais de interface (Electron)
+npm run test:journeys # executor de 30 jornadas de interface (Electron)
 npm run test:all      # Suíte local completa do Desktop
 ```
 
 O código original em `vendor/lnreader/` é versionado separadamente e não deve
 ser reformatado automaticamente ao modificar módulos próprios do Desktop.
 
-## Versão 0.3.0 Beta
+## Registro histórico: versão 0.3.0 Beta
 
 A branch principal passou a conter o Desktop independente. Esta versão reúne o isolamento do SDK
 original em `vendor/lnreader/`, atualizações da biblioteca, login individual por fonte,
 recuperação de erros, melhorias de backups, refatoração inicial da interface e suíte
 automatizada de 45 testes unitários e 10 jornadas de usuário. A compilação e o instalador
-Windows passaram no CI; Linux e o comportamento de todas as fontes ainda não estão
-validados. Veja [RELEASE_NOTES_0.3.0.md](docs/RELEASE_NOTES_0.3.0.md).
+Windows passaram no CI daquela versão; Linux e fontes reais exigiam
+verificação adicional. Esses resultados históricos não validam a `main` atual. Veja [RELEASE_NOTES_0.3.0.md](docs/RELEASE_NOTES_0.3.0.md).
 
 
-### Atalhos e busca (em desenvolvimento)
+### Atalhos e busca
 
 - **F11** alterna a tela cheia em qualquer tela principal do aplicativo.
 - **Fontes** abre inicialmente **Buscar obras em todas as fontes**; a aba Gerenciar fontes continua disponível.
 - A busca global prioriza fontes com resultados, sem descartar as demais fontes ainda sendo consultadas.
-- **Avanço por página** tem escala de 0 a 100%, com valor inicial de 50%. Configurações anteriormente salvas são mantidas.
+- **Avanço por página** tem escala de 10 a 100%, com valor inicial de 50%. Configurações anteriormente salvas são mantidas.
 
 
 ## Restaurar configurações e rolar as listas

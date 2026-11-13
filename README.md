@@ -56,7 +56,7 @@ Inspirado pelo ecossistema do [LNReader](https://github.com/LNReader/lnreader), 
 
 ## Download
 
-Baixe a **[v0.4.5 Beta](https://github.com/GuilhermeLourenceto/lnreader-desktop/releases/tag/v0.4.5)** na página de lançamentos:
+A versão declarada no código-fonte (`desktop/package.json`) é **0.4.5 Beta**. Para baixar instaladores, consulte a página de lançamentos **quando houver artefatos publicados**. A versão do código não garante que um instalador correspondente esteja disponível:
 
 <p align="center">
   <a href="https://github.com/GuilhermeLourenceto/lnreader-desktop/releases"><strong>Ver releases e baixar o Reader Desktop</strong></a>
@@ -100,6 +100,8 @@ npm run dist:linux  # Linux
 ```
 
 Os arquivos gerados ficam em `desktop/release/`. Não é necessário instalar o Android SDK.
+
+**Estado da validação:** os workflows da `main` apresentaram falhas de inicialização em 13/11/2026, antes dos passos dos jobs; por isso, o estado atual do build não deve ser tratado como aprovado. Confira o [GitHub Actions](https://github.com/GuilhermeLourenceto/lnreader-desktop/actions) e execute os testes localmente antes de distribuir uma compilação.
 
 Para desenvolvedores: [como começar](desktop/docs/DEVELOPMENT.md) · [arquitetura](desktop/docs/ARCHITECTURE.md) · [histórico de versões](desktop/CHANGELOG.md) · [como contribuir](CONTRIBUTING.md).
 

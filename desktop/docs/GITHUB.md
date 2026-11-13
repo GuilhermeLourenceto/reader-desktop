@@ -3,7 +3,12 @@
 A partir da v0.3.0, a branch padrão `main` contém o LNReader Desktop.
 O antigo código Android continua recuperável pelo histórico Git.
 
-- `desktop/src/`: interface Electron, rede, leitor e backups.
+- `desktop/src/`: inicialização Electron e módulos de baixo nível.
+- `desktop/src/features/`: funcionalidades de biblioteca, leitor, fontes e interface.
+- `desktop/src/components/`: componentes reutilizáveis.
+- `desktop/src/domain/`: regras de negócio compartilhadas.
+- `desktop/src/state/`: estado, serialização e preferências.
+- `desktop/src/infrastructure/`: política de rede, diagnósticos e atalhos.
 - `desktop/vendor/lnreader/`: módulos originais versionados para plugins,
   temas e formato de backups. Licença e procedência em `origin.json`.
 - `desktop/test/`: testes e simuladores de utilização.
@@ -27,8 +32,8 @@ npm run dist:win
 ```
 
 O Linux utiliza `npm run dist:linux` no Linux e ainda requer
-validação em computador real. O CI verifica a compilação com apenas
-`desktop/` presente no checkout.
+validação em computador real. O CI inclui um job de compilação com apenas `desktop/` presente no checkout.
+A aprovação depende da execução real dos jobs, não apenas de sua configuração.
 
 Não envie diretórios `node_modules`, `dist`, `release`, `.tmp`,
 dados pessoais, cookies, backups ou credenciais. Instaladores são
@@ -55,8 +60,8 @@ O Desktop não é uma distribuição oficial do LNReader Android.
 
 ## Colaboração
 
-Envie pull requests para `main`. A branch experimental `linux/prepare-packaging-and-tests` mantém
-as mudanças Linux separadas até uma revisão futura.
+Envie pull requests para `main`. O empacotamento Linux já está configurado
+na própria `main`; a antiga branch experimental é parte do histórico.
 Leia [CONTRIBUTING.md](../../CONTRIBUTING.md) e
 [ARCHITECTURE.md](ARCHITECTURE.md) antes de alterar o motor de plugins.
 A `main` segue sendo a branch padrão do GitHub e contém o Desktop a partir da v0.3.0.

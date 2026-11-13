@@ -1,13 +1,18 @@
 # Leitor no desktop
 
+Documentação da implementação em `src/features/reader/`, com regras
+compartilhadas em `src/domain/readerPaging.cjs` e
+`src/domain/readerChromeDelay.cjs`.
+
 ## Barras que somem
 
 Durante a leitura, a barra superior (voltar, título, ajustes, tamanho da fonte) e
-a barra inferior (navegação e posição) se escondem sozinhas depois de ~2,6 s sem
-movimento do mouse. Elas voltam ao mover o mouse, clicar ou usar o teclado.
+a barra inferior (navegação e posição) se escondem sozinhas após um período
+configurável de **1 a 10 segundos** sem interação (**2,6 s por padrão**). Elas voltam ao mover o mouse, clicar ou usar o teclado.
 
 - A opção fica em **Mais → Configurações → Leitor → Ocultar barras durante a
   leitura** (`desktopReaderAutoHide`, ligada por padrão).
+- **Tempo para ocultar as barras** fica na mesma tela e aceita passos de 0,2 s.
 - Enquanto os ajustes de leitura estão abertos, as barras ficam visíveis.
 - Com as barras escondidas elas também saem da navegação por teclado (`inert`),
   então Tab não foca botões invisíveis.
@@ -28,7 +33,7 @@ No modo horizontal, a roda do mouse também vira uma página por vez.
 ### Amplitude
 
 Em **Modo de leitura → Rolagem contínua**, a opção **Avanço por página** define
-quanto do visível é percorrido a cada tecla (30% a 100%, padrão 85%). Em
+quanto do visível é percorrido a cada tecla (**10% a 100%, padrão 50%**). Em
 **Páginas horizontais** cada passo vira uma página inteira.
 
 ## Modos de leitura
