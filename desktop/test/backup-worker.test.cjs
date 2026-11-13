@@ -15,7 +15,7 @@ const job = input =>
     worker.once('message', resolve);
     worker.once('error', reject);
   });
-test('background backup preserves library/progress despite damaged files and returns compact import references', async t => {
+test('corrupted or missing offline files reject export without overwriting the backup', async t => {
   const root = fs.mkdtempSync(
     path.join(os.tmpdir(), 'lnreader-backup-worker-'),
   );
@@ -63,7 +63,7 @@ test('background backup preserves library/progress despite damaged files and ret
     contentDirectory: store.directory,
   });
   assert.equal(exported.ok, false);
-  assert.match(exported.message, /2 arquivo\(s\) ausente\(s\)/);
+  assert.match(exported.message, /ENOENT|offline|corrompido|no such file/i);
   assert.equal(fs.existsSync(filename), false);
   assert.equal(state.novels[0].chapters[1].progress, 50);
 });
