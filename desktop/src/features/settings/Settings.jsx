@@ -10,7 +10,7 @@ import {
   READER_HIDE_DELAY_MIN,
   READER_HIDE_DELAY_MAX,
   readerHideDelaySeconds,
-} from '../../readerChromeDelay.cjs';
+} from '../../domain/readerChromeDelay.cjs';
 
 import { PalettePicker, SettingIcon, Toggle, Choice, Slider } from './Controls';
 

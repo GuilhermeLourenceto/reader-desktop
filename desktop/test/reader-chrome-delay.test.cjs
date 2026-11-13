@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { READER_HIDE_DELAY_DEFAULT, READER_HIDE_DELAY_MIN, READER_HIDE_DELAY_MAX, readerHideDelaySeconds, readerHideDelayMilliseconds } = require('../src/readerChromeDelay.cjs');
+const { READER_HIDE_DELAY_DEFAULT, READER_HIDE_DELAY_MIN, READER_HIDE_DELAY_MAX, readerHideDelaySeconds, readerHideDelayMilliseconds } = require('../src/domain/readerChromeDelay.cjs');
 
 test('existing profiles continue using the original 2.6 second delay', () => {
   assert.equal(READER_HIDE_DELAY_DEFAULT, 2.6);

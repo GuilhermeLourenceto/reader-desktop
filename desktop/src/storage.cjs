@@ -4,7 +4,7 @@ const { createHash, randomUUID } = require('node:crypto');
 const {
   READER_HIDE_DELAY_MIN,
   READER_HIDE_DELAY_MAX,
-} = require('./readerChromeDelay.cjs');
+} = require('./domain/readerChromeDelay.cjs');
 
 const isReference = value =>
   typeof value === 'string' && /^@file:[a-f0-9]{64}$/.test(value);

@@ -4,7 +4,7 @@ import {
   READER_HIDE_DELAY_DEFAULT,
   READER_HIDE_DELAY_MIN,
   READER_HIDE_DELAY_MAX,
-} from '../../readerChromeDelay.cjs';
+} from '../../domain/readerChromeDelay.cjs';
 export default function ReaderControls({
   settings,
   onChange,

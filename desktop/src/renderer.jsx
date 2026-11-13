@@ -58,7 +58,7 @@ import {
   validateNovelDetails,
 } from './domain.cjs';
 import { readerProgress, pageAmplitude } from './domain/readerPaging.cjs';
-import { readerHideDelayMilliseconds } from './readerChromeDelay.cjs';
+import { readerHideDelayMilliseconds } from './domain/readerChromeDelay.cjs';
 import { installElectronFetch } from './services/installElectronFetch';
 import { useSourceBrowse } from './features/sources/useSourceBrowse';
 import { createRefreshActions } from './features/updates/refreshActions';

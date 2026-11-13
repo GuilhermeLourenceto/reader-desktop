@@ -1,4 +1,4 @@
-const { READER_HIDE_DELAY_DEFAULT } = require('./readerChromeDelay.cjs');
+const { READER_HIDE_DELAY_DEFAULT } = require('./domain/readerChromeDelay.cjs');
 
 // Only desktop display and reading preferences are reset. Library, progress,
 // installed sources, source settings and unrelated imported backup data survive.
