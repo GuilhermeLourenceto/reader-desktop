@@ -18,7 +18,6 @@ const { resolveBackupOptions } = require('../vendor/lnreader/src/services/backup
 const MAX_ENTRIES = 100000;
 const MAX_METADATA_ENTRY = 128 * 1024 * 1024;
 const MAX_METADATA_TOTAL = 384 * 1024 * 1024;
-const MAX_OFFLINE_ENTRY = 2 * 1024 * 1024 * 1024;
 const ALREADY_COMPRESSED = /\.(?:png|jpe?g|gif|webp|avif|heic|woff2?|mp3|m4a|ogg|mp4|webm|pdf|zip|epub|gz)$/i;
 
 class ZipWriter {
@@ -386,10 +385,8 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
     const restored = parseBackup(inner.toBuffer());
     const store = async (name, entry) => {
       safePath(name);
-      if (entry.uncompressedSize > MAX_OFFLINE_ENTRY)
-        throw new Error('Arquivo individual offline excede 2 GiB');
       const tmp = path.join(workspace, randomUUID());
-      const hash = await copyEntry(entry, tmp, MAX_OFFLINE_ENTRY, progress);
+      const hash = await copyEntry(entry, tmp, Number.MAX_SAFE_INTEGER, progress);
       const target = path.join(contentDirectory, hash);
       // Re-importing an identical immutable object must not overwrite it.
       // This also keeps its mtime stable and avoids touching shared chapters.
