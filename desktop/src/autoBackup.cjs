@@ -129,14 +129,8 @@ function createAutoBackupManager({ dataDirectory, getState, contentDirectory, ex
       const name = availableName(folder, instant);
       filename = path.join(folder, name);
       const includeDownloads = options.desktopBackupIncludeDownloads !== false;
-      const backupState = includeDownloads ? state : {
-        ...state,
-        files: Object.fromEntries(Object.entries(state.files || {})
-          .filter(([key]) => !key.startsWith('Novels/'))),
-      };
-
       const result = await exportBackup({
-        action: 'export', state: backupState, contentDirectory, filename,
+        action: 'export', state, includeDownloads, contentDirectory, filename,
       });
       // A partial export (for example, missing offline chapters) must not
       // replace or cause deletion of an older verified good backup.
