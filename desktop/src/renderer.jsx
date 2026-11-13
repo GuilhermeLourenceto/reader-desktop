@@ -25,7 +25,6 @@ import {
   loadPlugin,
   reloadInstalledPlugins,
   fetchNovel,
-  fetchPage,
   cancelSourceOperations,
 } from './sourceClient';
 import { initializeDesktopPlugins as initializeInstalledPlugins } from './sources';
@@ -42,7 +41,6 @@ import NovelDetails from './features/library/NovelDetails';
 import History from './features/history/History';
 import SourceViews from './features/sources/SourceViews';
 import Updates from './features/updates/Updates';
-import { markNewChapters } from './updates.cjs';
 import ReaderControls from './features/reader/ReaderControls';
 import ReaderText, { readerPresentation } from './features/reader/ReaderText';
 import BookGrid from './features/library/BookGrid';
@@ -66,6 +64,7 @@ import { useSourceBrowse } from './features/sources/useSourceBrowse';
 import { createRefreshActions } from './features/updates/refreshActions';
 import { createChapterActions } from './features/reader/chapterActions';
 import { createLibraryActions } from './features/library/libraryActions';
+import { createNovelPagingActions } from './features/reader/novelPagingActions';
 import { createDownloadActions } from './features/downloads/downloadActions';
 
 // As paletas do app misturam `rgb(...)`, `#RRGGBB` e `rgba(...)`.
@@ -563,66 +562,9 @@ function App() {
     )
       saveReaderProgress(previous.bookId, previous.itemId, 100);
   }, []);
-  const loadNovelPage = async (book, page, trackUpdates = false) => {
-    const plugin = await loadPlugin(book.pluginId);
-    if (!plugin?.parsePage)
-      throw new Error('Esta fonte não oferece paginação de capítulos.');
-    const response = await withSourceDeadline(() =>
-      fetchPage(book.pluginId, book.path, String(page)),
-    );
-    if (!response || !Array.isArray(response.chapters))
-      throw new Error('A fonte retornou uma página de capítulos inválida.');
-    if (!response.chapters.length)
-      throw new Error(
-        'Esta página não retornou capítulos. Tente novamente; a página não será pulada.',
-      );
-    const latest = current.current.novels.find((item) => item.id === book.id);
-    const chapters = mergeChapters(
-      latest.chapters,
-      response.chapters,
-      book.id,
-      nextChapterId(current.current.novels),
-      String(page),
-    );
-    const changed = {
-      ...latest,
-      chapters: trackUpdates
-        ? markNewChapters(latest.chapters, chapters, new Date().toISOString())
-        : chapters,
-      desktopLoadedPages: [
-        ...new Set([...(latest.desktopLoadedPages || [1]), Number(page)]),
-      ],
-      desktopPage: Number(page),
-    };
-    changeNovel(changed);
-    return changed;
-  };
-  const navigateChapter = async (offset) => {
-    let book = current.current.novels.find((item) => item.id === novelId);
-    const step =
-      chapterDirection(book).direction === 'descending' ? -offset : offset;
-    const active = book.chapters.find((item) => item.id === chapterId);
-    let index = book.chapters.findIndex((item) => item.id === chapterId) + step;
-    const page = Number(active.page || 1);
-    const targetPage = page + step;
-    const adjacent = book.chapters[index];
-    if (
-      (!adjacent || Number(adjacent.page || 1) !== page) &&
-      targetPage >= 1 &&
-      targetPage <= Number(book.totalPages || 1) &&
-      !loadedPages(book).includes(targetPage)
-    ) {
-      book = await loadNovelPage(book, targetPage);
-      index = book.chapters.findIndex((item) => item.id === chapterId) + step;
-    }
-    if (book.chapters[index]) await loadChapter(book, book.chapters[index]);
-    else
-      setNotice(
-        offset > 0
-          ? 'Não há próximo capítulo disponível.'
-          : 'Não há capítulo anterior disponível.',
-      );
-  };
+  const { loadNovelPage, navigateChapter } = createNovelPagingActions({
+    current, changeNovel, loadChapter, novelId, chapterId, setNotice,
+  });
   const readerMetrics = () => {
     const element = readerRef.current;
     if (!element) return null;
