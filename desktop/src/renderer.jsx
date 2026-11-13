@@ -65,6 +65,7 @@ import { installElectronFetch } from './services/installElectronFetch';
 import { useSourceBrowse } from './features/sources/useSourceBrowse';
 import { createRefreshActions } from './features/updates/refreshActions';
 import { createChapterActions } from './features/reader/chapterActions';
+import { createLibraryActions } from './features/library/libraryActions';
 import { createDownloadActions } from './features/downloads/downloadActions';
 
 // As paletas do app misturam `rgb(...)`, `#RRGGBB` e `rgba(...)`.
@@ -461,85 +462,9 @@ function App() {
   const { deleteDownloads, downloadChapters, startDownloads } = createDownloadActions({
     downloading, cancelDownload, setNotice, setDownloadProgress, changeChapterRows,
   });
-  const libraryAction = async (action, ids) => {
-    const books = current.current.novels.filter(
-      (book) => ids.includes(book.id) && book.inLibrary,
-    );
-    if (!books.length) return;
-    if (action === 'remove') {
-      if (
-        !window.confirm(
-          translateMessage(
-            'Remover {v0} obra(s) da biblioteca? Histórico e downloads serão mantidos.',
-            { v0: books.length },
-          ),
-        )
-      )
-        return;
-      update({
-        ...current.current,
-        novels: current.current.novels.map((book) =>
-          ids.includes(book.id) ? { ...book, inLibrary: false } : book,
-        ),
-      });
-    } else if (action === 'reset') {
-      if (
-        !window.confirm(
-          translateMessage(
-            'Resetar a leitura de {v0} obra(s)? O progresso e o histórico serão zerados e os capítulos ficarão não lidos. Downloads e marcadores serão mantidos.',
-            { v0: books.length },
-          ),
-        )
-      )
-        return;
-      update({
-        ...current.current,
-        novels: current.current.novels.map((book) =>
-          ids.includes(book.id)
-            ? {
-                ...book,
-                chapters: book.chapters.map((chapter) => ({
-                  ...chapter,
-                  unread: true,
-                  progress: 0,
-                  desktopProgressUnit: 'percent',
-                  readTime: null,
-                })),
-              }
-            : book,
-        ),
-      });
-    } else if (action === 'download') {
-      if (downloading.current) {
-        setNotice(
-          'Já há um download em andamento. Aguarde ou pare a fila atual.',
-        );
-        return;
-      }
-      downloading.current = true;
-      cancelDownload.current = false;
-      try {
-        for (const book of books) {
-          if (cancelDownload.current) break;
-          await downloadChapters(
-            book,
-            book.chapters
-              .filter(
-                (chapter) =>
-                  !chapter.isDownloaded ||
-                  chapter.desktopAssetsCached === false,
-              )
-              .map((chapter) => chapter.id),
-            true,
-          );
-        }
-      } catch (error) {
-        setNotice(errorText(error));
-      } finally {
-        downloading.current = false;
-      }
-    }
-  };
+  const { libraryAction } = createLibraryActions({
+    current, update, downloading, cancelDownload, setNotice, downloadChapters,
+  });
   const saveReaderProgress = (bookId, itemId, percentage) => {
     if (current.current.settings.desktopIncognito) return;
     const latest = current.current.novels.find((book) => book.id === bookId);
