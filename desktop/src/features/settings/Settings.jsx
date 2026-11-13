@@ -5,7 +5,7 @@ import ReaderPreview from '../reader/ReaderPreview';
 import ReaderThemes from '../reader/ReaderThemes';
 import Spinner from '../../components/Spinner';
 import { languages } from '../../i18n.cjs';
-import { DEFAULT_DESKTOP_SETTINGS } from '../../defaultSettings.cjs';
+import { DEFAULT_DESKTOP_SETTINGS } from '../../state/defaultSettings.cjs';
 import {
   READER_HIDE_DELAY_MIN,
   READER_HIDE_DELAY_MAX,

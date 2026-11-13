@@ -1,5 +1,5 @@
 const { t } = require('./i18n.cjs');
-const { DEFAULT_DESKTOP_SETTINGS } = require('./defaultSettings.cjs');
+const { DEFAULT_DESKTOP_SETTINGS } = require('./state/defaultSettings.cjs');
 const ui = (message, values = {}) =>
   t(message, values, state?.settings?.desktopInterfaceLanguage || DEFAULT_DESKTOP_SETTINGS.desktopInterfaceLanguage);
 const {

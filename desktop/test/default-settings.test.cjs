@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { DEFAULT_DESKTOP_SETTINGS, restoreDesktopDefaults } = require('../src/defaultSettings.cjs');
+const { DEFAULT_DESKTOP_SETTINGS, restoreDesktopDefaults } = require('../src/state/defaultSettings.cjs');
 const { validateState } = require('../src/storage.cjs');
 
 test('restore only desktop preferences, preserving unrelated settings and original input', () => {

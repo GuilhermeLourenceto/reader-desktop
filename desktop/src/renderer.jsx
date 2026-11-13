@@ -29,7 +29,7 @@ import { INSTALLED_PLUGINS_KEY } from '../vendor/lnreader/src/plugins/constants'
 import { defaultTheme } from '../vendor/lnreader/src/theme/md3/defaultTheme';
 import Settings from './features/settings/Settings';
 import Onboarding from './features/onboarding/Onboarding';
-import { restoreDesktopDefaults } from './defaultSettings.cjs';
+import { restoreDesktopDefaults } from './state/defaultSettings.cjs';
 import Spinner from './components/Spinner';
 import { appTheme } from './appThemes';
 import { resolveAppearance, appearanceColors } from './appearance.cjs';

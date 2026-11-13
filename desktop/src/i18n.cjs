@@ -1,5 +1,5 @@
 const { languages, messages } = require('./locales.cjs');
-const { DEFAULT_DESKTOP_SETTINGS } = require('./defaultSettings.cjs');
+const { DEFAULT_DESKTOP_SETTINGS } = require('./state/defaultSettings.cjs');
 let locale = DEFAULT_DESKTOP_SETTINGS.desktopInterfaceLanguage;
 const listeners = new Set();
 function getLocale() {
