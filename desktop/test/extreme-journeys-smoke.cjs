@@ -46,7 +46,7 @@ function fixture(frequency='launch'){
 function workerJob(data){return new Promise((resolve,reject)=>{
  const worker=new Worker(path.join(__dirname,'../dist/backup-worker.cjs'),{workerData:data});
  let ended=false;const finish=(error,result)=>{if(ended)return;ended=true;if(error)reject(error);else resolve(result)};
- worker.on('message',m=>m.ok?finish(null,m.result??m.restored):finish(Error(m.message)));
+ worker.on('message',m=>{if(m.progress===true)return;m.ok?finish(null,m.result??m.restored):finish(Error(m.message))});
  worker.on('error',finish);worker.on('exit',c=>{if(!ended)finish(Error('Worker exited '+c))});
 });}
 app.on('browser-window-created',(_event,window)=>{

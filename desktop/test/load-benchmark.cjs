@@ -13,9 +13,10 @@ const backupJob = input =>
         path.join(__dirname, '../dist/backup-worker.cjs'),
       { workerData: input, resourceLimits: { maxOldGenerationSizeMb: 1024 } },
     );
-    worker.once('message', v =>
-      v.ok ? resolve(v.restored ?? v.result) : reject(new Error(v.message)),
-    );
+    worker.on('message', v => {
+      if (v.progress === true) return;
+      v.ok ? resolve(v.restored ?? v.result) : reject(new Error(v.message));
+    });
     worker.once('error', reject);
     worker.once('exit', code => {
       if (code) reject(new Error('Worker exit ' + code));

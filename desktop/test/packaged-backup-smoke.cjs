@@ -34,6 +34,7 @@ app.whenReady().then(() => {
     },
   );
   worker.on('message', result => {
+    if (result.progress === true) return;
     clearTimeout(timeout);
     if (!result.ok) console.error(result.message);
     else

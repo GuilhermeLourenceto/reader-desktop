@@ -20,9 +20,12 @@ function backupJob(input) {
       if (error) reject(error);
       else resolve(value);
     };
-    worker.on('message', value => value.ok
-      ? finish(null, value.restored ?? value.result)
-      : finish(Error(value.message)));
+    worker.on('message', value => {
+      if (value.progress === true) return;
+      value.ok
+        ? finish(null, value.restored ?? value.result)
+        : finish(Error(value.message));
+    });
     worker.on('error', finish);
     worker.on('exit', code => {
       if (!settled) finish(Error('Worker exited: ' + code));

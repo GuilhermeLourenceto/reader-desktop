@@ -12,7 +12,9 @@ const job = input =>
       path.join(__dirname, '../dist/backup-worker.cjs'),
       { workerData: input },
     );
-    worker.once('message', resolve);
+    worker.on('message', value => {
+      if (value.progress !== true) resolve(value);
+    });
     worker.once('error', reject);
   });
 test('corrupted or missing offline files reject export without overwriting the backup', async t => {
