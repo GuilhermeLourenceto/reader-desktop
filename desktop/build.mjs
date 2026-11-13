@@ -80,7 +80,7 @@ await build({
   bundle: true,
   platform: 'node',
   outfile: 'dist/main.cjs',
-  external: ['electron', 'adm-zip'],
+  external: ['electron', 'adm-zip', 'unzipper'],
   nodePaths: [resolve('node_modules')],
 });
 await build({
@@ -88,14 +88,14 @@ await build({
   bundle: true,
   platform: 'node',
   outfile: 'dist/backup.cjs',
-  external: ['adm-zip'],
+  external: ['adm-zip', 'unzipper'],
 });
 await build({
   entryPoints: ['src/backup-worker.cjs'],
   bundle: true,
   platform: 'node',
   outfile: 'dist/backup-worker.cjs',
-  external: ['adm-zip'],
+  external: ['adm-zip', 'unzipper'],
   nodePaths: [resolve('node_modules')],
 });
 for (const file of ['index.html', 'preload.cjs']) {
