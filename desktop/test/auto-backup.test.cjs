@@ -19,8 +19,8 @@ function fixture(t, frequency = 'launch') {
   let fail = false;
   let delay = null;
   const jobs = [];
-  const backup = async ({ filename, state: snapshot }) => {
-    jobs.push({ filename, snapshot });
+  const backup = async ({ filename, state: snapshot, includeDownloads }) => {
+    jobs.push({ filename, snapshot, includeDownloads });
     if (delay) await delay;
     if (fail) {
       fs.writeFileSync(filename + '.tmp', 'partial');
@@ -149,7 +149,10 @@ test('frequency thresholds and folder switch are independent, downloaded chapter
       }, settings: { ...f.state.settings, desktopBackupIncludeDownloads: false } });
       const manager = f.make();
       assert.equal(await manager.check({ launch: true }), true);
-      assert.deepEqual(Object.keys(f.jobs[0].snapshot.files), ['Covers/1']);
+      assert.deepEqual(Object.keys(f.jobs[0].snapshot.files), [
+        'Novels/source/1/1/index.html', 'Covers/1',
+      ]);
+      assert.equal(f.jobs[0].includeDownloads, false);
       f.setState({ ...f.state, novels: [{ id: 2 }] });
       f.advance(hours * 3600000 - 1);
       assert.equal(await manager.check(), false);
