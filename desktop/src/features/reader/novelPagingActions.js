@@ -2,7 +2,7 @@
 import { loadPlugin, fetchPage } from '../../sourceClient';
 import { withSourceDeadline } from '../../sourceGuards.cjs';
 import { mergeChapters, chapterDirection } from '../../domain.cjs';
-import { nextChapterId, loadedPages } from '../../libraryState';
+import { nextChapterId, loadedPages } from '../../state/libraryState';
 import { markNewChapters } from '../../domain/updates.cjs';
 
 export function createNovelPagingActions({

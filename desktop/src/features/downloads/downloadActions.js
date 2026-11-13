@@ -1,7 +1,7 @@
 // Download orchestration is isolated from the App component.
 // Its dependencies are explicit so downloads retain the existing lifecycle and cancellation semantics.
 import { t as translateMessage } from '../../i18n.cjs';
-import { fileKey } from '../../libraryState';
+import { fileKey } from '../../state/libraryState';
 import { errorText } from '../../sourceRuntime';
 import { loadPlugin, fetchChapter } from '../../sourceClient';
 import { withSourceDeadline } from '../../sourceGuards.cjs';

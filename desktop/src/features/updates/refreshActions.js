@@ -4,7 +4,7 @@ import { loadPlugin, fetchNovel } from '../../sourceClient';
 import { errorText } from '../../sourceRuntime';
 import { withSourceDeadline } from '../../sourceGuards.cjs';
 import { validateNovelDetails, mergeChapters } from '../../domain.cjs';
-import { loadedPages, nextChapterId } from '../../libraryState';
+import { loadedPages, nextChapterId } from '../../state/libraryState';
 import { markNewChapters } from '../../domain/updates.cjs';
 
 export function createRefreshActions({

@@ -19,7 +19,7 @@ import {
   fileKey,
   loadedPages,
   nextNovelPage,
-} from './libraryState';
+} from './state/libraryState';
 import { errorText } from './sourceRuntime';
 import {
   loadPlugin,

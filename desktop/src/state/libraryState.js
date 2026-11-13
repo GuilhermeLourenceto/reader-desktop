@@ -1,6 +1,6 @@
-import { nextNovelPage, nextChapterId } from './domain/libraryPerf.cjs';
-import { INSTALLED_PLUGINS_KEY } from '../vendor/lnreader/src/plugins/constants';
-import { setLocale } from './i18n.cjs';
+import { nextNovelPage, nextChapterId } from '../domain/libraryPerf.cjs';
+import { INSTALLED_PLUGINS_KEY } from '../../vendor/lnreader/src/plugins/constants';
+import { setLocale } from '../i18n.cjs';
 
 export function hydrate(state) {
   setLocale(state.settings?.desktopInterfaceLanguage);

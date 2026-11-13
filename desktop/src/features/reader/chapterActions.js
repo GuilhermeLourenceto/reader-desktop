@@ -1,7 +1,7 @@
 // Chapter fetching, offline cache lookup, HTML sanitization and progress transition.
 import sanitize from 'sanitize-html';
 import { t as translateMessage } from '../../i18n.cjs';
-import { fileKey } from '../../libraryState';
+import { fileKey } from '../../state/libraryState';
 import { loadPlugin, fetchChapter } from '../../sourceClient';
 import { errorText } from '../../sourceRuntime';
 import { withSourceDeadline } from '../../sourceGuards.cjs';
