@@ -204,6 +204,9 @@ async function exportBackup({ state, contentDirectory, filename, includeDownload
     return filename;
   };
   try {
+    // Validate every name, including files not selected for the archive.
+    // Otherwise an invalid entry could be silently omitted.
+    for (const name of Object.keys(state.files)) safePath(name);
     if (fs.existsSync(temp)) throw new Error('Exportação anterior ainda está em andamento');
     const pluginZip = await nested('Plugins/', ZipBackupName.PLUGINS);
     const novelZip = includeDownloads
