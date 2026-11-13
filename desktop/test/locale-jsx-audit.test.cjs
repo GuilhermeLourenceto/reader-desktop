@@ -14,7 +14,7 @@ const sampleExemptions = {
     '— Toda jornada começa com uma primeira página — disse o viajante.',
     'Ela sorriu e continuou a leitura. Algumas histórias não precisavam de pressa; precisavam apenas de espaço para acontecer.',
   ]),
-  'ReaderThemes.jsx': new Set(['Aa']), // Typography specimen, not a phrase
+  'features/reader/ReaderThemes.jsx': new Set(['Aa']), // Typography specimen, not a phrase
   'features/settings/Settings.jsx': new Set(['LNReader', 'LNReader Desktop', 'Reader Desktop', 'Desktop ·']),
   'features/onboarding/Onboarding.jsx': new Set(['Reader Desktop']),
   'renderer.jsx': new Set(['https://…/plugins.json', '×', 'A−', 'A+']),

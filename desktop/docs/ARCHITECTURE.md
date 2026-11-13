@@ -1,59 +1,64 @@
-# Arquitetura do LNReader Desktop
+# Arquitetura do Reader Desktop
 
-## Limites do aplicativo
+O aplicativo é independente do código Android externo: a compilação usa os arquivos em `desktop/`, Electron, React e esbuild. O SDK original do LNReader está versionado em `vendor/lnreader/`.
 
-O projeto fica inteiro em `desktop/`, inclusive o SDK original versionado.
-A compilação usa Node.js 24, esbuild e Electron sem React Native/Expo.
+## Organização do código
 
-| Área | Arquivos principais | Papel |
-| --- | --- | --- |
-| Processo principal Electron | `src/main.cjs`, `src/preload.cjs` | Janelas, ponte IPC e acesso controlado ao sistema |
-| Rede e segurança | `src/request.cjs`, `src/networkPolicy.cjs` | Requisições de fontes e política de destinos |
-| Interface React | `src/renderer.jsx`, `src/Library.jsx`, `src/NovelDetails.jsx`, `src/Settings.jsx` | Navegação, biblioteca e leitura |
-| Componentes compartilháveis | `src/Icon.jsx`, `src/SourceFilters.jsx`, `src/DesktopErrorBoundary.jsx` | Ícones, filtros e falhas de renderização |
-| Estado e busca | `src/libraryState.js`, `src/sourceRuntime.js` | Serialização, identificadores, paginação e busca |
-| Fontes e Workers | `src/sourceClient.js`, `src/plugin-worker.js`, `src/sources.js` | Ciclo de vida das extensões |
-| Dados e backups | `src/storage.cjs`, `src/backup.cjs`, `src/backup-worker.cjs` | Persistência e formato ZIP compatível |
-| Código original | `vendor/lnreader/` | SDK de plugins, contratos de backup, paletas, fontes e licença |
-| Testes | `test/` | Unidade, interface Electron, persistência e diagnóstico |
+```text
+desktop/
+├── src/
+│   ├── main.cjs                # Inicialização Electron e IPC
+│   ├── preload.cjs             # Ponte de APIs para o renderer
+│   ├── renderer.jsx            # Composição, navegação e estado do App
+│   ├── plugin-worker.js        # Entrada do Worker de extensões
+│   ├── components/             # Icon, Spinner, DesktopErrorBoundary
+│   ├── features/
+│   │   ├── library/            # Biblioteca, detalhes e grid virtualizado
+│   │   ├── reader/             # Leitura, temas, controles e carregamento
+│   │   ├── downloads/          # Fila, cancelamento e arquivos offline
+│   │   ├── sources/            # Pesquisa, filtros e paginação de fontes
+│   │   ├── updates/            # Atualizações e verificação de capítulos
+│   │   ├── history/            # Histórico de leitura
+│   │   ├── settings/           # Configurações e diagnósticos
+│   │   └── onboarding/         # Primeiro acesso e traduções do assistente
+│   ├── services/               # Adaptações de APIs do navegador
+│   ├── i18n/                   # Catálogo original de textos
+│   ├── styles/                 # Estilos agrupados por tela
+│   └── ...                     # Serviços de domínio, dados e segurança
+├── vendor/lnreader/            # Snapshot original e licença
+├── test/                       # Testes Node e jornadas Electron
+├── scripts/                    # Verificações e manutenção
+└── build.mjs
+```
 
-## Dependências e fluxo de dados
+Os arquivos de entrada `main.cjs`, `preload.cjs`, `renderer.jsx` e `plugin-worker.js` permanecem em seus caminhos originais para preservar o empacotamento. Os serviços centrais de persistência, rede e backup também não foram movidos nesta etapa: os testes existentes e os contratos do Electron dependem deles.
 
-1. O React chama APIs limitadas expostas em `preload.cjs`, sem acesso
-   direto a Node.js no renderer.
-2. O processo principal controla operações de rede, armazenamento e
-   acesso a arquivos pelo IPC.
-3. Extensões são executadas em Workers separados, com mensagens e
-   limites de tempo. Isso reduz travamentos da interface, mas não equivale
-   a isolamento de processo por extensão.
-4. Os metadados da biblioteca e os conteúdos baixados são persistidos
-   localmente; backups ZIP podem ser importados/exportados, preservando
-   os identificadores usados pelo formato Android.
+## Limites e fluxo
 
-## Princípios de manutenção
+1. A interface React chama os métodos expostos pelo `preload.cjs`; não acessa diretamente os módulos Node.
+2. `main.cjs` valida as chamadas IPC e controla janelas, rede e disco.
+3. As extensões executam em Web Workers; `sourceClient.js` aplica limites e encaminha operações permitidas.
+4. `storage.cjs` mantém metadados em JSON e conteúdo imutável em arquivos SHA-256.
+5. A importação e exportação ZIP são processadas por workers, com streaming e verificações de integridade.
+6. `renderer.jsx` coordena as telas, mas delega operações complexas às funcionalidades:
+   - `features/downloads/downloadActions.js`: downloads, remoção e progresso da fila.
+   - `features/sources/useSourceBrowse.js`: resultados e paginação de fontes.
+   - `features/updates/refreshActions.js`: verificação de obras e atualizações.
+   - `features/reader/chapterActions.js`: busca, cache e preparação de capítulos.
 
-- Não importar `../src`, `../assets` ou arquivos Android externos:
-  `scripts/check-standalone.cjs` protege o isolamento.
-- Alterações no snapshot `vendor/` são revisadas separadamente;
-  `scripts/sync-original-sdk.cjs` usa staging exclusivamente em
-  `desktop/.tmp/lnreader-original/` e não participa do build.
-- Evitar expandir o `renderer.jsx`: extrair módulos com responsabilidades
-  claras e manter comportamento comprovado pelos testes.
-- Antes de liberar alterações, rodar `npm run check`, os testes Electron
-  e verificar os workflows de empacotamento.
+## Regras de manutenção
 
-## Cobertura conhecida e lacunas
+- Componentes visuais novos entram na funcionalidade correspondente; componentes genéricos vão em `components/`.
+- Não acrescentar regras extensas ao `renderer.jsx`; preferir controladores com dependências explícitas.
+- Não modificar o SDK em `vendor/` para adaptar a interface Desktop.
+- Para verificar imports relativos, rodar `npm test` (o teste `source-module-imports.test.cjs` verifica os caminhos locais).
+- Antes de distribuir, rodar `npm run build`, `npm run check`, testes Electron e empacotamento Windows/Linux.
+- A refatoração é estrutural: alterações de protocolo IPC, dados, formato de backup ou execução de extensões exigem testes específicos.
 
-O CI verifica build isolado, testes de leitura, jornadas comuns de usuário
-e compilação Windows. A matriz de fontes é **diagnóstica**: concluir o job
-não significa que todas as fontes funcionaram. A Central Novel pode receber
-desafios Cloudflare em ambientes automatizados. Linux e instalações reais
-em máquinas variadas ainda precisam de validação.
+## Limitações conhecidas
 
-## Política de branches
+O estado React ainda mantém metadados da biblioteca em memória; `renderer.jsx` continua responsável por parte dos efeitos e pela composição do leitor. A modularização pode prosseguir em etapas pequenas, sem reescrita geral. Web Workers isolam a execução das extensões do renderer, mas não equivalem a processos com memória independente.
 
-A partir da v0.3.0, a branch `main` concentra o Desktop;
-`seguranca-e-estabilidade` continua como referência histórica desta etapa.
-O código Android anterior permanece acessível no histórico Git. Git não
-admite branches dentro de uma pasta. Uma futura migração para outro repositório
-exigiria decisão e trabalho separados.
+## Branch
+
+A `main` é a branch de desenvolvimento e distribuição do Reader Desktop. O histórico preserva as versões anteriores e o código Android antigo.
