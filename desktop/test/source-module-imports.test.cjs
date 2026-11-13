@@ -13,7 +13,7 @@ function* sources(directory) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const filename = path.join(directory, entry.name);
     if (entry.isDirectory()) yield* sources(filename);
-    else if (/\\.(?:js|jsx|cjs|mjs)$/.test(filename)) yield filename;
+    else if (/\.(?:js|jsx|cjs|mjs)$/.test(filename)) yield filename;
   }
 }
 
@@ -27,7 +27,7 @@ function existsImport(base) {
 test('every source-relative import resolves after module reorganization', () => {
   const unresolved = [];
   let imports = 0;
-  const expression = /(?:\\bfrom\\s*|\\brequire\\s*\\(\\s*|\\bimport\\s*\\(\\s*)['"](\\.\\.?\\/[^'"]+)['"]/g;
+  const expression = /(?:\bfrom\s*|\brequire\s*\(\s*|\bimport\s*\(\s*)['"](\.\.?\/[^'"]+)['"]/g;
   for (const filename of sources(root)) {
     const content = fs.readFileSync(filename, 'utf8');
     for (const match of content.matchAll(expression)) {
