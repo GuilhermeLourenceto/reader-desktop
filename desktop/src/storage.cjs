@@ -88,6 +88,21 @@ class DiskFiles {
     }
     return output;
   }
+  // Clean only blobs first created by the cancelled import, never the
+  // existing library or unrelated files. Hashes are not filesystem paths.
+  cleanupImported(hashes, retainedFiles = {}) {
+    const retained = new Set(Object.values(retainedFiles)
+      .filter(isReference).map(value => value.slice(6)));
+    for (const hash of new Set(hashes || [])) {
+      if (typeof hash !== 'string' || !/^[a-f0-9]{64}$/.test(hash) ||
+          retained.has(hash)) continue;
+      try {
+        fs.unlinkSync(path.join(this.directory, hash));
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+      }
+    }
+  }
   prune(files, previousFiles = {}) {
     const retained = new Set(
       [...Object.values(files), ...Object.values(previousFiles)]

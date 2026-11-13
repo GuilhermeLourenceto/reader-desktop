@@ -335,7 +335,8 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
     path.join(contentDirectory, '.reader-import-'),
   );
   const budget = { count: 0 };
-  const temporary = [];
+  const importedNewHashes = new Set();
+  let completed = false;
   try {
     const outer = inspect(await unzipper.Open.file(filename), budget);
     let metadata = outer, prefix = '';
@@ -393,9 +394,11 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
       // Re-importing an identical immutable object must not overwrite it.
       // This also keeps its mtime stable and avoids touching shared chapters.
       let alreadyPresent = false;
+      let existedBefore = false;
       try {
         const existing = createHash('sha256');
         for await (const chunk of fs.createReadStream(target)) existing.update(chunk);
+        existedBefore = true;
         alreadyPresent = existing.digest('hex') === hash;
       } catch (error) {
         if (error.code !== 'ENOENT') throw error;
@@ -404,6 +407,7 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
         await fs.promises.unlink(tmp);
       } else {
         await fs.promises.rename(tmp, target);
+        if (!existedBefore) importedNewHashes.add(hash);
       }
       restored.state.files[name] = '@file:' + hash;
     };
@@ -431,8 +435,16 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
           await store(name, entry);
     }
     validateState(restored.state);
+    restored.newBlobHashes = [...importedNewHashes];
+    completed = true;
     return restored;
   } finally {
+    if (!completed)
+      await Promise.all([...importedNewHashes].map(hash =>
+        fs.promises.unlink(path.join(contentDirectory, hash)).catch(error => {
+          if (error.code !== 'ENOENT') throw error;
+        }),
+      ));
     await fs.promises.rm(workspace, { recursive: true, force: true });
   }
 }
