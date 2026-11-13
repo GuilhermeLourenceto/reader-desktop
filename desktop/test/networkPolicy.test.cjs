@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { validateNetworkUrl, validateResolvedAddresses, validateNetworkDns } = require('../src/networkPolicy.cjs');
+const { validateNetworkUrl, validateResolvedAddresses, validateNetworkDns } = require('../src/infrastructure/networkPolicy.cjs');
 
 test('permite sites, CDNs e provedores públicos com diferentes domínios', () => {
   for (const url of [
@@ -50,7 +50,7 @@ test('DNS público é aceito, mas respostas privadas ou mistas são bloqueadas',
 });
 
 test('Electron 42 ResolvedHost.endpoints accepts public IPs and still blocks private ones', async () => {
-  const { validateResolvedAddresses, validateNetworkDns } = require('../src/networkPolicy.cjs');
+  const { validateResolvedAddresses, validateNetworkDns } = require('../src/infrastructure/networkPolicy.cjs');
   const publicDns = {
     endpoints: [
       { address: '1.1.1.1', family: 'ipv4' },

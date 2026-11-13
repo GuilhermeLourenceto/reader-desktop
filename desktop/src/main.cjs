@@ -27,8 +27,8 @@ const { emptyState, safePath } = require('./backup.cjs');
 const { backupJob } = require('./backupJobs.cjs');
 const { planRestore } = require('./restorePlan.cjs');
 const { createAutoBackupManager } = require('./autoBackup.cjs');
-const { createDiagnostics } = require('./diagnostics.cjs');
-const { validateNetworkUrl } = require('./networkPolicy.cjs');
+const { createDiagnostics } = require('./infrastructure/diagnostics.cjs');
+const { validateNetworkUrl } = require('./infrastructure/networkPolicy.cjs');
 const { installFullscreenShortcut } = require('./fullscreenShortcut.cjs');
 // Keep existing libraries when the displayed app name changes.
 const defaultProfile = path.join(app.getPath('appData'), app.getName());

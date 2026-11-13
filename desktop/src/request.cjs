@@ -1,7 +1,7 @@
 // Electron net.fetch does not consistently populate Response.url. Source
 // plugins use the final URL to detect login/captcha redirects, so track it
 // through ClientRequest rather than pretending it is the original URL.
-const { validateNetworkUrl, validateNetworkDns } = require('./networkPolicy.cjs');
+const { validateNetworkUrl, validateNetworkDns } = require('./infrastructure/networkPolicy.cjs');
 
 // Only used by the isolated CI source-matrix runs. Never log URLs (which can
 // contain tokens), cookies or response bodies.

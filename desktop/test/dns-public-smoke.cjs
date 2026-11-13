@@ -3,7 +3,7 @@
 const { app, net, session } = require('electron');
 const assert = require('node:assert/strict');
 const { RequestPool } = require('../src/request.cjs');
-const { validateResolvedAddresses } = require('../src/networkPolicy.cjs');
+const { validateResolvedAddresses } = require('../src/infrastructure/networkPolicy.cjs');
 
 app.commandLine.appendSwitch('disable-gpu');
 const watchdog = setTimeout(() => {

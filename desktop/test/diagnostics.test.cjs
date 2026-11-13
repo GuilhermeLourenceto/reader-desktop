@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { createDiagnostics, redact } = require('../src/diagnostics.cjs');
+const { createDiagnostics, redact } = require('../src/infrastructure/diagnostics.cjs');
 
 async function withLogger(fn, options = {}) {
   const root = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'reader-diagnostics-test-'));
