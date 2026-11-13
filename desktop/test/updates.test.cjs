@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { markNewChapters, updateGroups } = require('../src/updates.cjs');
+const { markNewChapters, updateGroups } = require('../src/domain/updates.cjs');
 test('updates preserve read state and previous detection dates without duplicate notifications', () => {
   const old = {
     id: 1,

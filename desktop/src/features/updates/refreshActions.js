@@ -5,7 +5,7 @@ import { errorText } from '../../sourceRuntime';
 import { withSourceDeadline } from '../../sourceGuards.cjs';
 import { validateNovelDetails, mergeChapters } from '../../domain.cjs';
 import { loadedPages, nextChapterId } from '../../libraryState';
-import { markNewChapters } from '../../updates.cjs';
+import { markNewChapters } from '../../domain/updates.cjs';
 
 export function createRefreshActions({
   current, novel, changeNovel, loadNovelPage, stopUpdates, downloading,
