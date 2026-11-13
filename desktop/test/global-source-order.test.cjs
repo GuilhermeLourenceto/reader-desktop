@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { orderGlobalSearchRows } = require('../src/globalSourceOrder.cjs');
+const { orderGlobalSearchRows } = require('../src/domain/globalSourceOrder.cjs');
 
 test('fontes com resultados aparecem primeiro mesmo ao responder fora de ordem', () => {
   const rows = [

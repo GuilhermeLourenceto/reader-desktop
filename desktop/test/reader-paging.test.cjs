@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { readerProgress, pageAmplitude } = require('../src/readerPaging.cjs');
+const { readerProgress, pageAmplitude } = require('../src/domain/readerPaging.cjs');
 
 test('continuous scrolling reports progress and chapter edges', () => {
   const middle = readerProgress({
