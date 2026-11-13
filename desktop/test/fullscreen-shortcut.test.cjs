@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
-const { installFullscreenShortcut } = require('../src/fullscreenShortcut.cjs');
+const { installFullscreenShortcut } = require('../src/infrastructure/fullscreenShortcut.cjs');
 
 test('F11 alterna tela cheia do aplicativo em qualquer aba', () => {
   const webContents = new EventEmitter();

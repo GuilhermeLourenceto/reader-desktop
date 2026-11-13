@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const {
   sourceLanguage, sourceLanguageOptions, matchesSourceLanguage, matchesSourceSearch,
-} = require('../src/sourceLanguages.cjs');
+} = require('../src/domain/sourceLanguages.cjs');
 const { getLocale, setLocale } = require('../src/i18n.cjs');
 
 test('normaliza códigos oficiais e suas variantes regionais', () => {

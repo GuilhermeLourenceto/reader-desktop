@@ -1,5 +1,5 @@
 // Language codes come from LNReader plugin metadata (lang), not the site URL.
-const { getLocale, t } = require('./i18n.cjs');
+const { getLocale, t } = require('../i18n.cjs');
 const aliases = {
   português: 'pt',
   portugues: 'pt',

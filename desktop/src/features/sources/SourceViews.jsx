@@ -2,7 +2,7 @@ import Icon from '../../components/Icon';
 import GlobalSearch from './GlobalSearch';
 import SourceFilters from './SourceFilters';
 import { fetchSourcePage } from '../../sourceRuntime';
-import { sourceLanguageOptions, matchesSourceLanguage, matchesSourceSearch } from '../../sourceLanguages.cjs';
+import { sourceLanguageOptions, matchesSourceLanguage, matchesSourceSearch } from '../../domain/sourceLanguages.cjs';
 import { fetchDesktopPlugins as fetchPlugins, installDesktopPlugin as installPlugin, uninstallDesktopPlugin as uninstallPlugin } from '../../sources';
 import { INSTALLED_PLUGINS_KEY } from '../../../vendor/lnreader/src/plugins/constants';
 
