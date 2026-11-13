@@ -21,7 +21,8 @@ const backupJob = input => new Promise((resolve, reject) => {
     if (error) reject(error);
     else resolve(value);
   };
-  worker.once('message', value => {
+  worker.on('message', value => {
+    if (value.progress === true) return;
     if (value.ok) finish(null, value.restored ?? value.result);
     else finish(new Error(value.message));
   });
