@@ -204,7 +204,7 @@ envio de corpo POST em UTF-8.
 Backups são importados e exportados por fluxo com suporte a ZIP64 (mais de 4 GiB),
 sem limite fixo de 512 MiB para o tamanho total. Permanecem as proteções contra
 caminhos perigosos, arquivos duplicados, expansão suspeita, falta de espaço em
-disco, mais de 100 mil entradas e arquivos offline individuais maiores que 2 GiB.
+disco, mais de 100 mil entradas e falta de espaço para extrair os arquivos.
 Metadados JSON são limitados separadamente para proteger a memória. Os jobs
 são executados em worker e interrompidos apenas após cinco minutos sem progresso;
 backups grandes podem demorar e ocupar espaço temporário em disco.
