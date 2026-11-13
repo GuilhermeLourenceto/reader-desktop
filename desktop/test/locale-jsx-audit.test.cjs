@@ -7,7 +7,7 @@ const { languages, messages } = require('../src/locales.cjs');
 
 const sourceDir = path.join(__dirname, '../src');
 const sampleExemptions = {
-  'ReaderPreview.jsx': new Set([
+  'features/reader/ReaderPreview.jsx': new Set([
     'Capítulo 1 — Uma nova história',
     'A luz da manhã atravessava a janela quando ela abriu o livro. Lá fora, a cidade despertava lentamente, mas entre aquelas páginas havia um mundo inteiro esperando.',
     'O caminho seguia entre as árvores, dobrando a cada descoberta. Nada parecia urgente: havia tempo para observar os detalhes, ouvir o vento e escolher a próxima direção.',

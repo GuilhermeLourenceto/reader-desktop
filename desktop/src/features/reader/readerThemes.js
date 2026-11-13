@@ -1,4 +1,4 @@
-import { presetReaderThemes } from '../vendor/lnreader/src/utils/constants/readerConstants';
+import { presetReaderThemes } from '../../../vendor/lnreader/src/utils/constants/readerConstants';
 
 const originalNames = [
   ['original-light', 'Claro original'],

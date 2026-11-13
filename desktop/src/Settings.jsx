@@ -1,8 +1,8 @@
 import { t as translateMessage } from './i18n.cjs';
 import React, { useEffect, useState } from 'react';
 import DiagnosticsPanel from './DiagnosticsPanel';
-import ReaderPreview from './ReaderPreview';
-import ReaderThemes from './ReaderThemes';
+import ReaderPreview from './features/reader/ReaderPreview';
+import ReaderThemes from './features/reader/ReaderThemes';
 import Spinner from './Spinner';
 import { languages } from './i18n.cjs';
 import { DEFAULT_DESKTOP_SETTINGS } from './defaultSettings.cjs';

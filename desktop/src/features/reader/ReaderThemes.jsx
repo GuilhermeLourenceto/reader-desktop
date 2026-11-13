@@ -1,4 +1,4 @@
-import { t as translateMessage } from './i18n.cjs';
+import { t as translateMessage } from '../../i18n.cjs';
 import React from 'react';
 import { readerThemes } from './readerThemes.js';
 
