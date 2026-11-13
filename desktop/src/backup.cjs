@@ -107,12 +107,17 @@ function emptyState() {
     progressUnit: 'percent',
   };
 }
-function parseBackup(
-  buffer,
-  { storeFile = (_name, data) => data.toString('base64') } = {},
-) {
+function parseBackup(buffer, options = {}) {
   const budget = { size: 0, count: 0 };
   const entries = unwrapBackup(readArchive(buffer, budget, true), budget);
+  return parseBackupEntries(entries, options, budget);
+}
+// Streamed imports pass CRC-verified metadata directly, without another ZIP in RAM.
+function parseBackupEntries(
+  entries,
+  { storeFile = (_name, data) => data.toString('base64'), streamedArchives = false } = {},
+  budget = { size: 0, count: 0 },
+) {
   const missingSections = [];
   const json = (name, fallback) =>
     entries.has(name)
@@ -227,9 +232,10 @@ function parseBackup(
   }
   const addFiles = (archive, prefix, select = () => true) => {
     if (!entries.has(archive)) throw new Error(`Backup sem ${archive}`);
-    readArchive(entries.get(archive), budget, false, (name, data) => {
-      state.files[safePath(prefix + name)] = storeFile(prefix + name, data);
-    }, select);
+    if (!streamedArchives)
+      readArchive(entries.get(archive), budget, false, (name, data) => {
+        state.files[safePath(prefix + name)] = storeFile(prefix + name, data);
+      }, select);
     entries.delete(archive);
   };
   if (formatVersion === 2) {
@@ -243,10 +249,11 @@ function parseBackup(
       name => name.startsWith('Plugins/') || name.startsWith('Novels/'),
     );
   }
-  for (const [name, data] of entries) {
-    if (name.startsWith(`${BackupEntryName.COVERS}/`))
-      state.files[name] = storeFile(name, data);
-  }
+  if (!streamedArchives)
+    for (const [name, data] of entries) {
+      if (name.startsWith(`${BackupEntryName.COVERS}/`))
+        state.files[name] = storeFile(name, data);
+    }
   validateState(state);
   return { state, sections, missingSections };
 }
@@ -333,4 +340,4 @@ function createBackup(state, { downloadedFiles = true } = {}) {
     throw new Error('O arquivo ZIP excede o limite de 512 MB.');
   return result;
 }
-module.exports = { safePath, emptyState, parseBackup, createBackup };
+module.exports = { safePath, emptyState, parseBackup, parseBackupEntries, createBackup };

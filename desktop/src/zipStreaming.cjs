@@ -7,9 +7,8 @@ const zlib = require('node:zlib');
 const { randomUUID, createHash } = require('node:crypto');
 const { Readable, Transform } = require('node:stream');
 const { pipeline } = require('node:stream/promises');
-const AdmZip = require('adm-zip');
 const unzipper = require('unzipper');
-const { safePath, parseBackup } = require('./backup.cjs');
+const { safePath, parseBackupEntries } = require('./backup.cjs');
 const { validateState } = require('./storage.cjs');
 const { chapterPercent } = require('./domain.cjs');
 const { BackupEntryName, ZipBackupName } = require('../vendor/lnreader/src/services/backup/types.ts');
@@ -343,18 +342,21 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
     if (!outer.has('Version.json')) {
       const candidates = [...outer.keys()].filter(name =>
         name === 'data.zip' || name.endsWith('/data.zip'));
-      if (candidates.length !== 1) throw new Error('Backup sem Version.json');
-      const dataName = candidates[0];
-      prefix = dataName.slice(0, -'data.zip'.length);
-      const allowed = new Set(['data.zip','plugins.zip','novel-files.zip','download.zip']
-        .map(x => prefix + x));
-      if ([...outer.keys()].some(name => !allowed.has(name)))
-        throw new Error('Estrutura externa inválida');
-      const nestedName = path.join(workspace, 'data.zip');
-      await copyEntry(outer.get(dataName), nestedName, Number.MAX_SAFE_INTEGER, progress);
-      metadata = inspect(await unzipper.Open.file(nestedName), budget);
+      if (candidates.length > 1) throw new Error('Backup contém data.zip duplicado');
+      if (candidates.length === 1) {
+        const dataName = candidates[0];
+        prefix = dataName.slice(0, -'data.zip'.length);
+        const allowed = new Set(['data.zip','plugins.zip','novel-files.zip','download.zip']
+          .map(x => prefix + x));
+        if ([...outer.keys()].some(name => !allowed.has(name)))
+          throw new Error('Estrutura externa inválida');
+        const nestedName = path.join(workspace, 'data.zip');
+        await copyEntry(outer.get(dataName), nestedName, Number.MAX_SAFE_INTEGER, progress);
+        metadata = inspect(await unzipper.Open.file(nestedName), budget);
+      }
+      // Android also accepts unwrapped legacy v1 archives without Version.json.
     }
-    const inner = new AdmZip();
+    const metadataEntries = new Map();
     let metadataTotal = 0;
     const permitted = name => name === 'Version.json' ||
       name === 'Category.json' || name === 'Setting.json' ||
@@ -365,9 +367,9 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
       if (metadataTotal > MAX_METADATA_TOTAL)
         throw new Error('Metadados grandes demais para serem processados com segurança');
       const data = await copyEntry(entry, null, MAX_METADATA_ENTRY, progress, true);
-      inner.addFile(name, data);
+      metadataEntries.set(name, data);
     }
-    const version = JSON.parse(inner.readAsText('Version.json') || '{}');
+    const version = JSON.parse(metadataEntries.get('Version.json')?.toString('utf8') || '{}');
     const isV2 = version.formatVersion === 2 && version.sections;
     const sections = resolveBackupOptions(isV2 ? version.sections : undefined);
     const required = isV2
@@ -380,9 +382,9 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
       if (!outer.has(prefix + archive) && !metadata.has(archive))
         throw new Error('Backup sem ' + archive);
       // The in-memory parser only processes metadata, never actual downloaded data.
-      inner.addFile(archive, new AdmZip().toBuffer());
+      metadataEntries.set(archive, Buffer.alloc(0));
     }
-    const restored = parseBackup(inner.toBuffer());
+    const restored = parseBackupEntries(metadataEntries, { streamedArchives: true });
     const store = async (name, entry) => {
       safePath(name);
       const tmp = path.join(workspace, randomUUID());
