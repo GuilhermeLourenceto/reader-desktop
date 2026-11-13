@@ -79,6 +79,10 @@ class ZipWriter {
     const output = compressed
       ? input.pipe(measure).pipe(zlib.createDeflateRaw())
       : input.pipe(measure);
+    // A failed source must reject the ZIP rather than emitting an unhandled
+    // stream error or publishing an incomplete archive.
+    input.on('error', error => output.destroy(error));
+    if (compressed) measure.on('error', error => output.destroy(error));
     for await (const chunk of output) {
       packed += chunk.length;
       await this.write(chunk);
@@ -311,7 +315,9 @@ async function copyEntry(entry, destination, limit, progress, returnBuffer = fal
   if (size !== entry.uncompressedSize)
     throw new Error('Entrada ZIP incompleta');
   const expected = entry.crc32 ?? entry.vars?.crc32;
-  if (typeof expected === 'number' && (expected >>> 0) !== (crc >>> 0))
+  if (typeof expected !== 'number' || !Number.isSafeInteger(expected))
+    throw new Error('Entrada ZIP sem CRC-32 verificável');
+  if ((expected >>> 0) !== (crc >>> 0))
     throw new Error('CRC incorreto no backup');
   return returnBuffer ? Buffer.concat(chunks) : hash.digest('hex');
 }
