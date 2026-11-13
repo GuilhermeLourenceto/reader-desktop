@@ -7,6 +7,8 @@ const { createHash, randomBytes } = require('node:crypto');
 const { DiskFiles } = require('../src/storage.cjs');
 const { emptyState, parseBackup } = require('../dist/backup.cjs');
 const { exportBackup, importBackup } = require('../dist/zipStreaming.cjs');
+const AdmZip = require('adm-zip');
+const { planRestore } = require('../src/restorePlan.cjs');
 
 test('streaming ZIP64 round trip retains source code, offline content and reading progress', async t => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-streaming-'));
@@ -117,3 +119,109 @@ test('over-512-MiB offline chapter uses disk streams instead of a global ZIP lim
     assert.equal(result.state.files['Novels/site/1/2/index.html'], '@file:' + hash);
     assert.equal(result.state.novels[0].chapters[0].isDownloaded, true);
   });
+
+function androidZip(root, members) {
+  const output = path.join(root, 'android.zip');
+  const zip = new AdmZip();
+  for (const [name, data] of Object.entries(members))
+    zip.addFile(name, Buffer.isBuffer(data) ? data : Buffer.from(JSON.stringify(data)));
+  fs.writeFileSync(output, zip.toBuffer());
+  return output;
+}
+
+test('real Android v2 settings-only ZIP preserves desktop appearance and library', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-android-settings-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const filename = androidZip(root, {
+    'Version.json': { appVersion: '2.1.4', formatVersion: 2,
+      sections: { library: false, settings: true, plugins: false, downloadedFiles: false } },
+    'Setting.json': {
+      THEME_MODE: 'dark', APP_SETTINGS: '{"incognitoMode":false}',
+      CHAPTER_READER_SETTINGS: '{"fontSize":18}',
+    },
+  });
+  const dir = path.join(root, 'content');
+  fs.mkdirSync(dir);
+  const restored = await importBackup({ filename, contentDirectory: dir });
+  assert.equal(restored.sections.library, false);
+  assert.deepEqual(restored.state.novels, []);
+  assert.deepEqual(restored.state.plugins, []);
+  const current = {
+    ...emptyState(),
+    novels: [{ id: 3, pluginId: 'local', path: '/book', name: 'Existing', chapters: [] }],
+    settings: { desktopTheme: 'oled', desktopPalette: 'lavender',
+      desktopReaderTheme: 'app', desktopOnboardingCompleted: true },
+  };
+  const plan = planRestore(current, restored);
+  assert.equal(plan.next.novels.length, 1);
+  assert.equal(plan.next.settings.desktopTheme, 'oled');
+  assert.equal(plan.next.settings.desktopPalette, 'lavender');
+  assert.equal(plan.next.settings.desktopReaderTheme, 'app');
+  assert.equal(plan.next.settings.THEME_MODE, 'dark');
+});
+
+test('Android v2 plugins-only ZIP does not need library or novel-files.zip', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-android-plugins-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const plugins = new AdmZip();
+  plugins.addFile('source/index.js', Buffer.from('module.exports = {}'));
+  const filename = androidZip(root, {
+    'Version.json': { appVersion: '2.1.4', formatVersion: 2,
+      sections: { library: false, settings: false, plugins: true, downloadedFiles: false } },
+    'Plugins.json': [{ id: 'source', url: 'https://example.org/source.js' }],
+    'plugins.zip': plugins.toBuffer(),
+  });
+  const dir = path.join(root, 'content');
+  fs.mkdirSync(dir);
+  const restored = await importBackup({ filename, contentDirectory: dir });
+  assert.equal(restored.sections.plugins, true);
+  assert.equal(restored.state.plugins.length, 1);
+  assert.match(restored.state.files['Plugins/source/index.js'], /^@file:/);
+  assert.deepEqual(restored.missingSections, []);
+});
+
+test('Android v2 library without downloaded files keeps local categories when absent', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-android-library-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const filename = androidZip(root, {
+    'Version.json': { appVersion: '2.1.4', formatVersion: 2,
+      sections: { library: true, settings: false, plugins: false, downloadedFiles: false } },
+    'NovelAndChapters/5.json': { id: 5, pluginId: 'site', name: 'From Android',
+      path: '/book', inLibrary: true,
+      chapters: [{ id: 6, path: '/chapter', name: 'Chapter',
+        progress: 60, isDownloaded: false }] },
+  });
+  const dir = path.join(root, 'content');
+  fs.mkdirSync(dir);
+  const restored = await importBackup({ filename, contentDirectory: dir });
+  assert.deepEqual(restored.missingSections, ['categories']);
+  const current = { ...emptyState(),
+    categories: [{ id: 1, name: 'Existing category', novelIds: [] }] };
+  const plan = planRestore(current, restored);
+  assert.equal(plan.next.novels.length, 1);
+  assert.deepEqual(plan.next.categories, current.categories);
+  assert.equal(plan.next.novels[0].chapters[0].progress, 60);
+});
+
+test('Android legacy ZIP without Version.json is still importable', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-android-legacy-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const files = new AdmZip();
+  files.addFile('Novels/site/5/6/index.html', Buffer.from('<p>Legacy offline</p>'));
+  const filename = androidZip(root, {
+    'NovelAndChapters/5.json': { id: 5, pluginId: 'site',
+      path: '/legacy', name: 'Legacy', chapters: [{ id: 6, path: '/chapter',
+        name: 'Chapter', isDownloaded: true }] },
+    'Category.json': [],
+    'Setting.json': {},
+    'Plugins.json': [],
+    'download.zip': files.toBuffer(),
+  });
+  const dir = path.join(root, 'content');
+  fs.mkdirSync(dir);
+  const restored = await importBackup({ filename, contentDirectory: dir });
+  assert.equal(restored.state.novels.length, 1);
+  assert.equal(restored.state.novels[0].name, 'Legacy');
+  assert.match(restored.state.files['Novels/site/5/6/index.html'], /^@file:/);
+  assert.equal(restored.sections.downloadedFiles, true);
+});
