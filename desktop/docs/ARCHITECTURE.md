@@ -55,6 +55,7 @@ Os arquivos de entrada `main.cjs`, `preload.cjs`, `renderer.jsx` e `plugin-worke
 ## Regras de manutenção
 
 - Componentes visuais novos entram na funcionalidade correspondente; componentes genéricos vão em `components/`.
+- `domain/` não pode depender de React, Electron, DOM ou componentes da interface; `infrastructure/` não pode importar componentes React. O teste `architecture-boundaries.test.cjs` protege essa separação.
 - Não acrescentar regras extensas ao `renderer.jsx`; preferir controladores com dependências explícitas.
 - Não modificar o SDK em `vendor/` para adaptar a interface Desktop.
 - Para verificar imports relativos, rodar `npm test` (o teste `source-module-imports.test.cjs` verifica os caminhos locais).

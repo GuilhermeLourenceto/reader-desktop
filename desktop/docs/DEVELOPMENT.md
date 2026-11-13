@@ -54,7 +54,7 @@ npm run format:check
 npm run build
 ```
 
-`npm run check` reúne lint, formatação parcial e testes Node. `npm test` inclui a verificação de imports relativos depois de movimentar módulos. Para testar os fluxos no Electron:
+`npm run check` reúne lint, formatação parcial e testes Node. `npm test` inclui a verificação de imports relativos e das fronteiras entre domínio, infraestrutura e UI depois de movimentar módulos. Para testar os fluxos no Electron:
 
 ```bash
 npm run test:smoke
