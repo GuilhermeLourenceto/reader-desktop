@@ -384,16 +384,20 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
       const tmp = path.join(workspace, randomUUID());
       const hash = await copyEntry(entry, tmp, MAX_OFFLINE_ENTRY, progress);
       const target = path.join(contentDirectory, hash);
+      // Re-importing an identical immutable object must not overwrite it.
+      // This also keeps its mtime stable and avoids touching shared chapters.
+      let alreadyPresent = false;
       try {
-        await fs.promises.rename(tmp, target);
-      } catch (error) {
-        if (error.code !== 'EEXIST' && error.code !== 'EPERM')
-          throw error;
-        // Preserve an existing content-addressed object; verify its contents.
         const existing = createHash('sha256');
         for await (const chunk of fs.createReadStream(target)) existing.update(chunk);
-        if (existing.digest('hex') !== hash) throw new Error('Bloco armazenado corrompido');
+        alreadyPresent = existing.digest('hex') === hash;
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+      }
+      if (alreadyPresent) {
         await fs.promises.unlink(tmp);
+      } else {
+        await fs.promises.rename(tmp, target);
       }
       restored.state.files[name] = '@file:' + hash;
     };
