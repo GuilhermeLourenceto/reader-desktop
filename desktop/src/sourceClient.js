@@ -2,9 +2,13 @@ import { INSTALLED_PLUGINS_KEY } from '../vendor/lnreader/src/plugins/constants'
 const entries = new Map();
 let callId = 0;
 const reportSourceFailure = (code, message) => {
-  void window.desktop.diagnostics.report({
-    level: 'warning', operation: 'source', code, message,
-  }).catch(() => {});
+  try {
+    void window.desktop?.diagnostics?.report?.({
+      level: 'warning', operation: 'source', code, message,
+    })?.catch(() => {});
+  } catch {
+    // Diagnostics must never interfere with source execution.
+  }
 };
 const activity = () =>
   window.dispatchEvent(

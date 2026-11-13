@@ -14,13 +14,16 @@ function redact(value) {
   let text = String(value ?? '').slice(0, 8192);
   text = text.replace(/\b(?:https?|wss?):\/\/[^\s<>"'`]+/gi, '[URL]');
   text = text.replace(/\bfile:\/\/[^\s<>\"'`]+/gi, '[PATH]');
+  text = text.replace(/\b(authorization|proxy-authorization)\s*[:=]\s*(?:basic|bearer|token|digest)\s+[^\s,;]+/gi, '$1=[REDACTED]');
   text = text.replace(/\b(?:bearer\s+)[\w.\-+/=]+/gi, 'Bearer [REDACTED]');
   text = text.replace(/\b(authorization|cookie|set-cookie|password|passwd|token|access_token|refresh_token|api[_-]?key|secret|session(?:id)?)\b\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;]+)/gi, '$1=[REDACTED]');
   text = text.replace(/\\\\(?:[^\\\s]+\\)+[^\\\s]+/g, '[PATH]');
   text = text.replace(/\b[A-Z]:\\(?:[^\s\\]+\\)*[^\s\\]*/gi, '[PATH]');
-  text = text.replace(/(?:\/(?:home|Users|mnt|tmp|var|run|workspaces|private|etc)\/)[^\s<>"'`]+/g, '[PATH]');
+  // Paths must be redacted regardless of mount or operating-system layout.
+  // URLs were removed above so these are local filesystem paths.
+  text = text.replace(/(^|[\s(=:'"])(\/(?!\/)[^\s<>"'`\\]+)/g, '$1[PATH]');
   text = text.replace(/\b[^\s@<>]+@[^\s@<>]+\.[A-Za-z]{2,}\b/g, '[EMAIL]');
-  return text.replace(/[\r\n\t]+/g, ' ').slice(0, 1500);
+  return text.replace(/[\u0000-\u001f\u007f-\u009f]+/g, ' ').slice(0, 1500);
 }
 
 function normalize(input, now) {
@@ -53,21 +56,75 @@ function createDiagnostics({ directory, now = () => Date.now(), maxFileBytes = M
     chain = job.then(() => { pending--; });
     return job;
   };
+  const ensureDirectory = async () => {
+    await fs.promises.mkdir(directory, { recursive: true, mode: 0o700 });
+    const info = await fs.promises.lstat(directory);
+    if (!info.isDirectory()) throw new Error('Pasta de logs inválida');
+    await fs.promises.chmod(directory, 0o700).catch(() => {});
+  };
   const stat = async filename => {
-    try { return await fs.promises.stat(filename); }
-    catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+    try {
+      const info = await fs.promises.lstat(filename);
+      if (!info.isFile()) throw new Error('Arquivo de log inválido');
+      return info;
+    } catch (error) {
+      if (error.code === 'ENOENT') return null;
+      throw error;
+    }
   };
   const cleanExpired = async (force = false) => {
     if (!force && now() - lastCleanup < 60 * 60 * 1000) return;
-    lastCleanup = now();
+    const cutoff = now() - retentionMs;
     for (const filename of files) {
       const info = await stat(filename);
-      if (info && now() - info.mtimeMs > retentionMs)
+      if (!info) continue;
+      await fs.promises.chmod(filename, 0o600).catch(() => {});
+      // Even a frequently written log may contain events older than 14 days.
+      // Compact the bounded files, instead of relying only on file mtime.
+      const original = await fs.promises.readFile(filename, 'utf8');
+      const lines = original.split('\n').filter(Boolean);
+      const kept = [];
+      let changed = false;
+      for (const line of lines) {
+        try {
+          const item = JSON.parse(line);
+          const at = Date.parse(item.at);
+          if (!Number.isFinite(at) || at < cutoff ||
+            !LEVELS.has(item.level) || !OPERATIONS.has(item.operation) ||
+            typeof item.code !== 'string' || !/^[A-Z][A-Z0-9_-]{2,47}$/.test(item.code) ||
+            typeof item.id !== 'string' || !/^[A-Za-z0-9_-]{1,80}$/.test(item.id) ||
+            typeof item.message !== 'string') {
+            changed = true;
+            continue;
+          }
+          const safe = {
+            id: item.id, at: new Date(at).toISOString(), level: item.level, operation: item.operation,
+            code: item.code, message: redact(item.message),
+          };
+          const encoded = JSON.stringify(safe);
+          if (encoded !== line) changed = true;
+          kept.push(encoded);
+        } catch { changed = true; }
+      }
+      if (!changed) continue;
+      if (!kept.length) {
         await fs.promises.rm(filename, { force: true });
+        continue;
+      }
+      const temporary = filename + '.compact-' + randomUUID();
+      try {
+        await fs.promises.writeFile(temporary, kept.join('\n') + '\n', {
+          flag: 'wx', mode: 0o600,
+        });
+        await fs.promises.rename(temporary, filename);
+      } finally {
+        await fs.promises.rm(temporary, { force: true }).catch(() => {});
+      }
     }
+    lastCleanup = now();
   };
   const append = async entry => {
-    await fs.promises.mkdir(directory, { recursive: true });
+    await ensureDirectory();
     await cleanExpired();
     const bytes = Buffer.from(JSON.stringify(entry) + '\n');
     const current = await stat(files[0]);
@@ -79,6 +136,7 @@ function createDiagnostics({ directory, now = () => Date.now(), maxFileBytes = M
       }
     }
     await fs.promises.appendFile(files[0], bytes, { mode: 0o600 });
+    await fs.promises.chmod(files[0], 0o600).catch(() => {});
   };
   const summary = async (item) => {
     if (!item.suppressed) return;
@@ -125,12 +183,19 @@ function createDiagnostics({ directory, now = () => Date.now(), maxFileBytes = M
     return chunk.split('\n').filter(Boolean).flatMap(line => {
       try {
         const item = JSON.parse(line);
-        return item && typeof item === 'object' && typeof item.code === 'string' ? [item] : [];
+        if (!item || typeof item !== 'object' ||
+          !LEVELS.has(item.level) || !OPERATIONS.has(item.operation) ||
+          typeof item.code !== 'string' || !/^[A-Z][A-Z0-9_-]{2,47}$/.test(item.code) ||
+          typeof item.id !== 'string' || !/^[A-Za-z0-9_-]{1,80}$/.test(item.id) ||
+          typeof item.at !== 'string' || !Number.isFinite(Date.parse(item.at)) ||
+          typeof item.message !== 'string') return [];
+        return [{ id: item.id, at: item.at, level: item.level,
+          operation: item.operation, code: item.code, message: redact(item.message) }];
       } catch { return []; }
     }).slice(-limit);
   };
   const read = async limit => {
-    await fs.promises.mkdir(directory, { recursive: true });
+    await ensureDirectory();
     await cleanExpired(true);
     await flushRepeats();
     const capped = Math.max(1, Math.min(500, Number.isSafeInteger(limit) ? limit : 100));

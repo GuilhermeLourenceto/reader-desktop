@@ -60,8 +60,7 @@ test('enforces age limit, clears and exports a reviewable text report', async ()
   let clock = Date.now();
   await withLogger(async (logger, folder, root) => {
     await logger.record({ code: 'UI-ERROR', operation: 'interface', message: 'bug' });
-    const diagnosticFile = path.join(folder, 'reader.jsonl');
-    await fs.promises.utimes(diagnosticFile, new Date(clock - 20 * 86400000), new Date(clock - 20 * 86400000));
+    clock += 20 * 86400000;
     const filtered = await logger.list();
     assert.equal(filtered.entries.length, 0);
     await logger.record({ code: 'UI-ERROR', operation: 'interface', message: 'Second error' });
@@ -82,5 +81,96 @@ test('silently fails when log location is unusable', async () => {
     assert.equal(await logger.record({ code: 'BKP-ERROR', message: 'error' }), null);
     assert.deepEqual((await logger.list()).entries, []);
     assert.equal(await logger.clear(), false);
+  });
+});
+
+test('redacts arbitrary Unix paths and complete Basic credentials', () => {
+  const input = 'at /root/.local/secret at /srv/data/book at /opt/app/worker.js Authorization: Basic dXNlcjpwYXNz';
+  const result = redact(input);
+  for (const secret of ['/root/.local', '/srv/data', '/opt/app', 'dXNlcjpwYXNz'])
+    assert.equal(result.includes(secret), false, secret);
+});
+
+test('expires individual events inside an actively written log', async () => {
+  let clock = Date.now();
+  await withLogger(async (logger, folder) => {
+    await logger.record({ code: 'OLD-EVENT', level: 'error', message: 'old event' });
+    clock += 15 * 86400000;
+    // Keep file mtime fresh: the age filter must inspect individual entries.
+    await fs.promises.utimes(path.join(folder, 'reader.jsonl'), new Date(clock), new Date(clock));
+    await logger.record({ code: 'NEW-EVENT', level: 'error', message: 'new event' });
+    const { entries } = await logger.list();
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].code, 'NEW-EVENT');
+  }, { now: () => clock });
+});
+
+test('does not follow a symlink masquerading as the diagnostics folder', async t => {
+  await withLogger(async (_logger, folder, root) => {
+    const other = path.join(root, 'other');
+    await fs.promises.mkdir(other);
+    try { await fs.promises.symlink(other, folder, 'dir'); }
+    catch (error) {
+      if (['EPERM', 'ENOSYS', 'EACCES'].includes(error.code)) return t.skip();
+      throw error;
+    }
+    const logger = createDiagnostics({ directory: folder });
+    assert.equal(await logger.record({ code: 'SAFE-TEST', message: 'try writing' }), null);
+    assert.deepEqual(await fs.promises.readdir(other), []);
+  });
+});
+
+test('sanitizes older on-disk logs before displaying or exporting', async () => {
+  await withLogger(async (logger, folder, root) => {
+    await fs.promises.mkdir(folder, { recursive: true });
+    const event = {
+      id: 'legacy-log-id', at: new Date().toISOString(), level: 'error',
+      operation: 'storage', code: 'STO-FAILED', message: 'Arquivo /srv/secret/private.txt'
+    };
+    const filename = path.join(folder, 'reader.jsonl');
+    await fs.promises.writeFile(filename, JSON.stringify(event) + '\n');
+    const { entries } = await logger.list();
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].message, 'Arquivo [PATH]');
+    assert.equal((await fs.promises.readFile(filename, 'utf8')).includes('/srv/secret'), false);
+    const out = path.join(root, 'redacted.txt');
+    assert.equal((await logger.exportReport(out)).saved, true);
+    assert.equal((await fs.promises.readFile(out, 'utf8')).includes('/srv/secret'), false);
+  });
+});
+
+test('ignores malformed disk entries with untrusted IDs and types', async () => {
+  await withLogger(async (logger, folder) => {
+    await fs.promises.mkdir(folder, { recursive: true });
+    const invalid = {
+      id: 'bad\\nentry', at: new Date().toISOString(), level: 'error',
+      operation: 'backup', code: 'BKP-TEST', message: 'abc',
+    };
+    await fs.promises.writeFile(path.join(folder, 'reader.jsonl'), JSON.stringify(invalid) + '\n');
+    assert.equal((await logger.list()).entries.length, 0);
+  });
+});
+
+test('log directory and exported reports use private POSIX permissions', async t => {
+  if (process.platform === 'win32') return t.skip();
+  await withLogger(async (logger, folder, root) => {
+    await logger.record({ code: 'SEC-TEST', operation: 'app', message: 'test' });
+    assert.equal((await fs.promises.stat(folder)).mode & 0o777, 0o700);
+    assert.equal((await fs.promises.stat(path.join(folder, 'reader.jsonl'))).mode & 0o777, 0o600);
+    const report = path.join(root, 'private-report.txt');
+    assert.equal((await logger.exportReport(report)).saved, true);
+    assert.equal((await fs.promises.stat(report)).mode & 0o777, 0o600);
+  });
+});
+
+test('large error bursts are bounded and do not crash the logger', async () => {
+  await withLogger(async logger => {
+    const sent = await Promise.all(Array.from({ length: 1024 }, (_, n) =>
+      logger.record({ code: 'SRC-ERROR', operation: 'source', message: `issue ${n}` })));
+    assert.ok(sent.some(item => item === null));
+    assert.ok(sent.some(item => item && item.code === 'SRC-ERROR'));
+    const listed = await logger.list();
+    assert.ok(listed.entries.length > 0);
+    assert.ok(listed.usedBytes <= listed.limitBytes);
   });
 });
