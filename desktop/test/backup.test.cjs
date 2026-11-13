@@ -346,3 +346,29 @@ test('a wrapped Android backup still rejects archives required by selected secti
   wrapped.addFile('data.zip', data.toBuffer());
   assert.throws(() => parseBackup(wrapped.toBuffer()), /plugins.zip/);
 });
+
+test('desktop repositories and plugin storage round-trip in Android-compatible v2', () => {
+  const state = fixture();
+  state.repositories = ['https://example.org/repo.json'];
+  state.pluginStorage = { 'plugin_db:test_DB_saved': '{"value":"saved"}' };
+  const zip = new AdmZip(createBackup(state));
+  const manifest = JSON.parse(zip.readAsText('Version.json'));
+  assert.deepEqual(manifest.desktopState.repositories, state.repositories);
+  assert.deepEqual(manifest.desktopState.pluginStorage, state.pluginStorage);
+  assert.deepEqual(parseBackup(zip.toBuffer()).state, state);
+});
+
+test('desktop novel-count marker detects a missing book in the ZIP', () => {
+  const zip = new AdmZip(createBackup(fixture()));
+  zip.deleteFile('NovelAndChapters/7.json');
+  assert.throws(() => parseBackup(zip.toBuffer()), /Backup incompleto/);
+});
+
+test('metadata-only ZIP reports Android download section as absent and preserves progress', () => {
+  const zip = new AdmZip(createBackup(fixture(), { downloadedFiles: false }));
+  assert.equal(JSON.parse(zip.readAsText('Version.json')).sections.downloadedFiles, false);
+  assert.equal(zip.getEntry('novel-files.zip'), null);
+  const parsed = parseBackup(zip.toBuffer());
+  assert.equal(parsed.state.novels[0].chapters[0].isDownloaded, false);
+  assert.equal(parsed.state.novels[0].chapters[0].progress, 0.4);
+});
