@@ -14,8 +14,6 @@ import DesktopErrorBoundary from './components/DesktopErrorBoundary';
 import {
   hydrate,
   snapshot,
-  nextId,
-  nextChapterId,
   fileKey,
   loadedPages,
   nextNovelPage,
@@ -24,11 +22,9 @@ import { errorText } from './sourceRuntime';
 import {
   loadPlugin,
   reloadInstalledPlugins,
-  fetchNovel,
   cancelSourceOperations,
 } from './sourceClient';
 import { initializeDesktopPlugins as initializeInstalledPlugins } from './sources';
-import { withSourceDeadline } from './sourceGuards.cjs';
 import { INSTALLED_PLUGINS_KEY } from '../vendor/lnreader/src/plugins/constants';
 import { defaultTheme } from '../vendor/lnreader/src/theme/md3/defaultTheme';
 import Settings from './features/settings/Settings';
@@ -48,14 +44,12 @@ import Library from './features/library/Library';
 import { getErrorChainMessages } from '../vendor/lnreader/src/utils/error';
 import {
   validateSourceItems,
-  mergeChapters,
   chapterPercent,
   recordProgress,
   chapterOrdinals,
   chapterReleaseLabel,
   chapterDirection,
   readingChapters,
-  validateNovelDetails,
 } from './domain.cjs';
 import { readerProgress, pageAmplitude } from './domain/readerPaging.cjs';
 import { readerHideDelayMilliseconds } from './domain/readerChromeDelay.cjs';
@@ -66,6 +60,7 @@ import { createChapterActions } from './features/reader/chapterActions';
 import { createLibraryActions } from './features/library/libraryActions';
 import { createNovelPagingActions } from './features/reader/novelPagingActions';
 import { createDownloadActions } from './features/downloads/downloadActions';
+import { createNovelActions } from './features/library/novelActions';
 
 // As paletas do app misturam `rgb(...)`, `#RRGGBB` e `rgba(...)`.
 const isColor = (value) =>
@@ -372,92 +367,9 @@ function App() {
     setLoadingMore, setPageError, setHasMore, setResults,
     setSource, setNovelQuery, setView, setSourceOptions, setSourceFilters,
   });
-  const openNovel = async (item, pluginId) => {
-    const existing = current.current.novels.find(
-      (n) => n.path === item.path && n.pluginId === pluginId,
-    );
-    if (existing) {
-      setNovelId(existing.id);
-      setView('novel');
-      return;
-    }
-    const plugin = await loadPlugin(pluginId);
-    if (!plugin) throw new Error('Fonte não instalada');
-    const detail = validateNovelDetails(
-      await withSourceDeadline(() => fetchNovel(pluginId, item.path)),
-    );
-    if (!detail || !Array.isArray(detail.chapters))
-      throw new Error(
-        'A fonte não retornou os detalhes desta obra. Atualize o plugin e tente novamente.',
-      );
-    const id = nextId(current.current.novels);
-    const firstChapterId = nextChapterId(current.current.novels);
-    const alreadyOpened = current.current.novels.find(
-      (book) => book.path === item.path && book.pluginId === pluginId,
-    );
-    if (alreadyOpened) {
-      setNovelId(alreadyOpened.id);
-      setView('novel');
-      return;
-    }
-    const created = {
-      ...detail,
-      name: detail.name || item.name,
-      cover: detail.cover || item.cover,
-      id,
-      pluginId,
-      path: item.path,
-      inLibrary: false,
-      chapters: mergeChapters([], detail.chapters, id, firstChapterId),
-    };
-    update({
-      ...current.current,
-      novels: [...current.current.novels, created],
-    });
-    setNovelId(id);
-    setView('novel');
-  };
-  const changeNovel = (changed) =>
-    update({
-      ...current.current,
-      novels: current.current.novels.map((n) =>
-        n.id === changed.id ? changed : n,
-      ),
-    });
-  const changeChapterRows = (bookId, ids, patch) => {
-    if (
-      pendingProgress.current?.bookId === bookId &&
-      ids.includes(pendingProgress.current.itemId)
-    ) {
-      pendingProgress.current = null;
-      clearTimeout(progressTimer.current);
-    }
-    const book = current.current.novels.find((item) => item.id === bookId);
-    const chosen = new Set(ids);
-    if (book)
-      changeNovel({
-        ...book,
-        chapters: book.chapters.map((chapter) =>
-          chosen.has(chapter.id) ? { ...chapter, ...patch } : chapter,
-        ),
-      });
-  };
-  const removeHistory = (entries) => {
-    const chosen = new Set(
-      entries.map((entry) => `${entry.novelId}:${entry.chapterId}`),
-    );
-    update({
-      ...current.current,
-      novels: current.current.novels.map((book) => ({
-        ...book,
-        chapters: book.chapters.map((chapter) =>
-          chosen.has(`${book.id}:${chapter.id}`)
-            ? { ...chapter, readTime: null }
-            : chapter,
-        ),
-      })),
-    });
-  };
+  const { openNovel, changeNovel, changeChapterRows, removeHistory } = createNovelActions({
+    current, update, pendingProgress, progressTimer, setNovelId, setView,
+  });
   const { deleteDownloads, downloadChapters, startDownloads } = createDownloadActions({
     downloading, cancelDownload, setNotice, setDownloadProgress, changeChapterRows,
   });
