@@ -62,23 +62,10 @@ test('background backup preserves library/progress despite damaged files and ret
     filename,
     contentDirectory: store.directory,
   });
-  assert.equal(exported.ok, true);
-  assert.equal(exported.result.missingCount, 2);
-  const parsed = parseBackup(fs.readFileSync(filename));
-  assert.equal(parsed.state.novels[0].chapters[0].isDownloaded, true);
-  assert.equal(parsed.state.novels[0].chapters[1].isDownloaded, false);
-  assert.equal(parsed.state.novels[0].chapters[1].progress, 50);
-  const imported = await job({
-    action: 'import',
-    filename,
-    contentDirectory: store.directory,
-  });
-  assert.equal(imported.ok, true);
-  assert.ok(
-    Object.values(imported.restored.state.files).every(value =>
-      value.startsWith('@file:'),
-    ),
-  );
+  assert.equal(exported.ok, false);
+  assert.match(exported.message, /2 arquivo\(s\) ausente\(s\)/);
+  assert.equal(fs.existsSync(filename), false);
+  assert.equal(state.novels[0].chapters[1].progress, 50);
 });
 
 test('repeated export/import keeps bytes, metadata and existing content blobs unchanged', async t => {
@@ -130,4 +117,35 @@ test('an invalid export leaves the existing backup intact and does not leave a p
   assert.equal(rejected.ok, false);
   assert.deepEqual(fs.readFileSync(filename), original);
   assert.equal(fs.existsSync(filename + '.tmp'), false);
+});
+
+test('metadata-only automatic export keeps covers and reading progress', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-metadata-only-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const store = new DiskFiles(path.join(root, 'content'));
+  const state = {
+    ...emptyState(),
+    novels: [{
+      id: 2, pluginId: 'source', path: '/book', name: 'Book',
+      chapters: [{
+        id: 3, novelId: 2, name: 'Chapter', path: '/chapter',
+        isDownloaded: true, progress: 85,
+      }],
+    }],
+    files: store.import({
+      'Novels/source/2/3/index.html': Buffer.from('<p>offline</p>').toString('base64'),
+      'Novels/source/2/cover.png': Buffer.from('cover').toString('base64'),
+    }),
+  };
+  const filename = path.join(root, 'metadata.zip');
+  const exported = await job({
+    action: 'export', state, includeDownloads: false,
+    filename, contentDirectory: store.directory,
+  });
+  assert.equal(exported.ok, true);
+  const parsed = parseBackup(fs.readFileSync(filename));
+  assert.equal(parsed.sections.downloadedFiles, false);
+  assert.equal(parsed.state.files['Covers/2'], Buffer.from('cover').toString('base64'));
+  assert.equal(parsed.state.novels[0].chapters[0].isDownloaded, false);
+  assert.equal(parsed.state.novels[0].chapters[0].progress, 85);
 });
