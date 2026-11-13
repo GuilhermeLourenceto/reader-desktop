@@ -291,6 +291,13 @@ function inspect(directory, budget) {
 async function copyEntry(entry, destination, limit, progress, returnBuffer = false) {
   if (entry.uncompressedSize > limit)
     throw new Error('Entrada ZIP excede o limite individual de segurança');
+  if (destination && typeof fs.statfsSync === 'function') {
+    const space = fs.statfsSync(path.dirname(destination));
+    const free = BigInt(space.bavail) * BigInt(space.bsize);
+    const required = BigInt(entry.uncompressedSize) + 128n * 1024n * 1024n;
+    if (required > free)
+      throw new Error('Espaço livre insuficiente para restaurar este backup');
+  }
   let size = 0, crc = 0;
   const hash = createHash('sha256');
   const chunks = [];
