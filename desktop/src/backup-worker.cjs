@@ -40,11 +40,6 @@ try {
         `Backup não exportado: ${missing.length} arquivo(s) ausente(s) ou corrompido(s). ` +
         'O backup anterior foi preservado.',
       );
-    const missingChapters = new Set(
-      missing
-        .filter(name => name.startsWith('Novels/'))
-        .map(name => name.split('/').slice(0, 4).join('/') + '/'),
-    );
     const full = {
       ...workerData.state,
       files: exported,
@@ -56,16 +51,12 @@ try {
             includeDownloads && chapter.isDownloaded &&
               Object.hasOwn(exported, prefix + 'index.html'),
           );
-          const missingAssets = missingChapters.has(prefix);
+          const cached = includeDownloads ? chapter.desktopAssetsCached : false;
           if (chapter.isDownloaded === downloaded &&
-              (!missingAssets || chapter.desktopAssetsCached === false))
-            return chapter;
+              chapter.desktopAssetsCached === cached) return chapter;
           changed = true;
-          return {
-            ...chapter,
-            isDownloaded: downloaded,
-            ...(missingAssets ? { desktopAssetsCached: false } : {}),
-          };
+          return { ...chapter, isDownloaded: downloaded,
+            desktopAssetsCached: cached };
         });
         return changed ? { ...novel, chapters } : novel;
       }),
