@@ -127,12 +127,35 @@ function parseBackup(
     formatVersion === 2 ? version.sections : undefined,
   );
   const state = emptyState();
+  // Optional Reader Desktop metadata in the original Android v2 manifest.
+  if (version.desktopState !== undefined) {
+    const value = version.desktopState;
+    if (
+      !value || typeof value !== 'object' || Array.isArray(value) ||
+      !Array.isArray(value.repositories) ||
+      value.repositories.some(url => typeof url !== 'string') ||
+      !value.pluginStorage || typeof value.pluginStorage !== 'object' ||
+      Array.isArray(value.pluginStorage) ||
+      Object.entries(value.pluginStorage).some(
+        ([key, text]) => !key.startsWith('plugin_db:') || typeof text !== 'string',
+      ) ||
+      (value.progressUnit !== undefined && value.progressUnit !== 'percent')
+    ) throw new Error('Dados do Reader Desktop inválidos no backup');
+    state.repositories = value.repositories;
+    state.pluginStorage = value.pluginStorage;
+    state.progressUnit = value.progressUnit || 'percent';
+  }
   if (sections.library) {
     const novelEntries = [...entries].filter(
       ([name]) =>
         name.startsWith(`${BackupEntryName.NOVEL_AND_CHAPTERS}/`) &&
         name.endsWith('.json'),
     );
+    if (
+      version.desktopNovelCount !== undefined &&
+      (!Number.isSafeInteger(version.desktopNovelCount) ||
+        version.desktopNovelCount !== novelEntries.length)
+    ) throw new Error('Backup incompleto: quantidade de obras divergente');
     if (!entries.has(BackupEntryName.CATEGORY))
       missingSections.push('categories');
     const ids = new Set();
@@ -227,7 +250,7 @@ function parseBackup(
   validateState(state);
   return { state, sections, missingSections };
 }
-function createBackup(state) {
+function createBackup(state, { downloadedFiles = true } = {}) {
   const bytes = value =>
     Buffer.isBuffer(value) ? value : Buffer.from(value, 'base64');
   const { files, ...metadata } = state;
@@ -238,6 +261,7 @@ function createBackup(state) {
   let entryCount = state.novels.length + 8;
   for (const [name, value] of Object.entries(files)) {
     safePath(name);
+    if (!downloadedFiles && name.startsWith('Novels/')) continue;
     size += Buffer.isBuffer(value)
       ? value.length
       : Buffer.byteLength(value, 'base64');
@@ -255,7 +279,13 @@ function createBackup(state) {
   addJSON(BackupEntryName.VERSION, {
     appVersion: require('../package.json').version,
     formatVersion: 2,
-    sections: resolveBackupOptions(),
+    sections: resolveBackupOptions({ downloadedFiles }),
+    desktopState: {
+      repositories: state.repositories || [],
+      pluginStorage: state.pluginStorage || {},
+      progressUnit: state.progressUnit || 'percent',
+    },
+    desktopNovelCount: state.novels.length,
     // Backwards-compatible, optional metadata. Preserve exactly the user's
     // library ordering instead of relying on ZIP directory enumeration.
     desktopNovelOrder: state.novels.map(novel => novel.id),
@@ -264,15 +294,12 @@ function createBackup(state) {
   for (const novel of state.novels)
     addJSON(`${BackupEntryName.NOVEL_AND_CHAPTERS}/${novel.id}.json`, {
       ...novel,
-      chapters: novel.chapters.map(chapter =>
-        chapter.desktopProgressUnit
-          ? {
-              ...chapter,
-              progress: chapterPercent(chapter),
-              desktopProgressUnit: 'percent',
-            }
-          : chapter,
-      ),
+      chapters: novel.chapters.map(chapter => {
+        const saved = chapter.desktopProgressUnit
+          ? { ...chapter, progress: chapterPercent(chapter), desktopProgressUnit: 'percent' }
+          : chapter;
+        return downloadedFiles ? saved : { ...saved, isDownloaded: false };
+      }),
     });
   addJSON(BackupEntryName.CATEGORY, state.categories);
   addJSON(BackupEntryName.SETTING, state.settings);
@@ -281,6 +308,7 @@ function createBackup(state) {
     ['Plugins/', ZipBackupName.PLUGINS, groups.plugins],
     ['Novels/', ZipBackupName.NOVEL_FILES, groups.novels],
   ]) {
+    if (archive === ZipBackupName.NOVEL_FILES && !downloadedFiles) continue;
     const nested = new AdmZip();
     for (const [name, content] of group) {
       const relativeName = name.slice(prefix.length);
