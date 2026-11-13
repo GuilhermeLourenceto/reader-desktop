@@ -604,7 +604,7 @@ app
             })
           : ui('Restaurar seções selecionadas do backup?'),
         detail: ui(
-          'As seções presentes no backup substituirão os dados atuais. Uma cópia do estado anterior será salva como before-restore.json na pasta de dados do aplicativo.',
+          'Obras e fontes serão mescladas com as atuais, sem apagar os capítulos offline. O tema, as cores e a pasta de backups do computador serão mantidos. Uma cópia anterior será salva como before-restore.json.',
         ) + missingInfo,
       });
       if (confirmation.response !== 1) return null;
@@ -612,6 +612,12 @@ app
         state,
         restored,
         files => diskFiles.import(files),
+        (_name, reference, replacements) => {
+          let html = diskFiles.read(reference).toString('utf8');
+          for (const { from, to } of replacements)
+            html = html.split(from).join(to);
+          return diskFiles.write(Buffer.from(html, 'utf8'));
+        },
       );
       // A full no-op restore should not rewrite library.json or its recovery
       // copy, reload the UI, or replace a useful before-restore.json.
