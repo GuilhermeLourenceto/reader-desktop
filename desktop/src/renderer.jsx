@@ -8,9 +8,9 @@ import React, {
   useSyncExternalStore,
 } from 'react';
 import { createRoot } from 'react-dom/client';
-import Icon from './Icon';
+import Icon from './components/Icon';
 import { getLocale, setLocale, subscribe } from './i18n.cjs';
-import DesktopErrorBoundary from './DesktopErrorBoundary';
+import DesktopErrorBoundary from './components/DesktopErrorBoundary';
 import {
   hydrate,
   snapshot,

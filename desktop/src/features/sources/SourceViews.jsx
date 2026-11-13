@@ -1,4 +1,4 @@
-import Icon from '../../Icon';
+import Icon from '../../components/Icon';
 import GlobalSearch from './GlobalSearch';
 import SourceFilters from './SourceFilters';
 import { fetchSourcePage } from '../../sourceRuntime';

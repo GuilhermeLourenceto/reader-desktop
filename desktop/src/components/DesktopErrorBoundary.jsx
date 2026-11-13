@@ -1,5 +1,5 @@
 import React from 'react';
-import { errorText } from './sourceRuntime';
+import { errorText } from '../sourceRuntime';
 
 export default class DesktopErrorBoundary extends React.Component {
   state = { error: null };
