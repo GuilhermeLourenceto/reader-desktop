@@ -175,10 +175,10 @@ Windows e Linux pelo teste gráfico com 10 mil obras/200 mil capítulos.
 - Importação do formato antigo com `download.zip` contendo `Plugins/` e `Novels/`.
 - Importação de backups Android organizados em uma pasta externa com
   `data.zip`, `plugins.zip` e `novel-files.zip`.
-- As seções presentes no backup **substituem** suas equivalentes locais;
-  a restauração não mescla bibliotecas. IDs são preservados para manter arquivos,
-  capítulos e categorias associados. Confirmação ocorre depois da leitura e
-  validação do arquivo. A cópia `before-restore.json` permite recuperação manual.
+- A restauração **mescla** obras, capítulos, categorias e fontes, preserva
+  downloads locais existentes e remapeia IDs em conflito. Tema, paleta e
+  configurações locais de backup não são substituídos. A cópia
+  `before-restore.json` permite recuperação manual.
 - Configurações Android sem equivalente desktop são preservadas na exportação;
   somente o tamanho de fonte desktop é aplicado pela interface nesta etapa.
 - Imagens já contidas em backups Android são preservadas e podem ser exibidas
@@ -201,8 +201,13 @@ capítulo concluída. A chamada de `popularNovels` agora envia as opções de
 filtros esperadas pelo Android, e a ponte HTTP preserva a URL final, inclusive
 em redirecionamentos. O teste local cobre esse contrato, redirecionamento e
 envio de corpo POST em UTF-8.
-Backups importados têm limite de 512 MB compactados e 512 MB descompactados
-no total, além de 100 mil entradas. O processamento acontece em segundo plano.
+Backups são importados e exportados por fluxo com suporte a ZIP64 (mais de 4 GiB),
+sem limite fixo de 512 MiB para o tamanho total. Permanecem as proteções contra
+caminhos perigosos, arquivos duplicados, expansão suspeita, falta de espaço em
+disco, mais de 100 mil entradas e arquivos offline individuais maiores que 2 GiB.
+Metadados JSON são limitados separadamente para proteger a memória. Os jobs
+são executados em worker e interrompidos apenas após cinco minutos sem progresso;
+backups grandes podem demorar e ocupar espaço temporário em disco.
 O resultado da revisão de persistência, memória, rede e fontes está em
 [`docs/REVISAO-ESTABILIDADE.md`](./docs/REVISAO-ESTABILIDADE.md), incluindo testes e limitações.
 
