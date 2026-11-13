@@ -226,18 +226,18 @@ test('reader chrome delay accepts 1 to 10 seconds and remains optional for older
   }
 });
 
-test('cancelled import removes only its new blobs and retains existing library files', t => {
+test('cancelled import removes only its new blobs and retains existing library files', async t => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-import-cancel-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const store = new DiskFiles(root);
   const existing = store.write(Buffer.from('existing offline chapter'));
   const incoming = store.write(Buffer.from('new imported chapter'));
   const unrelated = store.write(Buffer.from('unrelated preserved file'));
-  store.cleanupImported([
+  await store.cleanupImported([
     incoming.slice(6), existing.slice(6), '../../../invalid', incoming.slice(6),
   ], { 'Novels/site/1/2/index.html': existing });
   assert.equal(fs.existsSync(path.join(root, incoming.slice(6))), false);
   assert.equal(store.read(existing).toString(), 'existing offline chapter');
   assert.equal(store.read(unrelated).toString(), 'unrelated preserved file');
-  assert.doesNotThrow(() => store.cleanupImported([incoming.slice(6)], {}));
+  await assert.doesNotReject(store.cleanupImported([incoming.slice(6)], {}));
 });

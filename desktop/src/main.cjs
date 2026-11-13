@@ -633,7 +633,7 @@ app
         // A large Android ZIP may contain gigabytes of offline chapters.
         // If the user cancels, or restoration fails, remove only blobs
         // introduced by this import and not referenced by the current library.
-        diskFiles.cleanupImported(restored.newBlobHashes, state.files);
+        await diskFiles.cleanupImported(restored.newBlobHashes, state.files);
       }
     });
     const backupTimer = setInterval(() => void automaticBackup.check(), 5 * 60 * 1000);

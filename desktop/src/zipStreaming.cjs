@@ -9,7 +9,7 @@ const { Readable, Transform } = require('node:stream');
 const { pipeline } = require('node:stream/promises');
 const unzipper = require('unzipper');
 const { safePath, parseBackupEntries } = require('./backup.cjs');
-const { validateState } = require('./storage.cjs');
+const { validateState, DiskFiles } = require('./storage.cjs');
 const { chapterPercent } = require('./domain.cjs');
 const { BackupEntryName, ZipBackupName } = require('../vendor/lnreader/src/services/backup/types.ts');
 const { resolveBackupOptions } = require('../vendor/lnreader/src/services/backup/options.ts');
@@ -466,13 +466,12 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
     completed = true;
     return restored;
   } finally {
-    if (!completed)
-      await Promise.all([...importedNewHashes].map(hash =>
-        fs.promises.unlink(path.join(contentDirectory, hash)).catch(error => {
-          if (error.code !== 'ENOENT') throw error;
-        }),
-      ));
-    await fs.promises.rm(workspace, { recursive: true, force: true });
+    try {
+      if (!completed)
+        await new DiskFiles(contentDirectory).cleanupImported([...importedNewHashes]);
+    } finally {
+      await fs.promises.rm(workspace, { recursive: true, force: true });
+    }
   }
 }
 

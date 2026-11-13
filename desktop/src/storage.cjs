@@ -90,18 +90,26 @@ class DiskFiles {
   }
   // Clean only blobs first created by the cancelled import, never the
   // existing library or unrelated files. Hashes are not filesystem paths.
-  cleanupImported(hashes, retainedFiles = {}) {
+  async cleanupImported(hashes, retainedFiles = {}) {
     const retained = new Set(Object.values(retainedFiles)
       .filter(isReference).map(value => value.slice(6)));
-    for (const hash of new Set(hashes || [])) {
-      if (typeof hash !== 'string' || !/^[a-f0-9]{64}$/.test(hash) ||
-          retained.has(hash)) continue;
-      try {
-        fs.unlinkSync(path.join(this.directory, hash));
-      } catch (error) {
-        if (error.code !== 'ENOENT') throw error;
+    const pending = [...new Set(hashes || [])].filter(hash =>
+      typeof hash === 'string' && /^[a-f0-9]{64}$/.test(hash) &&
+      !retained.has(hash),
+    );
+    // Limit filesystem concurrency rather than blocking Electron's main thread.
+    let index = 0;
+    const remove = async () => {
+      while (index < pending.length) {
+        const hash = pending[index++];
+        try {
+          await fs.promises.unlink(path.join(this.directory, hash));
+        } catch (error) {
+          if (error.code !== 'ENOENT') throw error;
+        }
       }
-    }
+    };
+    await Promise.all(Array.from({ length: Math.min(8, pending.length) }, remove));
   }
   prune(files, previousFiles = {}) {
     const retained = new Set(
