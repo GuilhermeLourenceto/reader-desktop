@@ -225,3 +225,42 @@ test('Android legacy ZIP without Version.json is still importable', async t => {
   assert.match(restored.state.files['Novels/site/5/6/index.html'], /^@file:/);
   assert.equal(restored.sections.downloadedFiles, true);
 });
+
+test('partial Android backup ignores invalid JSON in unselected sections', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-android-ignore-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const file = androidZip(root, {
+    'Version.json': { appVersion: '2.1.4', formatVersion: 2,
+      sections: { library: false, settings: true, plugins: false, downloadedFiles: false } },
+    'Setting.json': { THEME_MODE: 'dark' },
+    'NovelAndChapters/123.json': Buffer.from('{invalid and unselected}'),
+    'Plugins.json': Buffer.from('{invalid and unselected}'),
+  });
+  const contentDirectory = path.join(root, 'content');
+  fs.mkdirSync(contentDirectory);
+  const restored = await importBackup({ filename: file, contentDirectory });
+  assert.deepEqual(restored.state.novels, []);
+  assert.deepEqual(restored.state.plugins, []);
+  assert.equal(restored.state.settings.THEME_MODE, 'dark');
+});
+
+test('malformed legacy Version.json uses Android v1 fallback when download.zip exists', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-android-oldmanifest-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const files = new AdmZip();
+  files.addFile('Novels/source/1/2/index.html', Buffer.from('Old downloaded chapter'));
+  const file = androidZip(root, {
+    'Version.json': Buffer.from('malformed legacy manifest'),
+    'NovelAndChapters/1.json': { id: 1, name: 'Legacy book',
+      pluginId: 'source', path: '/book', chapters: [{ id: 2, name: 'Chapter',
+        path: '/chapter', isDownloaded: true }] },
+    'Category.json': [], 'Setting.json': {}, 'Plugins.json': [],
+    'download.zip': files.toBuffer(),
+  });
+  const contentDirectory = path.join(root, 'content');
+  fs.mkdirSync(contentDirectory);
+  const restored = await importBackup({ filename: file, contentDirectory });
+  assert.equal(restored.state.novels.length, 1);
+  assert.equal(restored.state.novels[0].chapters[0].isDownloaded, true);
+  assert.match(restored.state.files['Novels/source/1/2/index.html'], /^@file:/);
+});
