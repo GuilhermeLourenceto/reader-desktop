@@ -98,6 +98,14 @@ await build({
   external: ['adm-zip', 'unzipper'],
   nodePaths: [resolve('node_modules')],
 });
+await build({
+  entryPoints: ['src/zipStreaming.cjs'],
+  bundle: true,
+  platform: 'node',
+  outfile: 'dist/zipStreaming.cjs',
+  external: ['adm-zip', 'unzipper'],
+  nodePaths: [resolve('node_modules')],
+});
 for (const file of ['index.html', 'preload.cjs']) {
   await copyFile(`src/${file}`, `dist/${file}`);
 }
