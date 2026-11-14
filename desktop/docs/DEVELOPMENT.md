@@ -1,6 +1,6 @@
 # Guia de desenvolvimento do Reader Desktop
 
-Este guia ajuda a localizar o código, reproduzir mudanças e preparar pull requests. O aplicativo é independente do Android SDK e usa **Node.js 24, React 19, Electron e esbuild**.
+Este guia ajuda a localizar o código, reproduzir mudanças e preparar pull requests. O aplicativo é independente do Android SDK e usa **Node.js 24, React 19, Electron e esbuild**. A versão declarada no código é **0.4.5 Beta**; alterações na `main` podem ser posteriores às notas de release.
 
 ## Preparar o ambiente
 
@@ -64,7 +64,7 @@ npm run test:visual
 npm run test:journeys
 ```
 
-Os testes de interface podem precisar de um display gráfico e de mais tempo. Os testes e o GitHub Actions podem apresentar falhas ambientais; nunca marque uma verificação como aprovada sem ter executado o comando correspondente. Registre o erro e o sistema operacional no PR.
+Os testes de interface podem precisar de um display gráfico e de mais tempo. Os testes e o GitHub Actions podem apresentar falhas ambientais; nunca marque uma verificação como aprovada sem ter executado o comando correspondente. Em 13/11/2026, os jobs recentes encerraram sem passos executados após poucos segundos, então as mudanças posteriores à release ainda precisam de validação completa. Registre o erro e o sistema operacional no PR.
 
 ## Checklist por área
 

@@ -1,6 +1,8 @@
-name: Near-512MiB backup stress (Windows and Linux)
+name: Legacy near-512MiB backup stress (Windows and Linux)
 
-# Explicit backup-volume validation. No release or installer and no user data.
+# Exercises the legacy in-memory backup limit with synthetic data.
+# The ZIP64 streaming import/export path does not have this global 512MiB cap.
+# No release or installer and no user data.
 on:
   push:
     branches: [main, linux/prepare-packaging-and-tests]
@@ -45,6 +47,6 @@ jobs:
         run: npm ci
       - name: Build temporary test code, not an installer
         run: npm run build
-      - name: Test near-format-cap backup, 2 imports, SHA256 validation and oversize rejection
+      - name: Test legacy near-cap backup, 2 imports, SHA256 and oversize rejection
         timeout-minutes: 19
         run: node test/heavy-backup-stress.cjs --profile=near-limit

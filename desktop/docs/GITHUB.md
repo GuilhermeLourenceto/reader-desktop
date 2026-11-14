@@ -28,7 +28,13 @@ npm run build
 npm test
 npm run test:smoke
 npm run test:reader
-npm run dist:win
+```
+
+Para gerar instaladores, execute no sistema correspondente:
+
+```sh
+npm run dist:win    # Windows
+npm run dist:linux  # Linux
 ```
 
 O Linux utiliza `npm run dist:linux` no Linux e ainda requer

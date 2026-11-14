@@ -21,8 +21,8 @@ desktop/
 │   │   ├── history/            # Histórico de leitura
 │   │   ├── settings/           # Configurações e diagnósticos
 │   │   └── onboarding/         # Primeiro acesso e traduções do assistente
-│   ├── domain/                 # Regras puras de biblioteca, leitura e fontes
-│   ├── state/                  # Hidratação e snapshot da biblioteca
+│   ├── domain/                 # Regras de biblioteca, novels, leitura e fontes
+│   ├── state/                  # Hidratação, snapshot e preferências padrão
 │   ├── infrastructure/         # Política de rede e diagnósticos
 │   ├── services/               # Adaptações de APIs do navegador
 │   ├── i18n/                   # Catálogo original e tabelas de tradução
@@ -43,7 +43,7 @@ Os arquivos de entrada `main.cjs`, `preload.cjs`, `renderer.jsx` e `plugin-worke
 2. `main.cjs` valida as chamadas IPC e controla janelas, rede e disco.
 3. As extensões executam em Web Workers; `sourceClient.js` aplica limites e encaminha operações permitidas.
 4. `storage.cjs` mantém metadados em JSON e conteúdo imutável em arquivos SHA-256.
-5. A importação e exportação ZIP são processadas por workers, com streaming e verificações de integridade.
+5. A importação e exportação ZIP são processadas por workers, com streaming/ZIP64 e verificações de integridade. O módulo `backup.cjs` mantém um limite de 512 MiB em rotinas legadas em memória; ele **não é** um teto geral do caminho principal `zipStreaming.cjs`.
 6. `renderer.jsx` coordena as telas, mas delega operações complexas às funcionalidades:
    - `features/downloads/downloadActions.js`: downloads, remoção e progresso da fila.
    - `features/library/libraryActions.js`: operações em lote da biblioteca.
@@ -68,4 +68,4 @@ O estado React ainda mantém metadados da biblioteca em memória; `renderer.jsx`
 
 ## Branch
 
-A `main` é a branch de desenvolvimento e distribuição do Reader Desktop. O histórico preserva as versões anteriores e o código Android antigo.
+A `main` concentra o desenvolvimento do Reader Desktop. A versão declarada no código é 0.4.5 Beta; commits posteriores à última versão documentada não são automaticamente releases ou builds testados. O histórico preserva o código Android antigo.

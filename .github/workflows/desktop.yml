@@ -1,13 +1,8 @@
 name: Desktop builds
 on:
   workflow_dispatch:
-    inputs:
-      include_linux:
-        description: 'Também compilar e testar Linux (port ainda pendente de validação)'
-        type: boolean
-        default: false
-  # Keep automatic Windows packaging on the published main branch only.
-  # The Linux development branch is deliberately not built on pushes.
+  # The current main matrix already includes Windows and Ubuntu.
+  # Manual runs are useful for diagnosing failures and obtaining artifacts.
   push:
     branches: [main]
     paths:
@@ -45,7 +40,7 @@ jobs:
 
   desktop-only:
     name: Standalone Desktop build (no Android files)
-    if: github.ref_name == 'seguranca-e-estabilidade' || github.ref_name == 'main' || github.event_name == 'pull_request'
+    if: github.ref_name == 'main' || github.event_name == 'pull_request'
     runs-on: windows-latest
     defaults:
       run:
@@ -196,7 +191,7 @@ jobs:
 
   user-journeys:
     name: 30 user journeys (Electron UI and backup stress)
-    if: github.ref_name == 'seguranca-e-estabilidade' || github.ref_name == 'main' || github.event_name == 'pull_request'
+    if: github.ref_name == 'main' || github.event_name == 'pull_request'
     runs-on: windows-latest
     permissions:
       contents: read

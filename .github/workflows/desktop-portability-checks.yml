@@ -1,6 +1,7 @@
 name: Windows + Linux code portability (no packages)
 
-# Tests only: does not build, package, publish, or upload artifacts.
+# Builds temporary test bundles and runs checks; does not package, publish,
+# or upload installation artifacts.
 on:
   push:
     branches: [linux/prepare-packaging-and-tests]

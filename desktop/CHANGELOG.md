@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## Em desenvolvimento na `main` (após o código 0.4.5 Beta)
+
+- Refatoração organizacional: componentes separados por funcionalidades em `src/features/`, regras em `src/domain/`, serialização e preferências em `src/state/` e política de rede/diagnósticos em `src/infrastructure/`.
+- Redução de `src/renderer.jsx` e extração de ações de downloads, leitor, biblioteca, navegação e atualização para módulos menores.
+- Guia de desenvolvimento, orientação de pull requests, testes de fronteiras arquiteturais e verificação de imports relativos.
+- Revisão da documentação pública para distinguir medições históricas, limites do backup legado, suporte a ZIP64 e estado atual da configuração de CI.
+
+**Status:** mudanças de desenvolvimento; sem novo número de versão, instalador certificado ou aprovação de CI nesta etapa. Consulte [o guia de desenvolvimento](docs/DEVELOPMENT.md).
+
 ## 0.4.5 Beta — biblioteca desktop, filtros, seleção e temas
 
 - Categorias no painel de filtro; removidas as abas redundantes da biblioteca.
