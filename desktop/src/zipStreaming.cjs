@@ -220,6 +220,7 @@ async function exportBackup({ state, contentDirectory, filename, includeDownload
           repositories: state.repositories || [],
           pluginStorage: state.pluginStorage || {},
           progressUnit: state.progressUnit || 'percent',
+          originalSettings: state.settings,
         },
         desktopNovelCount: state.novels.length,
         desktopNovelOrder: state.novels.map(novel => novel.id),

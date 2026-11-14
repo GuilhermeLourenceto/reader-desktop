@@ -674,7 +674,7 @@ app
             })
           : ui('Restaurar seções selecionadas do backup?'),
         detail: ui(
-          'Obras e fontes serão mescladas com as atuais, sem apagar os capítulos offline. O tema, as cores e a pasta de backups do computador serão mantidos. Uma cópia anterior será salva como before-restore.json.',
+          'Obras e fontes serão mescladas, preservando os downloads locais. Preferências Android compatíveis podem atualizar idioma, tema e leitura. Opções exclusivas do PC, como ocultar barras e a pasta de backup, serão mantidas. O estado anterior será salvo como before-restore.json se houver mudanças.',
         ) + missingInfo,
       });
       if (confirmation.response !== 1) return null;

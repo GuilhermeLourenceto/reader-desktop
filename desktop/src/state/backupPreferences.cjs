@@ -63,15 +63,22 @@ function fromAndroidPreferences(android) {
       result.desktopTheme = 'system';
   }
 
-  const themeId = androidPaletteId(android.APP_THEME_ID, mode);
-  if (themeId !== null) result.desktopPalette = paletteIds[themeId - 100];
+  // A custom Android accent changes the effective Material 3 palette.
+  // Desktop cannot reproduce it, so never claim the base palette is equivalent.
+  const customAccent = typeof android.CUSTOM_ACCENT_COLOR === 'string' &&
+    android.CUSTOM_ACCENT_COLOR.trim().length > 0;
+  if (!customAccent && !(mode === 'system' && amoled === true)) {
+    const themeId = androidPaletteId(android.APP_THEME_ID, mode);
+    if (themeId !== null) result.desktopPalette = paletteIds[themeId - 100];
+  }
 
-  const app = parseObject(android.APP_SETTINGS);
-  if (app) {
-    if (typeof app.incognitoMode === 'boolean')
-      result.desktopIncognito = app.incognitoMode;
-    if (typeof app.downloadedOnlyMode === 'boolean')
-      result.desktopDownloadedOnly = app.downloadedOnlyMode;
+  // These switches live in LIBRARY_SETTINGS, not APP_SETTINGS, in LNReader.
+  const library = parseObject(android.LIBRARY_SETTINGS);
+  if (library) {
+    if (typeof library.incognitoMode === 'boolean')
+      result.desktopIncognito = library.incognitoMode;
+    if (typeof library.downloadedOnlyMode === 'boolean')
+      result.desktopDownloadedOnly = library.downloadedOnlyMode;
   }
 
   const chapter = parseObject(android.CHAPTER_READER_SETTINGS);
@@ -101,7 +108,10 @@ function fromAndroidPreferences(android) {
 
 function toAndroidPreferences(settings) {
   if (!isObject(settings)) return settings;
-  const result = { ...settings };
+  // Native Android receives only its keys. Desktop-only values are stored
+  // losslessly in Version.json.desktopState.originalSettings instead.
+  const result = Object.fromEntries(Object.entries(settings)
+    .filter(([key]) => !key.startsWith('desktop')));
   const canUpdate = (key, supports) => !own(settings, key) || supports(settings[key]);
 
   if (supportedLocales.has(settings.desktopInterfaceLanguage) &&
@@ -125,6 +135,8 @@ function toAndroidPreferences(settings) {
 
   const paletteIndex = paletteIds.indexOf(settings.desktopPalette);
   if (paletteIndex >= 0 &&
+      !(typeof settings.CUSTOM_ACCENT_COLOR === 'string' &&
+        settings.CUSTOM_ACCENT_COLOR.trim()) &&
       canUpdate('APP_THEME_ID', value =>
         androidPaletteId(value, settings.THEME_MODE) !== null))
     result.APP_THEME_ID = 100 + paletteIndex;
@@ -144,7 +156,7 @@ function toAndroidPreferences(settings) {
       target[key] = value;
   };
 
-  mergeJson('APP_SETTINGS', (target, old) => {
+  mergeJson('LIBRARY_SETTINGS', (target, old) => {
     mergeValue(target, old, 'incognitoMode', settings.desktopIncognito,
       value => typeof value === 'boolean',
     );

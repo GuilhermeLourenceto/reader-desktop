@@ -387,13 +387,62 @@ test('desktop export writes known Android equivalents without erasing native-onl
   assert.equal(android.APP_LOCALE, 'pt-BR');
   assert.equal(android.THEME_MODE, 'dark');
   assert.equal(android.AMOLED_BLACK, true);
-  assert.equal(android.APP_THEME_ID, 104);
+  assert.equal(android.APP_THEME_ID, undefined, 'custom Android accent must not be replaced by a palette');
   assert.deepEqual(JSON.parse(android.APP_SETTINGS), { timeTrackingEnabled: false });
   assert.equal(android.CUSTOM_ACCENT_COLOR, '#fedcba');
-  assert.equal(android.desktopReaderAutoHide, false);
-  assert.equal(android.desktopReaderHideDelay, 6.2);
+  assert.equal('desktopReaderAutoHide' in android, false);
+  assert.equal('desktopReaderHideDelay' in android, false);
+  assert.equal(JSON.parse(zip.readAsText('Version.json')).desktopState.originalSettings.desktopReaderHideDelay, 6.2);
   const parsed = parseBackup(zip.toBuffer());
   assert.equal(parsed.isDesktopBackup, true);
   assert.equal(parsed.state.settings.APP_LOCALE, 'pt-BR');
   assert.equal(state.settings.APP_LOCALE, undefined, 'export cannot mutate live settings');
+});
+
+test('a Desktop backup keeps its original settings outside Android Setting.json', () => {
+  const state = fixture();
+  state.settings = {
+    desktopInterfaceLanguage: 'pt-BR',
+    desktopTheme: 'oled',
+    desktopPalette: 'lavender',
+    desktopReaderHideDelay: 7.5,
+    desktopReaderAutoHide: false,
+    LIBRARY_SETTINGS: JSON.stringify({ incognitoMode: true, sortOrder: 'recent' }),
+    CUSTOM_ACCENT_COLOR: '#123456',
+  };
+  const zip = new AdmZip(createBackup(state));
+  const android = JSON.parse(zip.readAsText('Setting.json'));
+  const version = JSON.parse(zip.readAsText('Version.json'));
+  assert.equal(Object.keys(android).some(k => k.startsWith('desktop')), false);
+  assert.deepEqual(version.desktopState.originalSettings, state.settings);
+  assert.deepEqual(parseBackup(zip.toBuffer()).state.settings, state.settings);
+  assert.deepEqual(JSON.parse(android.LIBRARY_SETTINGS), {
+    incognitoMode: true, sortOrder: 'recent',
+  });
+  // Original settings are retained even where a desktop approximation would differ.
+  assert.equal(android.CUSTOM_ACCENT_COLOR, '#123456');
+});
+
+test('a self-exported Desktop archive is a true no-op when restored locally', () => {
+  const { planRestore } = require('../src/restorePlan.cjs');
+  const state = fixture();
+  state.settings = {
+    desktopInterfaceLanguage: 'pt-BR',
+    desktopTheme: 'dark', desktopPalette: 'lavender',
+    desktopReaderAutoHide: false, desktopReaderHideDelay: 8,
+  };
+  const restored = parseBackup(createBackup(state));
+  assert.equal(restored.isDesktopBackup, true);
+  assert.deepEqual(restored.state.settings, state.settings);
+  const result = planRestore(state, restored);
+  assert.equal(result.changed, false);
+  assert.deepEqual(result.next, state);
+});
+
+test('rejects malformed optional original Desktop settings metadata', () => {
+  const zip = new AdmZip(createBackup(fixture()));
+  const manifest = JSON.parse(zip.readAsText('Version.json'));
+  manifest.desktopState.originalSettings = [];
+  zip.updateFile('Version.json', Buffer.from(JSON.stringify(manifest)));
+  assert.throws(() => parseBackup(zip.toBuffer()), /Reader Desktop inválidos/);
 });

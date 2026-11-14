@@ -36,7 +36,7 @@ test('an absent or unsupported Android preference never creates a Desktop defaul
     CUSTOM_ACCENT_COLOR: '#aabbcc',
     CHAPTER_READER_SETTINGS: '{bad json',
     CHAPTER_GENERAL_SETTINGS: '{"pageReader":"yes"}',
-    APP_SETTINGS: '{"incognitoMode":"false"}',
+    LIBRARY_SETTINGS: '{"incognitoMode":"false"}',
   }), {});
   assert.deepEqual(fromAndroidPreferences({
     APP_LOCALE: 'pt', THEME_MODE: 'system', AMOLED_BLACK: true,
@@ -46,7 +46,7 @@ test('an absent or unsupported Android preference never creates a Desktop defaul
 
 test('Android reader settings transfer only exact equivalents, never Desktop toolbar controls', () => {
   const source = {
-    APP_SETTINGS: JSON.stringify({ incognitoMode: true, downloadedOnlyMode: false,
+    LIBRARY_SETTINGS: JSON.stringify({ incognitoMode: true, downloadedOnlyMode: false,
       downloadNewChapters: true }),
     CHAPTER_READER_SETTINGS: JSON.stringify({
       textAlign: 'justify', fontFamily: 'noto-sans',
@@ -79,6 +79,7 @@ test('Desktop export provides only genuine Android equivalents', () => {
     desktopIncognito: true, desktopDownloadedOnly: false,
     desktopReaderAutoHide: false, desktopReaderHideDelay: 7.4,
     APP_SETTINGS: JSON.stringify({ timeTrackingEnabled: true }),
+    LIBRARY_SETTINGS: JSON.stringify({ sortOrder: 'DateAdded_DESC' }),
     CHAPTER_READER_SETTINGS: JSON.stringify({ customCSS: 'body{}' }),
   };
   const original = structuredClone(settings);
@@ -87,16 +88,17 @@ test('Desktop export provides only genuine Android equivalents', () => {
   assert.equal(exported.THEME_MODE, 'dark');
   assert.equal(exported.AMOLED_BLACK, true);
   assert.equal(exported.APP_THEME_ID, 104);
-  assert.deepEqual(JSON.parse(exported.APP_SETTINGS), {
-    timeTrackingEnabled: true, incognitoMode: true, downloadedOnlyMode: false,
+  assert.deepEqual(JSON.parse(exported.APP_SETTINGS), { timeTrackingEnabled: true });
+  assert.deepEqual(JSON.parse(exported.LIBRARY_SETTINGS), {
+    sortOrder: 'DateAdded_DESC', incognitoMode: true, downloadedOnlyMode: false,
   });
   assert.deepEqual(JSON.parse(exported.CHAPTER_READER_SETTINGS), {
     customCSS: 'body{}', textAlign: 'justify', fontFamily: 'noto-sans',
     lineHeight: 1.7, theme: '#292832', textColor: '#CCCCCC',
   });
   assert.deepEqual(JSON.parse(exported.CHAPTER_GENERAL_SETTINGS), { pageReader: true });
-  assert.equal(exported.desktopReaderAutoHide, false);
-  assert.equal(exported.desktopReaderHideDelay, 7.4);
+  assert.equal('desktopReaderAutoHide' in exported, false);
+  assert.equal('desktopReaderHideDelay' in exported, false);
   assert.deepEqual(settings, original);
 });
 
@@ -120,14 +122,14 @@ test('unrecognized Android values survive a Desktop export unchanged', () => {
   for (const key of ['APP_LOCALE','APP_THEME_ID','THEME_MODE','AMOLED_BLACK',
     'CUSTOM_ACCENT_COLOR','APP_SETTINGS','CHAPTER_READER_SETTINGS'])
     assert.deepEqual(exported[key], settings[key], key + ' must remain unchanged');
-  assert.equal(exported.desktopReaderAutoHide, true);
-  assert.equal(exported.desktopReaderHideDelay, 9.6);
+  assert.equal('desktopReaderAutoHide' in exported, false);
+  assert.equal('desktopReaderHideDelay' in exported, false);
 });
 
 test('absence of a Desktop counterpart never creates Android settings', () => {
   const values = { desktopReaderAutoHide: false, desktopReaderHideDelay: 3.4,
     CUSTOM_ACCENT_COLOR: '#ffbc00' };
-  assert.deepEqual(toAndroidPreferences(values), values);
+  assert.deepEqual(toAndroidPreferences(values), { CUSTOM_ACCENT_COLOR: '#ffbc00' });
 });
 
 test('invalid JSON and unrepresentable Android reader themes remain unchanged', () => {
@@ -160,4 +162,67 @@ test('desktop settings exported to Android can be mapped back without using fall
     desktopPagination: 'scroll',
     desktopReaderTheme: 'original-green',
   });
+});
+
+test('the Android library toggles are read only from LIBRARY_SETTINGS', () => {
+  assert.deepEqual(fromAndroidPreferences({
+    APP_SETTINGS: JSON.stringify({ incognitoMode: false, downloadedOnlyMode: false }),
+    LIBRARY_SETTINGS: JSON.stringify({
+      incognitoMode: true, downloadedOnlyMode: true, sortOrder: 'date',
+    }),
+  }), { desktopIncognito: true, desktopDownloadedOnly: true });
+  assert.deepEqual(fromAndroidPreferences({
+    APP_SETTINGS: JSON.stringify({ incognitoMode: true, downloadedOnlyMode: true }),
+  }), {});
+});
+
+test('export changes only real Android library preferences and preserves unrelated fields', () => {
+  const settings = {
+    APP_SETTINGS: JSON.stringify({ timeTrackingEnabled: false }),
+    LIBRARY_SETTINGS: JSON.stringify({ sortOrder: 'date', showUnreadBadges: true }),
+    desktopIncognito: false, desktopDownloadedOnly: true,
+  };
+  const updated = toAndroidPreferences(settings);
+  assert.equal(updated.APP_SETTINGS, settings.APP_SETTINGS);
+  assert.deepEqual(JSON.parse(updated.LIBRARY_SETTINGS), {
+    sortOrder: 'date', showUnreadBadges: true,
+    incognitoMode: false, downloadedOnlyMode: true,
+  });
+  assert.equal('desktopIncognito' in updated, false);
+  assert.equal('desktopDownloadedOnly' in updated, false);
+  assert.equal(settings.LIBRARY_SETTINGS, JSON.stringify({
+    sortOrder: 'date', showUnreadBadges: true,
+  }), 'the live Android preferences must remain untouched');
+});
+
+test('custom Android accent suppresses palette translation in either direction', () => {
+  const android = {
+    APP_THEME_ID: 104,
+    CUSTOM_ACCENT_COLOR: '#557799',
+    THEME_MODE: 'dark',
+  };
+  assert.deepEqual(fromAndroidPreferences(android), { desktopTheme: 'dark' });
+  const source = { ...android, desktopPalette: 'teal' };
+  const result = toAndroidPreferences(source);
+  assert.equal(result.APP_THEME_ID, 104);
+  assert.equal(result.CUSTOM_ACCENT_COLOR, '#557799');
+  assert.equal('desktopPalette' in result, false);
+  assert.equal(fromAndroidPreferences({
+    APP_THEME_ID: 104, THEME_MODE: 'system', AMOLED_BLACK: true,
+  }).desktopPalette, undefined);
+});
+
+test('unknown native preferences are retained while Desktop-only preferences leave Setting.json', () => {
+  const android = {
+    APP_LOCALE: 'pt',
+    LIBRARY_SETTINGS: JSON.stringify({ incognitoMode: 'legacy', sortOrder: 2 }),
+    CHAPTER_READER_SETTINGS: JSON.stringify({ fontFamily: 'lora' }),
+    desktopReaderAutoHide: false, desktopReaderHideDelay: 8,
+  };
+  const result = toAndroidPreferences(android);
+  assert.equal(result.APP_LOCALE, 'pt');
+  assert.equal(result.LIBRARY_SETTINGS, android.LIBRARY_SETTINGS);
+  assert.equal(result.CHAPTER_READER_SETTINGS, android.CHAPTER_READER_SETTINGS);
+  assert.equal('desktopReaderAutoHide' in result, false);
+  assert.equal('desktopReaderHideDelay' in result, false);
 });

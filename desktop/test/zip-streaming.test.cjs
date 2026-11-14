@@ -137,7 +137,7 @@ test('Android v2 settings-only ZIP maps supported appearance but preserves Deskt
       sections: { library: false, settings: true, plugins: false, downloadedFiles: false } },
     'Setting.json': {
       THEME_MODE: 'dark', APP_LOCALE: 'ja', APP_THEME_ID: 104,
-      APP_SETTINGS: '{"incognitoMode":false}',
+      LIBRARY_SETTINGS: '{"incognitoMode":false}',
       CHAPTER_READER_SETTINGS: '{"fontSize":18}',
     },
   });
@@ -289,10 +289,13 @@ test('streaming exporter emits Android-readable appearance keys without changing
   assert.equal(settings.APP_LOCALE, 'pt-BR');
   assert.equal(settings.THEME_MODE, 'dark');
   assert.equal(settings.AMOLED_BLACK, true);
-  assert.equal(settings.APP_THEME_ID, 104);
+  assert.equal(settings.APP_THEME_ID, undefined, 'custom Android accent must not be overwritten');
   assert.equal(settings.CUSTOM_ACCENT_COLOR, '#112233');
-  assert.equal(settings.desktopReaderAutoHide, false);
-  assert.equal(settings.desktopReaderHideDelay, 8.2);
+  assert.equal('desktopReaderAutoHide' in settings, false);
+  assert.equal('desktopReaderHideDelay' in settings, false);
+  const version = JSON.parse(zip.readAsText('Version.json'));
+  assert.equal(version.desktopState.originalSettings.desktopReaderAutoHide, false);
+  assert.equal(version.desktopState.originalSettings.desktopReaderHideDelay, 8.2);
   assert.equal(state.settings.APP_LOCALE, undefined);
   const restored = await importBackup({ filename, contentDirectory: root });
   assert.equal(restored.isDesktopBackup, true);

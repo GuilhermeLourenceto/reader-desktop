@@ -146,7 +146,10 @@ function parseBackupEntries(
       Object.entries(value.pluginStorage).some(
         ([key, text]) => !key.startsWith('plugin_db:') || typeof text !== 'string',
       ) ||
-      (value.progressUnit !== undefined && value.progressUnit !== 'percent')
+      (value.progressUnit !== undefined && value.progressUnit !== 'percent') ||
+      (value.originalSettings !== undefined &&
+        (!value.originalSettings || typeof value.originalSettings !== 'object' ||
+          Array.isArray(value.originalSettings)))
     ) throw new Error('Dados do Reader Desktop inválidos no backup');
     state.repositories = value.repositories;
     state.pluginStorage = value.pluginStorage;
@@ -206,6 +209,10 @@ function parseBackupEntries(
     if (!entries.has(BackupEntryName.SETTING))
       missingSections.push('settings');
     state.settings = json(BackupEntryName.SETTING, {});
+    // This original map is authoritative only when the archive came from
+    // Reader Desktop. Android reads the translated Setting.json instead.
+    if (version.desktopState?.originalSettings !== undefined)
+      state.settings = version.desktopState.originalSettings;
   }
   if (
     !state.settings ||
@@ -293,6 +300,7 @@ function createBackup(state, { downloadedFiles = true } = {}) {
       repositories: state.repositories || [],
       pluginStorage: state.pluginStorage || {},
       progressUnit: state.progressUnit || 'percent',
+      originalSettings: state.settings,
     },
     desktopNovelCount: state.novels.length,
     // Backwards-compatible, optional metadata. Preserve exactly the user's

@@ -232,7 +232,7 @@ test('Android preferences apply only supported values and retain Desktop-only re
   };
   const backup = { ...oldState(), settings: {
     APP_LOCALE: 'ja', THEME_MODE: 'dark', AMOLED_BLACK: true, APP_THEME_ID: 104,
-    APP_SETTINGS: JSON.stringify({ incognitoMode: true }),
+    LIBRARY_SETTINGS: JSON.stringify({ incognitoMode: true }),
     CHAPTER_READER_SETTINGS: JSON.stringify({ theme: '#f5f5fa',
       textColor: '#111111', fontFamily: 'noto-sans' }),
     CHAPTER_GENERAL_SETTINGS: JSON.stringify({ pageReader: true }),

@@ -199,10 +199,14 @@ mas seu resultado atual depende de executar novamente a suíte.
   Campos ausentes, desconhecidos ou incompatíveis nunca geram valores padrão.
   Opções próprias do Desktop (ocultar barras, atraso, pasta de backup etc.)
   permanecem como estavam. A cópia `before-restore.json` permite recuperação manual.
-- Na exportação, preferências compatíveis do Desktop são escritas nas chaves
-  originais do Android; valores Android sem equivalente (como cores dinâmicas,
-  acentos personalizados e fontes exclusivas) são preservados sem substituição.
-  O backup não transfere cookies de autenticação entre plataformas.
+- Na exportação, somente chaves compreendidas pelo Android são gravadas em
+  `Setting.json`; as preferências originais do Desktop são preservadas em
+  `Version.json.desktopState.originalSettings`, permitindo uma restauração
+  exata no próprio PC sem alterar configurações nem recriar defaults. Os
+  modos anônimo/somente baixados são sincronizados em `LIBRARY_SETTINGS`.
+  Valores Android sem equivalente (cores dinâmicas, acentos personalizados,
+  fontes exclusivas) são preservados. O backup não transfere cookies de
+  autenticação entre plataformas.
 - Imagens já contidas em backups Android são preservadas e podem ser exibidas
   offline. As ações de download também armazenam imagens quando a fonte permite.
   Há download individual, dos próximos 10 e dos capítulos selecionados, com
