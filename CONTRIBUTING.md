@@ -5,7 +5,7 @@ O Reader Desktop é um projeto independente do LNReader Android. Contribuições
 ## Comece por aqui
 
 1. Consulte as [issues](https://github.com/GuilhermeLourenceto/lnreader-desktop/issues) para evitar trabalho duplicado. Para mudanças grandes, discuta o desenho antes do pull request.
-2. Leia o [guia de desenvolvimento](desktop/docs/DEVELOPMENT.md) e a [arquitetura](desktop/docs/ARCHITECTURE.md).
+2. Leia o [índice da documentação](desktop/docs/README.md), o [guia de desenvolvimento](desktop/docs/DEVELOPMENT.md) e a [arquitetura](desktop/docs/ARCHITECTURE.md).
 3. Crie sua branch de trabalho a partir de `main` em seu fork; envie um **pull request para `main`**. Não é necessário criar ou depender das branches históricas do proprietário.
 4. Mantenha mudanças pequenas e focadas, preferencialmente com teste de regressão.
 

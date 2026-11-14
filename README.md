@@ -103,6 +103,8 @@ Os arquivos gerados ficam em `desktop/release/`. Não é necessário instalar o 
 
 **Estado da validação:** os workflows da `main` apresentaram falhas de inicialização em 13/11/2026, antes dos passos dos jobs; por isso, o estado atual do build não deve ser tratado como aprovado. Confira o [GitHub Actions](https://github.com/GuilhermeLourenceto/lnreader-desktop/actions) e execute os testes localmente antes de distribuir uma compilação.
 
+Para navegar por guias e registros anteriores, veja o [índice da documentação](desktop/docs/README.md).
+
 Para desenvolvedores: [como começar](desktop/docs/DEVELOPMENT.md) · [arquitetura](desktop/docs/ARCHITECTURE.md) · [histórico de versões](desktop/CHANGELOG.md) · [como contribuir](CONTRIBUTING.md).
 
 ## Contribua

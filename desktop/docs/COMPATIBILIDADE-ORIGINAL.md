@@ -1,5 +1,11 @@
 # Revisão das regras do Android — 28/10/2026
 
+> **Registro histórico.** Os arquivos `src/screens/...` citados na tabela são
+> referências do projeto LNReader Android naquela comparação; não devem ser
+> confundidos com a estrutura atual do Desktop. As regras do Desktop estão
+> organizadas em `src/domain/`, `src/features/` e `src/state/`.
+> Consulte [a arquitetura atual](ARCHITECTURE.md) e o [guia de desenvolvimento](DEVELOPMENT.md).
+
 Esta revisão cobre fontes, pesquisa, páginas de capítulos, atualização e leitura.
 O desktop continua experimental e não tem paridade com todos os serviços Android.
 

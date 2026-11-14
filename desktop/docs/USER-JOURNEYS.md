@@ -1,5 +1,10 @@
 # Jornadas de usuário do LNReader Desktop
 
+> **Histórico e guia de regressão.** O levantamento abaixo foi feito em
+> 05/11/2026; os scripts de teste continuam no repositório, mas os jobs recentes
+> da `main` não chegaram a executar seus passos em 13/11/2026. Portanto,
+> nenhuma aprovação atual pode ser inferida dos resultados antigos.
+
 Pesquisa e matriz de testes em 05/11/2026, baseada em relatos do LNReader Android e de outros leitores. Os relatos **não comprovam** que o Desktop tenha os mesmos bugs: eles fornecem situações realistas para testar preventivamente.
 
 ## De onde vêm as jornadas
@@ -62,6 +67,6 @@ As duas últimas jornadas foram incluídas no executor em 05/11/2026; seus scrip
 - Comportamento observado no Electron real, com assertions sobre UI e estado persistido.
 - Falhas trazem etapa reproduzível e logs úteis; screenshots são auxiliares, não substituem assertions.
 - Nenhum dado da biblioteca pessoal ou site externo é alterado durante a suíte automatizada.
-- Resultado `PASS` na CI significa apenas a cobertura dos testes, **não** compatibilidade universal de plugins ou validação visual manual no hardware final.
+- Um resultado real `PASS` na CI comprova apenas a cobertura executada, **não** compatibilidade universal de plugins ou validação visual manual no hardware final. Status `failure` sem etapas executadas não comprova regressão no código.
 
 Para diagnosticar localmente, execute `npm run test:journeys` no Windows. No Linux, use uma sessão gráfica; no CI Linux, testes Electron individuais são executados com Xvfb.
