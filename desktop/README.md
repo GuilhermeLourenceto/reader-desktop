@@ -193,11 +193,16 @@ mas seu resultado atual depende de executar novamente a suíte.
 - Importação de backups Android organizados em uma pasta externa com
   `data.zip`, `plugins.zip` e `novel-files.zip`.
 - A restauração **mescla** obras, capítulos, categorias e fontes, preserva
-  downloads locais existentes e remapeia IDs em conflito. Tema, paleta e
-  configurações locais de backup não são substituídos. A cópia
-  `before-restore.json` permite recuperação manual.
-- Configurações Android sem equivalente desktop são preservadas na exportação;
-  somente o tamanho de fonte desktop é aplicado pela interface nesta etapa.
+  downloads locais existentes e remapeia IDs em conflito. Preferências Android
+  só atualizam o Desktop quando houver valor válido e equivalente: idioma
+  suportado, modo claro/escuro, paleta MD3, AMOLED e algumas opções de leitura.
+  Campos ausentes, desconhecidos ou incompatíveis nunca geram valores padrão.
+  Opções próprias do Desktop (ocultar barras, atraso, pasta de backup etc.)
+  permanecem como estavam. A cópia `before-restore.json` permite recuperação manual.
+- Na exportação, preferências compatíveis do Desktop são escritas nas chaves
+  originais do Android; valores Android sem equivalente (como cores dinâmicas,
+  acentos personalizados e fontes exclusivas) são preservados sem substituição.
+  O backup não transfere cookies de autenticação entre plataformas.
 - Imagens já contidas em backups Android são preservadas e podem ser exibidas
   offline. As ações de download também armazenam imagens quando a fonte permite.
   Há download individual, dos próximos 10 e dos capítulos selecionados, com

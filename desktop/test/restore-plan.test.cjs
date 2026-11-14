@@ -220,3 +220,89 @@ test('source code, registry and repositories merge without replacing existing so
   assert.equal(result.next.files['Plugins/site/index.js'], current.files['Plugins/site/index.js']);
   assert.equal(result.next.files['Plugins/new/index.js'], 'new-code');
 });
+
+test('Android preferences apply only supported values and retain Desktop-only reader controls', () => {
+  const current = oldState();
+  current.settings = {
+    ...current.settings, desktopOnboardingCompleted: false,
+    desktopInterfaceLanguage: 'pt-BR', desktopTheme: 'light',
+    desktopPalette: 'teal', desktopReaderTheme: 'app',
+    desktopReaderAutoHide: false, desktopReaderHideDelay: 8.4,
+    desktopBackupDirectory: '/home/user/backups',
+  };
+  const backup = { ...oldState(), settings: {
+    APP_LOCALE: 'ja', THEME_MODE: 'dark', AMOLED_BLACK: true, APP_THEME_ID: 104,
+    APP_SETTINGS: JSON.stringify({ incognitoMode: true }),
+    CHAPTER_READER_SETTINGS: JSON.stringify({ theme: '#f5f5fa',
+      textColor: '#111111', fontFamily: 'noto-sans' }),
+    CHAPTER_GENERAL_SETTINGS: JSON.stringify({ pageReader: true }),
+  } };
+  const result = planRestore(current, restore(backup, {
+    library: false, settings: true, plugins: false, downloadedFiles: false,
+  }));
+  assert.equal(result.next.settings.desktopInterfaceLanguage, 'ja');
+  assert.equal(result.next.settings.desktopTheme, 'oled');
+  assert.equal(result.next.settings.desktopPalette, 'lavender');
+  assert.equal(result.next.settings.desktopReaderTheme, 'original-light');
+  assert.equal(result.next.settings.desktopFontFamily, 'sans');
+  assert.equal(result.next.settings.desktopPagination, 'pages');
+  assert.equal(result.next.settings.desktopIncognito, true);
+  assert.equal(result.next.settings.desktopReaderAutoHide, false);
+  assert.equal(result.next.settings.desktopReaderHideDelay, 8.4);
+  assert.equal(result.next.settings.desktopBackupDirectory, '/home/user/backups');
+  assert.equal(result.next.settings.desktopOnboardingCompleted, false);
+  assert.equal(current.settings.desktopInterfaceLanguage, 'pt-BR');
+});
+
+test('unsupported Android locale, system AMOLED and custom reader colors cannot reset Desktop', () => {
+  const current = oldState();
+  current.settings = {
+    ...current.settings, desktopInterfaceLanguage: 'pt-BR',
+    desktopTheme: 'oled', desktopPalette: 'lavender',
+    desktopReaderTheme: 'original-dark', desktopFontFamily: 'serif',
+    desktopReaderAutoHide: true, desktopReaderHideDelay: 4.2,
+  };
+  const incoming = restore({ ...oldState(), settings: {
+    APP_LOCALE: 'zh-TW', APP_THEME_ID: -1,
+    THEME_MODE: 'system', AMOLED_BLACK: true,
+    CUSTOM_ACCENT_COLOR: '#abcdef',
+    CHAPTER_READER_SETTINGS: JSON.stringify({
+      theme: '#abcdef', textColor: '#123456', fontFamily: 'lora',
+    }),
+  } }, { library: false, settings: true, plugins: false, downloadedFiles: false });
+  const result = planRestore(current, incoming);
+  for (const key of [
+    'desktopInterfaceLanguage', 'desktopTheme', 'desktopPalette',
+    'desktopReaderTheme', 'desktopFontFamily',
+    'desktopReaderAutoHide', 'desktopReaderHideDelay',
+  ]) assert.equal(result.next.settings[key], current.settings[key], key);
+  assert.equal(result.next.settings.APP_LOCALE, 'zh-TW');
+  assert.equal(result.next.settings.CUSTOM_ACCENT_COLOR, '#abcdef');
+});
+
+test('a Desktop-origin ZIP cannot overwrite local preferences using its Android mirror', () => {
+  const current = oldState();
+  current.settings = { ...current.settings, desktopInterfaceLanguage: 'pt-BR',
+    desktopTheme: 'oled', desktopPalette: 'lavender' };
+  const backup = restore({ ...oldState(), settings: {
+    desktopInterfaceLanguage: 'en', desktopTheme: 'light',
+    APP_LOCALE: 'ja', THEME_MODE: 'light', APP_THEME_ID: 102,
+  } }, { library: false, settings: true, plugins: false, downloadedFiles: false });
+  backup.isDesktopBackup = true;
+  const result = planRestore(current, backup);
+  assert.equal(result.next.settings.desktopInterfaceLanguage, 'pt-BR');
+  assert.equal(result.next.settings.desktopTheme, 'oled');
+  assert.equal(result.next.settings.desktopPalette, 'lavender');
+});
+
+test('missing settings section cannot change locale or appearance even if Android keys exist', () => {
+  const current = oldState();
+  current.settings = { ...current.settings, desktopInterfaceLanguage: 'pt-BR',
+    desktopPalette: 'lavender', desktopReaderAutoHide: false };
+  const backup = restore({ ...oldState(), settings: {
+    APP_LOCALE: 'ja', THEME_MODE: 'light', APP_THEME_ID: 102,
+  } }, { library: false, settings: false, plugins: false, downloadedFiles: false });
+  const result = planRestore(current, backup);
+  assert.equal(result.changed, false);
+  assert.deepEqual(result.next.settings, current.settings);
+});

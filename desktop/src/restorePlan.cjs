@@ -1,6 +1,7 @@
 // Non-destructive restore for LNReader Android and Reader Desktop archives.
 const { isDeepStrictEqual } = require('node:util');
 const { validateState } = require('./storage.cjs');
+const { fromAndroidPreferences } = require('./state/backupPreferences.cjs');
 
 function allocateIds(existing, incoming) {
   const used = new Set(existing.filter(Number.isSafeInteger));
@@ -103,7 +104,11 @@ function planRestore(current, restored, importFiles = files => files,
       if (Object.hasOwn(current.settings, key)) settings[key] = current.settings[key];
       else delete settings[key];
     }
-    settings.desktopOnboardingCompleted = true;
+    // Apply only exact Android equivalents. Unavailable or unknown values
+    // must never reset local Desktop choices such as auto-hide controls.
+    if (!restored.isDesktopBackup)
+      Object.assign(settings, fromAndroidPreferences(backup.settings));
+    // Onboarding completion belongs to this installation, not the archive.
     next.settings = settings;
   }
 

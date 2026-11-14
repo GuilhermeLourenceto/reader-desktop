@@ -372,3 +372,28 @@ test('metadata-only ZIP reports Android download section as absent and preserves
   assert.equal(parsed.state.novels[0].chapters[0].isDownloaded, false);
   assert.equal(parsed.state.novels[0].chapters[0].progress, 0.4);
 });
+
+test('desktop export writes known Android equivalents without erasing native-only settings', () => {
+  const state = fixture();
+  state.settings = {
+    desktopInterfaceLanguage: 'pt-BR', desktopTheme: 'oled',
+    desktopPalette: 'lavender', desktopReaderAutoHide: false,
+    desktopReaderHideDelay: 6.2,
+    APP_SETTINGS: JSON.stringify({ timeTrackingEnabled: false }),
+    CUSTOM_ACCENT_COLOR: '#fedcba',
+  };
+  const zip = new AdmZip(createBackup(state));
+  const android = JSON.parse(zip.readAsText('Setting.json'));
+  assert.equal(android.APP_LOCALE, 'pt-BR');
+  assert.equal(android.THEME_MODE, 'dark');
+  assert.equal(android.AMOLED_BLACK, true);
+  assert.equal(android.APP_THEME_ID, 104);
+  assert.deepEqual(JSON.parse(android.APP_SETTINGS), { timeTrackingEnabled: false });
+  assert.equal(android.CUSTOM_ACCENT_COLOR, '#fedcba');
+  assert.equal(android.desktopReaderAutoHide, false);
+  assert.equal(android.desktopReaderHideDelay, 6.2);
+  const parsed = parseBackup(zip.toBuffer());
+  assert.equal(parsed.isDesktopBackup, true);
+  assert.equal(parsed.state.settings.APP_LOCALE, 'pt-BR');
+  assert.equal(state.settings.APP_LOCALE, undefined, 'export cannot mutate live settings');
+});

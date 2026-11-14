@@ -129,14 +129,15 @@ function androidZip(root, members) {
   return output;
 }
 
-test('real Android v2 settings-only ZIP preserves desktop appearance and library', async t => {
+test('Android v2 settings-only ZIP maps supported appearance but preserves Desktop-only options', async t => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-android-settings-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const filename = androidZip(root, {
     'Version.json': { appVersion: '2.1.4', formatVersion: 2,
       sections: { library: false, settings: true, plugins: false, downloadedFiles: false } },
     'Setting.json': {
-      THEME_MODE: 'dark', APP_SETTINGS: '{"incognitoMode":false}',
+      THEME_MODE: 'dark', APP_LOCALE: 'ja', APP_THEME_ID: 104,
+      APP_SETTINGS: '{"incognitoMode":false}',
       CHAPTER_READER_SETTINGS: '{"fontSize":18}',
     },
   });
@@ -150,11 +151,16 @@ test('real Android v2 settings-only ZIP preserves desktop appearance and library
     ...emptyState(),
     novels: [{ id: 3, pluginId: 'local', path: '/book', name: 'Existing', chapters: [] }],
     settings: { desktopTheme: 'oled', desktopPalette: 'lavender',
-      desktopReaderTheme: 'app', desktopOnboardingCompleted: true },
+      desktopReaderTheme: 'app', desktopInterfaceLanguage: 'pt-BR',
+      desktopReaderAutoHide: false, desktopReaderHideDelay: 7.4,
+      desktopOnboardingCompleted: true },
   };
   const plan = planRestore(current, restored);
   assert.equal(plan.next.novels.length, 1);
-  assert.equal(plan.next.settings.desktopTheme, 'oled');
+  assert.equal(plan.next.settings.desktopTheme, 'dark');
+  assert.equal(plan.next.settings.desktopInterfaceLanguage, 'ja');
+  assert.equal(plan.next.settings.desktopReaderAutoHide, false);
+  assert.equal(plan.next.settings.desktopReaderHideDelay, 7.4);
   assert.equal(plan.next.settings.desktopPalette, 'lavender');
   assert.equal(plan.next.settings.desktopReaderTheme, 'app');
   assert.equal(plan.next.settings.THEME_MODE, 'dark');
@@ -263,4 +269,31 @@ test('malformed legacy Version.json uses Android v1 fallback when download.zip e
   assert.equal(restored.state.novels.length, 1);
   assert.equal(restored.state.novels[0].chapters[0].isDownloaded, true);
   assert.match(restored.state.files['Novels/source/1/2/index.html'], /^@file:/);
+});
+
+test('streaming exporter emits Android-readable appearance keys without changing local-only options', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-preference-export-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const state = {
+    ...emptyState(),
+    settings: {
+      desktopInterfaceLanguage: 'pt-BR', desktopTheme: 'oled',
+      desktopPalette: 'lavender', desktopReaderAutoHide: false,
+      desktopReaderHideDelay: 8.2, CUSTOM_ACCENT_COLOR: '#112233',
+    },
+  };
+  const filename = path.join(root, 'backup.zip');
+  await exportBackup({ filename, state, contentDirectory: root });
+  const zip = new AdmZip(fs.readFileSync(filename));
+  const settings = JSON.parse(zip.readAsText('Setting.json'));
+  assert.equal(settings.APP_LOCALE, 'pt-BR');
+  assert.equal(settings.THEME_MODE, 'dark');
+  assert.equal(settings.AMOLED_BLACK, true);
+  assert.equal(settings.APP_THEME_ID, 104);
+  assert.equal(settings.CUSTOM_ACCENT_COLOR, '#112233');
+  assert.equal(settings.desktopReaderAutoHide, false);
+  assert.equal(settings.desktopReaderHideDelay, 8.2);
+  assert.equal(state.settings.APP_LOCALE, undefined);
+  const restored = await importBackup({ filename, contentDirectory: root });
+  assert.equal(restored.isDesktopBackup, true);
 });

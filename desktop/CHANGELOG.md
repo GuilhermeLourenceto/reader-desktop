@@ -2,6 +2,8 @@
 
 ## Em desenvolvimento na `main` (após o código 0.4.5 Beta)
 
+- Compatibilidade seletiva de configurações dos backups Android ↔ Desktop: idioma, tema, paletas MD3, AMOLED e preferências de leitura com correspondência exata. Valores desconhecidos/ausentes não redefinem preferências; opções exclusivas do Desktop (como ocultação das barras) e valores Android não representáveis são preservados.
+
 - Refatoração organizacional: componentes separados por funcionalidades em `src/features/`, regras em `src/domain/`, serialização e preferências em `src/state/` e política de rede/diagnósticos em `src/infrastructure/`.
 - Redução de `src/renderer.jsx` e extração de ações de downloads, leitor, biblioteca, navegação e atualização para módulos menores.
 - Guia de desenvolvimento, orientação de pull requests, testes de fronteiras arquiteturais e verificação de imports relativos.

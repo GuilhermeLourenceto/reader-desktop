@@ -1,6 +1,7 @@
 const AdmZip = require('adm-zip');
 const { chapterPercent } = require('./domain/novels.cjs');
 const { validateState } = require('./storage.cjs');
+const { toAndroidPreferences } = require('./state/backupPreferences.cjs');
 const {
   BackupEntryName,
   ZipBackupName,
@@ -255,7 +256,8 @@ function parseBackupEntries(
         state.files[name] = storeFile(name, data);
     }
   validateState(state);
-  return { state, sections, missingSections };
+  return { state, sections, missingSections,
+    isDesktopBackup: version.desktopState !== undefined };
 }
 function createBackup(state, { downloadedFiles = true } = {}) {
   const bytes = value =>
@@ -309,7 +311,7 @@ function createBackup(state, { downloadedFiles = true } = {}) {
       }),
     });
   addJSON(BackupEntryName.CATEGORY, state.categories);
-  addJSON(BackupEntryName.SETTING, state.settings);
+  addJSON(BackupEntryName.SETTING, toAndroidPreferences(state.settings));
   addJSON(BackupEntryName.PLUGIN_METADATA, state.plugins);
   for (const [prefix, archive, group] of [
     ['Plugins/', ZipBackupName.PLUGINS, groups.plugins],

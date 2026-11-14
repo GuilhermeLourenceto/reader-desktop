@@ -10,6 +10,7 @@ const { pipeline } = require('node:stream/promises');
 const unzipper = require('unzipper');
 const { safePath, parseBackupEntries } = require('./backup.cjs');
 const { validateState, DiskFiles } = require('./storage.cjs');
+const { toAndroidPreferences } = require('./state/backupPreferences.cjs');
 const { chapterPercent } = require('./domain/novels.cjs');
 const { BackupEntryName, ZipBackupName } = require('../vendor/lnreader/src/services/backup/types.ts');
 const { resolveBackupOptions } = require('../vendor/lnreader/src/services/backup/options.ts');
@@ -236,7 +237,8 @@ async function exportBackup({ state, contentDirectory, filename, includeDownload
         if (++count > MAX_ENTRIES) throw new Error('Backup contém entradas demais');
       }
       await addJson(zip, BackupEntryName.CATEGORY, state.categories, progress);
-      await addJson(zip, BackupEntryName.SETTING, state.settings, progress);
+      await addJson(zip, BackupEntryName.SETTING,
+         toAndroidPreferences(state.settings), progress);
       await addJson(zip, BackupEntryName.PLUGIN_METADATA, state.plugins, progress);
       await zip.add(ZipBackupName.PLUGINS, () => fs.createReadStream(pluginZip),
         false, undefined, progress);
