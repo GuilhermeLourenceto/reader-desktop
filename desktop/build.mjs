@@ -1,12 +1,11 @@
 import { build } from 'esbuild';
 import { localization } from './scripts/localize-build.mjs';
 import { mkdir, copyFile, writeFile } from 'node:fs/promises';
-import generateIcon from './build/make-icon.cjs';
 import { resolve } from 'node:path';
 import { readFile } from 'node:fs/promises';
 
 await mkdir('dist', { recursive: true });
-generateIcon();
+// The checked-in icons are authoritative. Regenerate only via build/make-icon.cjs when requested.
 const adapter = resolve('src/adapters.js');
 const { dependencies } = JSON.parse(await readFile('package.json', 'utf8'));
 const sourceAliases = {
@@ -116,7 +115,7 @@ await copyFile(
 );
 await copyFile('vendor/lnreader/assets/reader/fonts/noto-sans.ttf', 'dist/noto-sans.ttf');
 await copyFile('vendor/lnreader/assets/reader/fonts/pt-serif.ttf', 'dist/pt-serif.ttf');
-// The new book icon is generated locally; the original source assets remain intact.
+// Use the checked-in Reader Desktop icon consistently across builds.
 await copyFile('build/icon-256.png', 'dist/logo.png');
 // Preserve the exact original cascade order; the onboarding CSS still comes last.
 const styleParts = ["00-foundation.css","10-navigation-and-library.css","20-reader-and-settings.css","30-novel-and-chapters.css","40-history-and-updates.css","50-filters-and-responsive.css","60-diagnostics.css"];

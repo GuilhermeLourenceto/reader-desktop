@@ -17,7 +17,8 @@ const sampleExemptions = {
   'features/reader/ReaderThemes.jsx': new Set(['Aa']), // Typography specimen, not a phrase
   'features/settings/Settings.jsx': new Set(['LNReader', 'LNReader Desktop', 'Reader Desktop', 'Desktop ·']),
   'features/onboarding/Onboarding.jsx': new Set(['Reader Desktop']),
-  'renderer.jsx': new Set(['https://…/plugins.json', '×', 'A−', 'A+']),
+  'renderer.jsx': new Set(['×', 'A−', 'A+']),
+  'features/sources/SourceViews.jsx': new Set(['https://…/plugins.json']),
 };
 
 // Check components in nested folders as well as the root of src/.

@@ -2,6 +2,8 @@
 
 ## Em desenvolvimento na `main` (após o código 0.4.5 Beta)
 
+- Correções validadas localmente no Linux: import de obras ajustado após a modularização; backups ZIP64 gerados por streaming agora abrem também nos leitores ZIP legados; auditoria de traduções completada para diagnósticos em dez idiomas; testes de exportação e temporizador alinhados ao comportamento de preservação de preferências; build deixa de sobrescrever os ícones versionados.
+
 - Preferências resistentes a erros: idioma inválido/ausente não força inglês; importações, atualizações parciais e salvamentos preservam os valores válidos do usuário. Idioma escolhido também é usado nos diálogos de erro, e o reset explícito continua funcionando.
 
 - Compatibilidade seletiva de configurações dos backups Android ↔ Desktop: idioma, tema, paletas MD3, AMOLED e preferências de leitura com correspondência exata. Valores desconhecidos/ausentes não redefinem preferências; opções exclusivas do Desktop (como ocultação das barras) e valores Android não representáveis são preservados.

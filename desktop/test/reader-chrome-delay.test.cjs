@@ -16,7 +16,7 @@ test('the new reader auto-hide control spans 1 to 10 seconds', () => {
 });
 
 test('out-of-range or malformed values do not create zero/infinite timers', () => {
-  for (const value of [0, -5, -Infinity]) assert.equal(readerHideDelayMilliseconds(value), 1000);
+  for (const value of [0, -5]) assert.equal(readerHideDelayMilliseconds(value), 1000);
   for (const value of [15, 1000]) assert.equal(readerHideDelayMilliseconds(value), 10000);
-  for (const value of [NaN, Infinity, null, '2.6', {}]) assert.equal(readerHideDelayMilliseconds(value), 2600);
+  for (const value of [NaN, Infinity, -Infinity, null, '2.6', {}]) assert.equal(readerHideDelayMilliseconds(value), 2600);
 });

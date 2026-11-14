@@ -54,6 +54,7 @@ rows.push(
     .map((row) => row.split('|')),
 );
 rows.push(...require('./i18n/catalogs/locale-reader-desktop.cjs').trim().split('\n').map(row => row.split('|')));
+rows.push(...require('./i18n/catalogs/locale-diagnostics.cjs').trim().split('\n').map(row => row.split('|')));
 const messages = Object.fromEntries(
   rows.map((row) => [
     row[0],

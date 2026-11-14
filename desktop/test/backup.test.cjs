@@ -395,7 +395,9 @@ test('desktop export writes known Android equivalents without erasing native-onl
   assert.equal(JSON.parse(zip.readAsText('Version.json')).desktopState.originalSettings.desktopReaderHideDelay, 6.2);
   const parsed = parseBackup(zip.toBuffer());
   assert.equal(parsed.isDesktopBackup, true);
-  assert.equal(parsed.state.settings.APP_LOCALE, 'pt-BR');
+  assert.equal(parsed.state.settings.desktopInterfaceLanguage, 'pt-BR');
+  assert.equal(parsed.state.settings.APP_LOCALE, undefined,
+    'Restoring a Desktop archive must preserve the exact original settings, not its Android mirror');
   assert.equal(state.settings.APP_LOCALE, undefined, 'export cannot mutate live settings');
 });
 

@@ -3,7 +3,7 @@
 import { loadPlugin, fetchNovel } from '../../sourceClient';
 import { withSourceDeadline } from '../../sourceGuards.cjs';
 import { nextId, nextChapterId } from '../../state/libraryState';
-import { validateNovelDetails, mergeChapters } from '../../domain.cjs';
+import { validateNovelDetails, mergeChapters } from '../../domain/novels.cjs';
 
 export function createNovelActions({ current, update, pendingProgress, progressTimer, setNovelId, setView }) {
   const openNovel = async (item, pluginId) => {

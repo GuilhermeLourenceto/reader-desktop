@@ -42,6 +42,18 @@ class ZipWriter {
       offset += bytesWritten;
     }
   }
+  // Local headers are completed once the stream finishes. No data descriptor
+  // is needed, which also permits legacy ZIP readers to open ZIP64 archives.
+  async patchAt(buffer, position) {
+    let written = 0;
+    while (written < buffer.length) {
+      const result = await this.handle.write(
+        buffer, written, buffer.length - written, position + written,
+      );
+      if (!result.bytesWritten) throw new Error('Falha ao completar o cabeçalho ZIP');
+      written += result.bytesWritten;
+    }
+  }
   async add(name, openSource, compressed = false, expectedHash, progress = () => {}) {
     safePath(name);
     const title = Buffer.from(name, 'utf8');
@@ -49,11 +61,11 @@ class ZipWriter {
       throw new Error('Arquivo ZIP excede o limite de entradas ou nome');
     const offset = this.offset;
     const method = compressed ? 8 : 0;
-    // ZIP64 local header and stream descriptor avoid pre-buffering the file.
+    // ZIP64 local header avoids pre-buffering even for files larger than 4 GiB.
     const header = Buffer.alloc(30 + title.length + 20);
     header.writeUInt32LE(0x04034b50, 0);
     header.writeUInt16LE(45, 4);
-    header.writeUInt16LE(0x0808, 6); // UTF-8 + data descriptor
+    header.writeUInt16LE(0x0800, 6); // UTF-8; local header patched after streaming
     header.writeUInt16LE(method, 8);
     header.writeUInt32LE(0xffffffff, 18);
     header.writeUInt32LE(0xffffffff, 22);
@@ -89,12 +101,16 @@ class ZipWriter {
     const hash = digest.digest('hex');
     if (expectedHash && expectedHash !== hash)
       throw new Error('Arquivo offline corrompido (SHA-256); exportação cancelada');
-    const descriptor = Buffer.alloc(24);
-    descriptor.writeUInt32LE(0x08074b50, 0);
-    descriptor.writeUInt32LE(crc >>> 0, 4);
-    descriptor.writeBigUInt64LE(BigInt(packed), 8);
-    descriptor.writeBigUInt64LE(BigInt(plain), 16);
-    await this.write(descriptor);
+    // Patch the known CRC and ZIP64 sizes in-place. A descriptor with a
+    // 64-bit size is valid but older readers (including adm-zip) interpret it
+    // as a 32-bit descriptor and report false corruption.
+    const crcBytes = Buffer.alloc(4);
+    crcBytes.writeUInt32LE(crc >>> 0, 0);
+    const sizes = Buffer.alloc(16);
+    sizes.writeBigUInt64LE(BigInt(plain), 0);
+    sizes.writeBigUInt64LE(BigInt(packed), 8);
+    await this.patchAt(crcBytes, offset + 14);
+    await this.patchAt(sizes, offset + 30 + title.length + 4);
     this.entries.push({ title, offset, crc: crc >>> 0, plain, packed, method });
   }
   async finish() {
@@ -104,7 +120,7 @@ class ZipWriter {
       header.writeUInt32LE(0x02014b50, 0);
       header.writeUInt16LE(45, 4);
       header.writeUInt16LE(45, 6);
-      header.writeUInt16LE(0x0808, 8);
+      header.writeUInt16LE(0x0800, 8);
       header.writeUInt16LE(entry.method, 10);
       header.writeUInt32LE(entry.crc, 16);
       header.writeUInt32LE(0xffffffff, 20);
