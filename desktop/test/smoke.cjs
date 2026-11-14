@@ -181,7 +181,15 @@ server.listen(0, '127.0.0.1', () => {
         await wait(
           "document.body.innerText.includes('Backup restaurado.') && !document.body.innerText.includes('Processando…')",
         );
-        assert.ok(fs.existsSync(path.join(dataPath, 'before-restore.json')));
+        // Importing an identical archive must not replace a useful recovery
+        // snapshot or create a redundant before-restore.json.
+        assert.equal(
+          fs.existsSync(path.join(dataPath, 'before-restore.json')),
+          false,
+        );
+        // A no-op restore intentionally keeps the current Settings page.
+        await click('Biblioteca');
+        await wait("document.querySelector('.book') !== null");
         await execute("document.querySelector('.book').click()");
         await click('Continuar leitura');
         await wait(
