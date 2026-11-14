@@ -2,6 +2,8 @@
 
 ## Em desenvolvimento na `main` (após o código 0.4.5 Beta)
 
+- Preferências resistentes a erros: idioma inválido/ausente não força inglês; importações, atualizações parciais e salvamentos preservam os valores válidos do usuário. Idioma escolhido também é usado nos diálogos de erro, e o reset explícito continua funcionando.
+
 - Compatibilidade seletiva de configurações dos backups Android ↔ Desktop: idioma, tema, paletas MD3, AMOLED e preferências de leitura com correspondência exata. Valores desconhecidos/ausentes não redefinem preferências; opções exclusivas do Desktop (como ocultação das barras) e valores Android não representáveis são preservados.
 - Correção da chave Android `LIBRARY_SETTINGS` (anônimo e somente baixados), preservação de paletas com cor de destaque personalizada, restauração sem mudanças reais e separação das preferências exclusivas do PC em `Version.json.desktopState.originalSettings`. Aviso de restauração atualizado em dez idiomas.
 

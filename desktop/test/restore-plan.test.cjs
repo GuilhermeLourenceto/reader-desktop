@@ -306,3 +306,75 @@ test('missing settings section cannot change locale or appearance even if Androi
   assert.equal(result.changed, false);
   assert.deepEqual(result.next.settings, current.settings);
 });
+
+test('invalid Android preferences never replace the last user choices', () => {
+  const current = oldState();
+  current.settings = {
+    ...current.settings,
+    desktopInterfaceLanguage: 'pt-BR',
+    desktopTheme: 'oled',
+    desktopPalette: 'lavender',
+    desktopReaderTheme: 'original-dark',
+    desktopReaderAutoHide: false,
+    desktopReaderHideDelay: 8.4,
+    desktopDownloadedOnly: true,
+    desktopIncognito: false,
+    APP_LOCALE: 'pt-BR',
+    LIBRARY_SETTINGS: '{"incognitoMode":false}',
+  };
+  const source = restore({ ...oldState(), settings: {
+    APP_LOCALE: 'unsupported-language',
+    THEME_MODE: 'invalid',
+    APP_THEME_ID: -999,
+    AMOLED_BLACK: 'true',
+    LIBRARY_SETTINGS: '{"incognitoMode":"false"}',
+    CHAPTER_READER_SETTINGS: '{"textAlign":"invalid","lineHeight":-1}',
+    desktopTheme: 'light',
+    desktopReaderAutoHide: true,
+    desktopReaderHideDelay: -1,
+  } }, { library: false, settings: true, plugins: false, downloadedFiles: false });
+  const next = planRestore(current, source).next.settings;
+  for (const key of [
+    'desktopInterfaceLanguage', 'desktopTheme', 'desktopPalette',
+    'desktopReaderTheme', 'desktopReaderAutoHide',
+    'desktopReaderHideDelay', 'desktopDownloadedOnly', 'desktopIncognito',
+  ])
+    assert.equal(next[key], current.settings[key], key);
+  assert.equal(next.APP_LOCALE, 'pt-BR');
+  assert.equal(next.LIBRARY_SETTINGS, current.settings.LIBRARY_SETTINGS);
+});
+
+test('partial settings import keeps every local preference absent from the backup', () => {
+  const current = oldState();
+  current.settings = {
+    ...current.settings,
+    desktopInterfaceLanguage: 'ja', desktopTheme: 'oled',
+    desktopPalette: 'catppuccin', desktopReaderAutoHide: false,
+    desktopReaderHideDelay: 9, desktopBackupDirectory: '/my/backups',
+    customUnknownPreference: 'keep',
+  };
+  const source = restore({ ...oldState(), settings: {
+    CHAPTER_READER_SETTINGS: '{broken json',
+  } }, { library: false, settings: true, plugins: false, downloadedFiles: false });
+  const next = planRestore(current, source).next.settings;
+  for (const [key, value] of Object.entries(current.settings))
+    assert.deepEqual(next[key], value, key);
+});
+
+test('a restore that fails validation keeps every previous setting and book untouched', () => {
+  const current = oldState();
+  current.settings = {
+    ...current.settings,
+    desktopInterfaceLanguage: 'pt-BR', desktopTheme: 'oled',
+    desktopPalette: 'lavender', desktopReaderAutoHide: false,
+    desktopReaderHideDelay: 8.4, desktopBackupFrequency: '24',
+  };
+  const before = structuredClone(current);
+  const damaged = structuredClone(current);
+  damaged.novels.push(structuredClone(damaged.novels[0]));
+  damaged.settings = {
+    APP_LOCALE: 'en', THEME_MODE: 'light',
+  };
+  assert.throws(() => planRestore(current, restore(damaged)), /Obras duplicadas/);
+  assert.deepEqual(current, before);
+});

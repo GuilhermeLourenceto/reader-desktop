@@ -1,15 +1,17 @@
 const { languages, messages } = require('./locales.cjs');
 const { DEFAULT_DESKTOP_SETTINGS } = require('./state/defaultSettings.cjs');
+const supportedLocales = new Set(languages.map(([code]) => code));
 let locale = DEFAULT_DESKTOP_SETTINGS.desktopInterfaceLanguage;
 const listeners = new Set();
 function getLocale() {
   return locale;
 }
 function setLocale(value) {
-  const next = languages.some(([code]) => code === value) ? value : DEFAULT_DESKTOP_SETTINGS.desktopInterfaceLanguage;
-  if (next === locale) return;
-  locale = next;
-  if (typeof document !== 'undefined') document.documentElement.lang = next;
+  // Invalid, missing or unrecognized values are not an instruction to
+  // switch languages. Keep the last explicitly selected valid locale.
+  if (!supportedLocales.has(value) || value === locale) return;
+  locale = value;
+  if (typeof document !== 'undefined') document.documentElement.lang = value;
   for (const listener of listeners) listener();
 }
 function subscribe(listener) {
@@ -21,7 +23,8 @@ function t(message, values = {}, language = locale) {
     language = values;
     values = {};
   }
-  return (messages[message]?.[language] || message).replace(
+  const selected = supportedLocales.has(language) ? language : locale;
+  return (messages[message]?.[selected] || message).replace(
     /\{(\w+)\}/g,
     (token, key) => (Object.hasOwn(values, key) ? String(values[key]) : token),
   );

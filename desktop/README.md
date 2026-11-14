@@ -198,7 +198,11 @@ mas seu resultado atual depende de executar novamente a suíte.
   suportado, modo claro/escuro, paleta MD3, AMOLED e algumas opções de leitura.
   Campos ausentes, desconhecidos ou incompatíveis nunca geram valores padrão.
   Opções próprias do Desktop (ocultar barras, atraso, pasta de backup etc.)
-  permanecem como estavam. A cópia `before-restore.json` permite recuperação manual.
+  permanecem como estavam. Em caso de erro, valores inválidos ou atualização
+  parcial, o idioma e as preferências válidas já escolhidas não são
+  substituídos por padrões; inglês só é aplicado na primeira instalação ou
+  quando o usuário o seleciona explicitamente. A opção de redefinir padrões
+  continua sendo uma ação separada. A cópia `before-restore.json` permite recuperação manual.
 - Na exportação, somente chaves compreendidas pelo Android são gravadas em
   `Setting.json`; as preferências originais do Desktop são preservadas em
   `Version.json.desktopState.originalSettings`, permitindo uma restauração

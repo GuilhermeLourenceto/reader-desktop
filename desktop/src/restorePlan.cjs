@@ -2,6 +2,7 @@
 const { isDeepStrictEqual } = require('node:util');
 const { validateState } = require('./storage.cjs');
 const { fromAndroidPreferences } = require('./state/backupPreferences.cjs');
+const { preserveDesktopPreferences } = require('./state/preserveDesktopPreferences.cjs');
 
 function allocateIds(existing, incoming) {
   const used = new Set(existing.filter(Number.isSafeInteger));
@@ -97,7 +98,11 @@ function planRestore(current, restored, importFiles = files => files,
   }
 
   if (sections.settings && !missing.has('settings')) {
-    const settings = { ...current.settings, ...backup.settings };
+    // Keep existing local and Android-only values. New keys from the backup
+    // are retained for round-tripping, while recognized Android equivalents
+    // are translated explicitly below. A foreign/unknown value must not
+    // overwrite an existing choice just because its name matches.
+    const settings = { ...backup.settings, ...current.settings };
     // Desktop options are local to this installation; Android does not own them.
     for (const key of Object.keys(settings)) {
       if (!key.startsWith('desktop')) continue;
@@ -109,7 +114,7 @@ function planRestore(current, restored, importFiles = files => files,
     if (!restored.isDesktopBackup)
       Object.assign(settings, fromAndroidPreferences(backup.settings));
     // Onboarding completion belongs to this installation, not the archive.
-    next.settings = settings;
+    next.settings = preserveDesktopPreferences(current.settings, settings);
   }
 
   if (restorePlugins) {

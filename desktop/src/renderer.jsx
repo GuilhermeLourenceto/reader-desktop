@@ -30,6 +30,7 @@ import { defaultTheme } from '../vendor/lnreader/src/theme/md3/defaultTheme';
 import Settings from './features/settings/Settings';
 import Onboarding from './features/onboarding/Onboarding';
 import { restoreDesktopDefaults } from './state/defaultSettings.cjs';
+import { preserveDesktopPreferences } from './state/preserveDesktopPreferences.cjs';
 import Spinner from './components/Spinner';
 import { appTheme } from './appThemes';
 import { resolveAppearance, appearanceColors } from './appearance.cjs';
@@ -227,6 +228,15 @@ function App() {
     return () => media.removeEventListener('change', apply);
   }, [preferences.desktopTheme, preferences.desktopPalette]);
   const update = (next) => {
+    // UI state and the saved state use the same safeguards: a malformed
+    // preference must never replace a known choice while saving asynchronously.
+    if (next && current.current) {
+      const incomingSettings = next.settings && typeof next.settings === 'object' &&
+        !Array.isArray(next.settings) ? next.settings : {};
+      next = { ...next, settings: preserveDesktopPreferences(
+        current.current.settings, incomingSettings,
+      ) };
+    }
     current.current = next;
     setState(next);
     clearTimeout(saveTimer.current);

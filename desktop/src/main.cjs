@@ -1,7 +1,7 @@
-const { t } = require('./i18n.cjs');
-const { DEFAULT_DESKTOP_SETTINGS } = require('./state/defaultSettings.cjs');
+const { t, setLocale } = require('./i18n.cjs');
+const { preserveDesktopPreferences } = require('./state/preserveDesktopPreferences.cjs');
 const ui = (message, values = {}) =>
-  t(message, values, state?.settings?.desktopInterfaceLanguage || DEFAULT_DESKTOP_SETTINGS.desktopInterfaceLanguage);
+  t(message, values, state?.settings?.desktopInterfaceLanguage);
 const {
   app,
   BrowserWindow,
@@ -62,6 +62,7 @@ let automaticBackup;
 const commit = (next) => {
   writeState(stateFile, next);
   state = next;
+  setLocale(state.settings?.desktopInterfaceLanguage);
 };
 const publicState = (metadataOnly = false) => ({
   ...state,
@@ -86,7 +87,10 @@ const merge = (input) => {
     'pluginStorage',
     'progressUnit',
   ]) {
-    if (input[key] !== undefined) next[key] = input[key];
+    if (input[key] !== undefined)
+      next[key] = key === 'settings'
+        ? preserveDesktopPreferences(state.settings, input[key])
+        : input[key];
   }
   commit(validateState(next));
 };
@@ -133,6 +137,8 @@ app
     const existingProfile = [stateFile, stateFile + '.bak', stateFile + '.tmp'].some(filename => fs.existsSync(filename));
     const loaded = readState(stateFile, emptyState);
     state = loaded.state;
+    // Restore the persisted user locale before any dialogs can be shown.
+    setLocale(state.settings?.desktopInterfaceLanguage);
     if (!existingProfile) {
       // An unfinished first run remains unfinished after an app restart.
       commit({ ...state, settings: {

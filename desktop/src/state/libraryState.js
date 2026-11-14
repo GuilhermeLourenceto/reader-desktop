@@ -3,7 +3,6 @@ import { INSTALLED_PLUGINS_KEY } from '../../vendor/lnreader/src/plugins/constan
 import { setLocale } from '../i18n.cjs';
 
 export function hydrate(state) {
-  setLocale(state.settings?.desktopInterfaceLanguage);
   for (const key of Object.keys(localStorage))
     if (key.startsWith('plugin_db:')) localStorage.removeItem(key);
   localStorage.setItem(INSTALLED_PLUGINS_KEY, JSON.stringify(state.plugins));
@@ -21,6 +20,9 @@ export function hydrate(state) {
       break;
     }
   }
+  // Only change the displayed language after the rest of hydration finishes.
+  // A storage failure must not switch the interface before the state loads.
+  setLocale(state.settings?.desktopInterfaceLanguage);
 }
 export function snapshot(state) {
   const { files: _files, ...metadata } = state;

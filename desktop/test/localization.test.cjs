@@ -36,7 +36,7 @@ test('locale switching preserves unknown source content, safely interpolates and
   );
   assert.equal(t('Buscar em {count} fontes', { count: 3 }), '配信元3件を検索');
   setLocale('invalid');
-  assert.equal(getLocale(), 'en');
+  assert.equal(getLocale(), 'ja', 'an invalid locale cannot undo the user choice');
 });
 
 test('palette and reader theme options have localized labels for all ten interfaces', () => {
@@ -111,4 +111,18 @@ test('native restore confirmation button is translated in all ten locales', () =
   assert.equal(t('Restaurar', {}, 'en'), 'Restore');
   assert.equal(t('Restaurar', {}, 'de'), 'Wiederherstellen');
   assert.equal(t('Restaurar', {}, 'ja'), '復元');
+});
+
+test('missing and invalid locale requests preserve the last valid language', () => {
+  setLocale('pt-BR');
+  for (const invalid of [undefined, null, '', 0, false, 'xx', 'pt', 'es-MX', {}]) {
+    setLocale(invalid);
+    assert.equal(getLocale(), 'pt-BR', String(invalid));
+  }
+  setLocale('ja');
+  assert.equal(getLocale(), 'ja');
+  assert.equal(t('Biblioteca', {}, 'not-supported'), 'ライブラリ');
+  assert.equal(t('Biblioteca', {}, null), 'ライブラリ');
+  setLocale('en');
+  assert.equal(getLocale(), 'en', 'explicitly selecting English still works');
 });
