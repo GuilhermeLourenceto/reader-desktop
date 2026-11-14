@@ -19,6 +19,7 @@ import {
   nextNovelPage,
 } from './state/libraryState';
 import { errorText } from './sourceRuntime';
+import { userMessageForError } from './domain/userFacingError.cjs';
 import {
   loadPlugin,
   reloadInstalledPlugins,
@@ -244,9 +245,22 @@ function App() {
       () =>
         window.desktop
           .save(snapshot(current.current))
-          .catch((error) => setNotice(error.message)),
+          .catch((error) => showError(error, 'storage')),
       300,
     );
+  };
+  const showError = (error, operation = 'interface') => {
+    // Users see only an actionable sentence. Technical details remain in the
+    // private, redacted report that they can choose to export.
+    const message = translateMessage(userMessageForError(error));
+    const code = operation === 'storage' ? 'STO-SAVE-FAILED' : 'UI-ACTION-FAILED';
+    setNotice(message);
+    setLastDiagnostic({ message, code });
+    void window.desktop.diagnostics.report({
+      level: 'error', code, operation, message: errorText(error),
+    }).then(result => {
+      if (result) setLastDiagnostic({ message, ...result });
+    }).catch(() => {});
   };
   const run = async (task) => {
     activeTasks.current++;
@@ -256,13 +270,7 @@ function App() {
     try {
       await task();
     } catch (error) {
-      const message = errorText(error);
-      setNotice(message);
-      void window.desktop.diagnostics.report({
-        level: 'error', code: 'UI-ACTION-FAILED', operation: 'interface', message,
-      }).then(result => {
-        if (result) setLastDiagnostic({ message, ...result });
-      }).catch(() => {});
+      showError(error);
     } finally {
       activeTasks.current--;
       setBusy(activeTasks.current > 0);
@@ -850,17 +858,26 @@ function App() {
           </div>
         )}
         {notice && (
-          <div className="notice" role="status">
-            {notice}
-            {lastDiagnostic?.message === notice && (
-              <button onClick={() => {
-                setView('settings');
-                setDiagnosticsRequest(value => value + 1);
-              }}>Ver diagnóstico ({lastDiagnostic.code})</button>
-            )}
-            <button onClick={() => setNotice('')} aria-label="Fechar aviso">
-              ×
-            </button>
+          <div className="notice" role={lastDiagnostic?.message === notice ? 'alert' : 'status'}>
+            <span className="notice-message">{notice}</span>
+            <span className="notice-actions">
+              {lastDiagnostic?.message === notice && (
+                <button type="button" onClick={async () => {
+                  try {
+                    const result = await window.desktop.diagnostics.export();
+                    if (result?.saved) {
+                      setLastDiagnostic(null);
+                      setNotice(translateMessage('Relatório salvo.'));
+                    }
+                  } catch {
+                    setLastDiagnostic(null);
+                    setNotice(translateMessage('Não foi possível salvar o relatório. Tente novamente.'));
+                  }
+                }}>Salvar relatório do erro</button>
+              )}
+              <button onClick={() => { setLastDiagnostic(null); setNotice(''); }}
+                aria-label="Fechar aviso">×</button>
+            </span>
           </div>
         )}
         {view === 'library' && (

@@ -1,5 +1,4 @@
 import React from 'react';
-import { errorText } from '../sourceRuntime';
 
 export default class DesktopErrorBoundary extends React.Component {
   state = { error: null };
@@ -21,7 +20,10 @@ export default class DesktopErrorBoundary extends React.Component {
       return (
         <div className="empty" role="alert">
           <h2>Não foi possível exibir esta tela</h2>
-          <p>{errorText(this.state.error)}</p>
+          <p>
+            Ocorreu um problema na interface. Recarregue o aplicativo ou salve
+            um relatório.
+          </p>
           <button onClick={() => window.location.reload()}>
             Recarregar aplicativo
           </button>
