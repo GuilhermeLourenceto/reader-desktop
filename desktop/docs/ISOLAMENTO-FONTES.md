@@ -1,4 +1,9 @@
-# Isolamento de fontes na versão 0.1.0
+# Isolamento de fontes — arquitetura do Desktop
+
+Este documento nasceu na versão 0.1.0. O modelo de Web Workers continua
+no código, mas os resultados dos testes citados abaixo pertencem à época da
+sua execução. Os módulos principais agora convivem com serviços em
+`src/infrastructure/` e funcionalidades em `src/features/sources/`.
 
 Cada fonte carregada executa em um Web Worker dedicado. O `pluginManager`, os
 pacotes e os auxiliares originais executam dentro dele; a thread do React recebe

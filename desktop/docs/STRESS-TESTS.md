@@ -1,5 +1,14 @@
 # Testes de volume e falhas de conexão
 
+> **Medições históricas:** os números abaixo foram produzidos em versões e
+> commits de 29–30/10/2026. Eles não são benchmarks da `main` atual.
+> O caminho principal de importação/exportação atual usa `src/zipStreaming.cjs`
+> (ZIP64 e streaming), enquanto `src/backup.cjs` ainda possui o limite legado
+> de 512 MiB para seu caminho em memória. Portanto, não interprete os antigos
+> testes perto de 512 MiB como um limite geral vigente do aplicativo.
+> As execuções recentes do GitHub Actions ainda não validaram o build reorganizado.
+
+
 Executados em 29/10/2026 no Windows, com dados sintéticos e perfil separado.
 Nenhuma biblioteca pessoal foi usada ou modificada. Não houve alteração no aplicativo nesta rodada.
 
@@ -12,7 +21,7 @@ Nenhuma biblioteca pessoal foi usada ou modificada. Não houve alteração no ap
 | Gravar / carregar e validar os metadados                                              | 0,18 s / 0,17 s                                                                                                                 |
 | Exportar 7.000 obras e 64 MiB de arquivos aleatórios                                  | 3,70 s; ZIP de 67,95 MiB                                                                                                        |
 | Restaurar esse ZIP                                                                    | 2,30 s; contagens, progresso, marcadores e conteúdo dos 64 arquivos conferidos                                                  |
-| Arquivo de entrada maior que 512 MiB                                                  | Rejeitado pelo limite previsto                                                                                                  |
+| Arquivo de entrada maior que 512 MiB                                                  | Rejeitado pelo limite do caminho de teste daquela versão                                                                                                  |
 | Três ciclos de queda/retorno: 60 conexões interrompidas e 61 conexões bem-sucedidas   | Recuperou; fila sem entradas e sem requisições ativas ao concluir                                                               |
 | HTTP 503, tempo excedido e cancelamento                                               | Tratados; nova requisição funcionou depois                                                                                      |
 | Teste existente de estabilidade                                                       | Passou: fonte ausente, repositórios inválidos, cancelamento HTTP, conflito entre restauração/download e fechamento com gravação |
@@ -34,8 +43,8 @@ Tempos locais não são garantias para outros computadores. Electron foi executa
 com GPU desativada e visualização de teste fora da tela. As conexões usaram o
 Electron net real contra um servidor HTTP local; não houve alteração no Wi-Fi.
 Isso não reproduz DNS, TLS, Cloudflare ou todas as falhas dos sites reais.
-Não foi testado o backup de 1,4 GB citado na issue original: o formato atual do
-desktop limita backups a 512 MiB. O teste não é uma certificação de todos os
+Não foi testado o backup de 1,4 GB citado na issue original: o caminho de backup
+então testado limitava arquivos a 512 MiB. O teste não é uma certificação de todos os
 tamanhos abaixo desse limite.
 
 ## Repetir
@@ -116,7 +125,7 @@ compatibilidade do parser Desktop, não toda a cadeia Android.
 | Pico de RSS do processo Node | 2.343,6 MiB | 1.732,7 MiB |
 
 Os dois sistemas recusaram um ZIP esparso de 513 MiB com a biblioteca
-original intacta. O limite atual de 512 MiB foi **mantido**: esta rodada
+original intacta. O limite de 512 MiB foi **mantido na versão testada**: esta rodada
 não comprova suporte a arquivos de 1 GiB ou mais.
 
 ### Interface Electron: biblioteca muito grande

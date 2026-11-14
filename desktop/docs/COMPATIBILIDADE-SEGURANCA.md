@@ -1,6 +1,11 @@
-# Compatibilidade sem perder o isolamento
+# Compatibilidade e isolamento das fontes
 
-Avaliação da branch `seguranca-e-estabilidade` em 29/10/2026.
+> **Origem histórica:** avaliação da antiga branch `seguranca-e-estabilidade` em
+> 29/10/2026. A implementação atual é mantida na `main`. Os resultados de
+> fontes externas abaixo representam aquela data, não uma certificação atual.
+>
+> **Código de referência:** `src/infrastructure/networkPolicy.cjs`,
+> `src/request.cjs`, `src/sourceClient.js`, `src/main.cjs`.
 
 ## Objetivo
 
@@ -35,13 +40,13 @@ No LNReader Android, o `src/plugins/pluginManager.ts` avalia as extensões JavaS
 - Acesso de arquivo de cada fonte limitado à pasta `Plugins/<id>/`; IPC sob validação.
 - Janela principal permanece sandboxed; janelas de login e secundárias também.
 - Cookies e autenticação segregados por fonte; uma fonte não recebe automaticamente os cookies das outras.
-- Em builds distribuídos, endereços locais/privados explícitos continuam bloqueados para extensões. O bloqueio também é aplicado aos redirecionamentos.
+- Em builds distribuídos, endereços locais/privados explícitos são bloqueados para extensões. O destino de redirecionamentos também é validado. A ponte executa checagens de resolução DNS e recusa endereços resolvidos para redes privadas, quando o resolver da sessão está disponível.
 - Limites de tamanho de respostas, requisições simultâneas e cancelamento preservados.
 - Nada de desativar TLS, executar código de fontes no processo principal ou remover verificações de origem.
 
 ### Limitações conhecidas
 
-1. A validação de hostname protege IPs internos **explícitos**, mas exige reforço contra DNS que resolva para IP privado ou DNS rebinding.
+1. **Situação atual:** `validateNetworkDns()` consulta e valida endereços resolvidos antes da chamada privilegiada; portanto a antiga lacuna de *somente verificar IP explícito* foi corrigida. Isso não elimina automaticamente todos os riscos de mudança de DNS entre verificação e conexão (*rebinding/TOCTOU*); manter testes de DNS, redirecionamentos e sessões reais por fonte.
 2. Desafios Cloudflare podem rejeitar navegadores embutidos ou exigir passos que um teste sem interação humana não reproduz. **Não há promessa de bypass**, somente suporte a uma sessão real de navegador com cookies.
 3. O teste de integração com servidor HTTP local valida a arquitetura de login, **não** valida acesso à Central Novel nem seu próprio Cloudflare.
 4. Instabilidade transitória, DNS, TLS e HTTP 5xx do site externo não devem ser tratados automaticamente como regressões da extensão.
@@ -58,6 +63,6 @@ A matriz `desktop/test/source-matrix.cjs` instala e tenta navegar/ler nove fonte
 
 **Importante:** resultados são amostras pontuais. O mesmo site pode responder de forma diferente por IP, região, horário, conta e perfil de sessão.
 
-## Antes do lançamento público
+## Verificações pendentes na `main`
 
-Testar login real de Central Novel no Windows e Linux, persistência de cookies após reiniciar, restauração dos dados do usuário, URLs redirecionadas e dependências com avisos de segurança. Não fundir esta branch automaticamente.
+Testar login real em fontes com desafio no Windows e Linux, persistência de cookies após reiniciar, exclusão de dados de sessão ao remover uma extensão, redirecionamentos e falhas DNS reais. A análise histórica desta branch já foi incorporada à `main`; não há merge pendente dessa branch. A falta de jobs de CI executados na revisão de 13/11/2026 impede afirmar que essa matriz foi revalidada.

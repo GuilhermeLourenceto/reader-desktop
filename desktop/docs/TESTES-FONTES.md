@@ -30,7 +30,7 @@ Classificação:
 
 ## Cobertura do catálogo
 
-Para o primeiro beta, amostrar:
+Para cada rodada de regressão, amostrar:
 - Fontes em português, inglês e outros idiomas.
 - Sem login e com login por cookies.
 - Sites com e sem desafios Cloudflare.
@@ -41,8 +41,10 @@ Para o primeiro beta, amostrar:
 Priorizar fontes com falhas reproduzíveis e registrar detalhes antes de criar exceção.
 Nunca fazer login automaticamente, automatizar resolução de CAPTCHA, nem armazenar senhas no código ou logs.
 
-## Estado da implementação
+## Estado atual da implementação
 
-A branch `seguranca-e-estabilidade` introduz uma primeira versão de sessões por fonte e janela de login, além de validação de destinos HTTP. **Isso não constitui suporte verificado a Cloudflare**. É necessário testar o fluxo real da janela de autenticação, cookies, redirecionamentos e encerramento da sessão. A política de URL protege endereços explícitos; requer revisão adicional para impedir resolução DNS para rede local/rebinding, e testes em diferentes plataformas.
+A `main` contém sessões persistentes e janelas de login segregadas por fonte, além da política de destinos HTTP em `src/infrastructure/networkPolicy.cjs`. O `RequestPool` aplica validação de endereços explícitos, destinos de redirecionamentos e **endereços resolvidos via DNS**. Essa proteção não comprova ausência de condições de corrida de DNS/rebinding nem suporte universal a Cloudflare.
+
+É necessário testar o fluxo real de autenticação, cookies por sessão, redirecionamentos, expiração da sessão e comportamento após remover/reinstalar fontes em diferentes plataformas. As medições de 29/10/2026 são históricas.
 
 Os testes de unidade da política de rede não substituem os testes Electron nem o funcionamento real dos sites.

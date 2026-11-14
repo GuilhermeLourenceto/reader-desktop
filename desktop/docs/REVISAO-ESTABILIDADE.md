@@ -1,5 +1,11 @@
 # Revisão de estabilidade do desktop — 28/10/2026
 
+> **Registro histórico.** Esta auditoria documenta correções e medições feitas
+> em 28/10/2026, não a cobertura da `main` em 13/11/2026. Em especial, a
+> referência ao limite de 512 MiB abaixo descreve o caminho antigo de backup
+> em memória; o fluxo principal atual usa ZIP64 com streaming em
+> `src/zipStreaming.cjs` e limites específicos de metadados e entradas.
+
 Escopo: código do port desktop, ponte Electron, persistência, backups, leitura,
 downloads, fontes, paginação e os módulos originais usados nesses caminhos.
 As correções desta revisão se concentram em funcionamento e estabilidade.
