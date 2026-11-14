@@ -2,6 +2,8 @@
 
 ## Em desenvolvimento na `main` (após o código 0.4.5 Beta)
 
+- Validação candidata a pré-estável no Debian 13 KDE Plasma/Wayland: build, suíte completa de testes, pacotes AppImage/DEB, inicialização dos executáveis empacotados em perfis descartáveis, worker dentro do ASAR, backup de 530 MiB e teste de 474 MiB com duas restaurações. README atualizado com seis capturas reais e [relatório de validação](docs/PREESTAVEL-LINUX.md). Ainda sem nova versão Stable.
+
 - Revisão de robustez no Linux: testes de backups Android v2 para configurações ausentes/desconhecidas/inválidas, ZIPs danificados e limpeza segura de importações parciais; erros mostrados de forma simples, com opção direta de exportar relatório privado. Diagnósticos compactos com detalhes técnicos recolhidos; layout validado em 800/1280 px e teste Electron incluído em `test:all`.
 
 - Correções validadas localmente no Linux: import de obras ajustado após a modularização; backups ZIP64 gerados por streaming agora abrem também nos leitores ZIP legados; auditoria de traduções completada para diagnósticos em dez idiomas; testes de exportação e temporizador alinhados ao comportamento de preservação de preferências; build deixa de sobrescrever os ícones versionados.

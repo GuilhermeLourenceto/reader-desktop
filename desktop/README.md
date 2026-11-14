@@ -1,4 +1,4 @@
-# LNReader Desktop — versão beta para Windows e Linux
+# LNReader Desktop
 
 Port para Windows 10/11 e Linux usando Electron. A interface desktop é nova,
 adaptada para mouse, teclado e telas maiores. Em janelas largas, os detalhes da
@@ -9,14 +9,41 @@ o painel de filtros oferece ordem inversa e ordenação por nome/número.
 As opções para definir a direção
 da fonte e ler desde o início também ficam nesse painel. O código Android antigo continua acessível no histórico Git; a `main` agora contém somente o projeto Desktop.
 
-Versão atual: **0.4.5 Beta (Windows e Linux)**. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.4.5.md).
+Versão atual: **0.4.5 Beta (Windows e Linux)**. A `main` é uma **candidata a pré-estável no Linux** após testes locais em Debian 13 KDE Plasma/Wayland; ainda não foi publicada uma versão Stable. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.4.5.md).
+
+[Relatório de validação para pré-estável Linux](docs/PREESTAVEL-LINUX.md).
+
+## Capturas de tela
+
+Capturas **reais do Electron no Debian 13**, geradas por testes gráficos em 14/11/2026 com dados demonstrativos. O visual e as fontes podem variar de acordo com tema, versão e sistema.
+
+| Biblioteca e filtros | Detalhes e capítulos |
+| :---: | :---: |
+| ![Biblioteca do Reader Desktop com capas, filtros e navegação](docs/screenshots/desktop-library.png) | ![Detalhes de uma obra e capítulos em duas colunas](docs/screenshots/desktop-novel.png) |
+| **Leitura com controles** | **Configurações** |
+| ![Leitor do Reader Desktop e controles de leitura](docs/screenshots/desktop-reader.png) | ![Tela de configurações](docs/screenshots/desktop-settings.png) |
+| **Filtros da biblioteca** | **Diagnósticos e relatórios** |
+| ![Filtros de categoria, estado e ordenação](docs/screenshots/desktop-filters.png) | ![Erros recentes, exportação de relatório e histórico](docs/screenshots/desktop-diagnostics.png) |
+
+## Situação da pré-estabilidade no Linux
+
+| Área | Verificação local em Debian 13 KDE Plasma/Wayland |
+| :--- | :--- |
+| Código e interface | `npm run test:all`: 215 testes unitários aprovados, 1 opcional ignorado e testes gráficos/jornadas aprovados |
+| Instaladores | `npm run dist:linux` gerou AppImage e `.deb` amd64; ambos iniciaram com `--disable-gpu` em perfis descartáveis (o `.deb` foi extraído, sem instalação no sistema) |
+| Backup do aplicativo empacotado | Worker funcionou a partir de `app.asar`; exportação/importação e preferências preservadas |
+| Volume | 6.000 obras, 92.985 capítulos, 474 MiB de dados e duas restaurações com verificação SHA-256 |
+| Limite histórico | Arquivo offline de 530 MiB exportado e restaurado por streaming sem limite de 512 MiB |
+| Pendências | Instalação do `.deb` via gerenciador de pacotes; outras distribuições, sessão X11 e backups reais variados do LNReader Android |
+
+Os testes usam perfis temporários e arquivos sintéticos. **Pré-estável não significa livre de falhas:** use cópias dos backups importantes, sobretudo na primeira migração entre Android e Desktop. A versão Windows permanece Beta e não foi revalidada nesta rodada.
 
 A interface utiliza uma cópia versionada da paleta original,
 em `vendor/lnreader/src/theme/md3/defaultTheme.ts`, e as fontes
 Noto Sans, PT Sans e PT Serif armazenadas dentro de `vendor/lnreader/assets/`.
 Esse conjunto é independente da pasta Android na compilação. A navegação, filtros de categorias, contadores nas
 capas, ícones das fontes e leitor em tela inteira seguem o visual do Android.
-Os backups ficam em **Mais → Backups e ajustes**.
+Os backups ficam em **Mais → Backups**.
 A revisão das regras de funcionamento do Android está em
 [`docs/COMPATIBILIDADE-ORIGINAL.md`](./docs/COMPATIBILIDADE-ORIGINAL.md), com os
 arquivos originais consultados, adaptações, testes e diferenças ainda pendentes.
@@ -71,7 +98,7 @@ terceiros podem conter informações inesperadas.
 
 ## Executar a partir do código
 
-Requer Node.js 24 e npm. Na pasta `desktop`:
+Requer Node.js e npm. O fluxo foi executado localmente com **Node.js 20.19.2** e **npm 9.2.0**; versões futuras precisam de validação própria. Na pasta `desktop`:
 
 ```sh
 npm ci
@@ -110,12 +137,17 @@ Windows/Ubuntu. A publicação de releases é condicionada a jobs específicos;
 artefatos de teste não equivalem a instaladores distribuídos. Há ainda
 workflows de portabilidade, preparação Linux e stress, com gatilhos próprios.
 
-**Estado em 13/11/2026:** as execuções mais recentes da `main` terminaram
-em falha após poucos segundos, sem passos de job disponíveis. Não há confirmação
-de que o código reorganizado tenha passado pelo build e por todos os testes.
-Consulte o [GitHub Actions](https://github.com/GuilhermeLourenceto/lnreader-desktop/actions)
-e o [guia Linux](docs/CONTINUAR-NO-LINUX.md). A instalação em Linux real
-continua exigindo testes em X11 e Wayland; os binários não são assinados.
+**Validação local de 14/11/2026:** a `main` compilou no Debian 13 KDE Plasma/Wayland,
+com `npm run test:all`, `npm run dist:linux`, execução do AppImage em perfil
+isolado com `--disable-gpu` e teste do worker de backup dentro do ASAR
+aprovado. O pacote `.deb` foi gerado, inspecionado e seu executável iniciou
+após extração em pasta temporária (com `--disable-gpu`). A instalação no sistema
+com `dpkg` **não foi realizada**. O teste `apt-get -s install` confirmou que o
+gerenciador resolveria as dependências.
+Esse resultado é independente do [GitHub Actions](https://github.com/GuilhermeLourenceto/lnreader-desktop/actions):
+não implica CI aprovado, assinatura digital ou suporte confirmado em todas as
+distribuições, sessões X11 ou máquinas Windows. Consulte também o
+[guia Linux](docs/CONTINUAR-NO-LINUX.md).
 
 ## Estrutura independente e código original reaproveitado
 
@@ -177,8 +209,8 @@ virtualização de cartões: apenas as linhas visíveis e uma pequena margem
 ficam montadas no renderer. O grid mantém capas, badges, seleção, pesquisa,
 categorias e menus de contexto. Listas pequenas usam a renderização anterior.
 Os metadados das obras e capítulos permanecem em memória, portanto a
-virtualização não garante um tamanho fixo de RAM. O projeto possui um teste gráfico com 10 mil obras e 200 mil capítulos,
-mas seu resultado atual depende de executar novamente a suíte.
+virtualização não garante um tamanho fixo de RAM. O projeto possui teste gráfico com 10 mil obras e 200 mil capítulos,
+aprovado localmente no Debian 13 durante a rodada de 14/11/2026.
 
 ## Biblioteca, leitura e backups
 
@@ -279,15 +311,24 @@ Mantenha a pasta `content/` junto desses arquivos; os índices novos dependem de
 ## Validação
 
 ```sh
-npm run build
-npm test
-npm run test:smoke
-npm run test:pagination
-npm run test:reader
+npm run test:all       # build, lint, testes unitários e testes Electron
+npm run dist:linux     # gerar AppImage e .deb no Linux
 ```
 
+Para habilitar também o teste de um arquivo offline de 530 MiB (mais lento e com
+uso temporário de disco), execute:
+
+```sh
+READER_LARGE_BACKUP_TEST=1 node --test test/zip-streaming.test.cjs
+```
+
+Os testes Electron precisam de uma sessão gráfica (X11 ou Xwayland). O teste
+`test:diagnostics` verifica mensagens simples, exportação privada de relatório
+e geometria da tela em larguras de 800 e 1280 pixels.
+
 Os testes verificam ZIP antigo/atual, ida e volta de dados/arquivos/progresso,
-backup parcial e entradas inválidas. O teste Electron usa uma fonte de teste
+backup parcial, entradas inválidas, dados opcionais ausentes, rejeição de ZIPs
+corrompidos e preservação das preferências escolhidas pelo usuário. O teste Electron usa uma fonte de teste
 local e uma pasta temporária própria: instala o plugin pelo carregador original,
 abre uma obra, lê e salva um capítulo, rejeita scripts no HTML e repete a leitura
 offline. A janela de teste fica oculta e fecha ao terminar.
