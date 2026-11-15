@@ -2,6 +2,9 @@
 
 ## Em desenvolvimento na `main` (após o código 0.4.5 Beta)
 
+- Restauração Android mais rápida em volumes FUSE (incluindo Google Drive/rclone): leitura sequencial única para uma cópia temporária local antes de abrir o ZIP, com verificação de espaço livre e limpeza posterior; arquivos já locais não são duplicados. No backup Android de 93 MB testado em Debian KDE: importação pelo Drive em 11,2 s e importação local em 2,9 s.
+- Respeito ao campo Android `inLibrary`: registros usados apenas como cache/consulta deixam de ser importados como obras da biblioteca e seus arquivos offline/capas são ignorados; backups Desktop mantêm a compatibilidade com registros legados. Testes adicionais de falha, limpeza e importação real pelo worker empacotado.
+
 - Validação candidata a pré-estável no Debian 13 KDE Plasma/Wayland: build, suíte completa de testes, pacotes AppImage/DEB, inicialização dos executáveis empacotados em perfis descartáveis, worker dentro do ASAR, backup de 530 MiB e teste de 474 MiB com duas restaurações. README atualizado com seis capturas reais e [relatório de validação](docs/PREESTAVEL-LINUX.md). Ainda sem nova versão Stable.
 
 - Revisão de robustez no Linux: testes de backups Android v2 para configurações ausentes/desconhecidas/inválidas, ZIPs danificados e limpeza segura de importações parciais; erros mostrados de forma simples, com opção direta de exportar relatório privado. Diagnósticos compactos com detalhes técnicos recolhidos; layout validado em 800/1280 px e teste Electron incluído em `test:all`.

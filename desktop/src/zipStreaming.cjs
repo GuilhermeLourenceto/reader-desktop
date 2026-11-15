@@ -19,6 +19,9 @@ const MAX_ENTRIES = 100000;
 const MAX_METADATA_ENTRY = 128 * 1024 * 1024;
 const MAX_METADATA_TOTAL = 384 * 1024 * 1024;
 const ALREADY_COMPRESSED = /\.(?:png|jpe?g|gif|webp|avif|heic|woff2?|mp3|m4a|ogg|mp4|webm|pdf|zip|epub|gz)$/i;
+// The Linux FUSE filesystem type (rclone, SSHFS, etc). ZIP central-directory
+// reads cause many remote seeks; one sequential copy is substantially faster.
+const FUSE_SUPER_MAGIC = 0x65735546;
 
 class ZipWriter {
   constructor(filename) {
@@ -349,7 +352,37 @@ async function copyEntry(entry, destination, limit, progress, returnBuffer = fal
   return returnBuffer ? Buffer.concat(chunks) : hash.digest('hex');
 }
 
-async function importBackup({ filename, contentDirectory, progress = () => {} }) {
+async function localizeRemoteArchive(filename, workspace, progress, forceLocalStage) {
+  // Local disks already support fast random-access ZIP reads; never duplicate
+  // a multi-gigabyte archive just because its file is large.
+  const remoteFuse = process.platform === 'linux' &&
+    typeof fs.statfsSync === 'function' &&
+    fs.statfsSync(filename).type === FUSE_SUPER_MAGIC;
+  if (!remoteFuse && !forceLocalStage) return filename;
+  const size = (await fs.promises.stat(filename)).size;
+  const space = fs.statfsSync(workspace);
+  const available = BigInt(space.bavail) * BigInt(space.bsize);
+  // Keep importing directly if staging would exhaust the local filesystem.
+  if (BigInt(size) + 128n * 1024n * 1024n > available) return filename;
+  const staged = path.join(workspace, 'source.zip');
+  await pipeline(
+    fs.createReadStream(filename),
+    new Transform({
+      transform(chunk, _encoding, callback) {
+        progress(chunk.length);
+        callback(null, chunk);
+      },
+    }),
+    fs.createWriteStream(staged, { flags: 'wx' }),
+  );
+  if ((await fs.promises.stat(staged)).size !== size)
+    throw new Error('Cópia local do backup incompleta');
+  return staged;
+}
+
+async function importBackup({
+  filename, contentDirectory, progress = () => {}, forceLocalStage = false,
+}) {
   const workspace = await fs.promises.mkdtemp(
     path.join(contentDirectory, '.reader-import-'),
   );
@@ -357,7 +390,10 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
   const importedNewHashes = new Set();
   let completed = false;
   try {
-    const outer = inspect(await unzipper.Open.file(filename), budget);
+    const localFilename = await localizeRemoteArchive(
+      filename, workspace, progress, forceLocalStage,
+    );
+    const outer = inspect(await unzipper.Open.file(localFilename), budget);
     let metadata = outer, prefix = '';
     if (!outer.has('Version.json')) {
       const candidates = [...outer.keys()].filter(name =>
@@ -432,6 +468,12 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
     const restored = parseBackupEntries(metadataEntries, {
       streamedArchives: true, preparsedNovels,
     });
+    // Do not copy offline chapters or covers for Android database entries
+    // explicitly marked as not belonging to the library.
+    const androidLibrary = !restored.isDesktopBackup && sections.library;
+    const libraryNovelKeys = new Set(restored.state.novels.map(novel =>
+      novel.pluginId + '/' + novel.id));
+    const libraryNovelIds = new Set(restored.state.novels.map(novel => novel.id));
     const store = async (name, entry) => {
       safePath(name);
       const tmp = path.join(workspace, randomUUID());
@@ -465,6 +507,11 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
       const entries = inspect(await unzipper.Open.file(nestedFile), budget);
       for (const [name, entry] of entries) {
         const target = base ? base + name : name;
+        if (androidLibrary && target.startsWith('Novels/')) {
+          const relative = target.slice('Novels/'.length);
+          const [pluginId, novelId] = relative.split('/');
+          if (!libraryNovelKeys.has(pluginId + '/' + novelId)) continue;
+        }
         if (base || target.startsWith('Novels/') || target.startsWith('Plugins/'))
           await store(target, entry);
       }
@@ -477,7 +524,8 @@ async function importBackup({ filename, contentDirectory, progress = () => {} })
     }
     if (sections.library) {
       for (const [name, entry] of metadata)
-        if (name.startsWith('Covers/'))
+        if (name.startsWith('Covers/') &&
+            (!androidLibrary || libraryNovelIds.has(Number(name.slice(7)))))
           await store(name, entry);
     }
     validateState(restored.state);

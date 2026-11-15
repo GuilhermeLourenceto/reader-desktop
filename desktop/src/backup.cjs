@@ -181,7 +181,12 @@ function parseBackupEntries(
         throw new Error('Novel inválida no backup');
       safePath(novel.pluginId);
       ids.add(novel.id);
-      state.novels.push(novel);
+      // Android backs up every novel record in its database, including
+      // browsing/cache entries that were never added to the library. Keep
+      // Reader Desktop archives lossless, but restore only Android books
+      // whose inLibrary flag is not explicitly false.
+      if (version.desktopState !== undefined || novel.inLibrary !== false)
+        state.novels.push(novel);
     }
     // AdmZip lists NovelAndChapters/*.json by ZIP filename, so without an
     // explicit order a large library can silently reorder after restoration.
@@ -238,6 +243,15 @@ function parseBackupEntries(
       throw new Error('Registro de plugins inválido');
     delete state.settings[INSTALLED_PLUGINS_KEY];
   }
+  const androidLibrary = version.desktopState === undefined && sections.library;
+  const libraryNovelKeys = new Set(state.novels.map(n =>
+    n.pluginId + '/' + n.id));
+  const libraryNovelIds = new Set(state.novels.map(n => n.id));
+  const includeAndroidFile = name => {
+    if (!androidLibrary) return true;
+    const [pluginId, novelId] = name.split('/');
+    return libraryNovelKeys.has(pluginId + '/' + novelId);
+  };
   const addFiles = (archive, prefix, select = () => true) => {
     if (!entries.has(archive)) throw new Error(`Backup sem ${archive}`);
     if (!streamedArchives)
@@ -249,17 +263,21 @@ function parseBackupEntries(
   if (formatVersion === 2) {
     if (sections.plugins) addFiles(ZipBackupName.PLUGINS, 'Plugins/');
     if (sections.downloadedFiles)
-      addFiles(ZipBackupName.NOVEL_FILES, 'Novels/');
+      addFiles(ZipBackupName.NOVEL_FILES, 'Novels/', includeAndroidFile);
   } else {
     addFiles(
       ZipBackupName.DOWNLOAD,
       '',
-      name => name.startsWith('Plugins/') || name.startsWith('Novels/'),
+      name => name.startsWith('Plugins/') ||
+        (name.startsWith('Novels/') &&
+          includeAndroidFile(name.slice('Novels/'.length))),
     );
   }
   if (!streamedArchives)
     for (const [name, data] of entries) {
-      if (name.startsWith(`${BackupEntryName.COVERS}/`))
+      if (name.startsWith(`${BackupEntryName.COVERS}/`) &&
+          (!androidLibrary ||
+            libraryNovelIds.has(Number(name.slice(BackupEntryName.COVERS.length + 1)))))
         state.files[name] = storeFile(name, data);
     }
   validateState(state);

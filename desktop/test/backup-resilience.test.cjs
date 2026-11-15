@@ -135,3 +135,81 @@ test('unselected malformed Android metadata is ignored while valid preferences i
   assert.equal(result.next.settings.desktopReaderHideDelay, 7.4);
   assert.equal(result.next.settings.desktopReaderAutoHide, false);
 });
+
+
+test('staged Android archive imports only books marked inLibrary and skips their offline blobs', async t => {
+  const offline = new AdmZip();
+  offline.addFile('site/1/10/index.html', Buffer.from('book in library'));
+  offline.addFile('site/2/20/index.html', Buffer.from('browser cache, not in library'));
+  const input = fixture(t, {
+    'Version.json': manifest({
+      library: true, settings: false, plugins: false, downloadedFiles: true,
+    }),
+    'NovelAndChapters/1.json': {
+      id: 1, pluginId: 'site', path: '/kept', name: 'In library',
+      inLibrary: true,
+      chapters: [{ id: 10, path: '/10', name: 'Read' }],
+    },
+    'NovelAndChapters/2.json': {
+      id: 2, pluginId: 'site', path: '/cached', name: 'Cached only',
+      inLibrary: false,
+      chapters: [{ id: 20, path: '/20', name: 'Preview' }],
+    },
+    'Category.json': [{ id: 1, name: 'Padrão', novelIds: [1] }],
+    'Covers/1': Buffer.from('kept cover'),
+    'Covers/2': Buffer.from('cached cover'),
+    'novel-files.zip': offline.toBuffer(),
+  });
+  const originalZip = fs.readFileSync(input.filename);
+  const { parseBackup } = require('../dist/backup.cjs');
+  const parsed = parseBackup(originalZip);
+  assert.equal(parsed.state.novels.length, 1);
+  assert.equal(Object.keys(parsed.state.files).length, 2);
+  const restored = await importBackup({ ...input, forceLocalStage: true });
+  assert.equal(restored.state.novels.length, 1);
+  assert.equal(restored.state.novels[0].name, 'In library');
+  assert.equal(Object.keys(restored.state.files).length, 2);
+  assert.match(restored.state.files['Novels/site/1/10/index.html'], /^@file:/);
+  assert.match(restored.state.files['Covers/1'], /^@file:/);
+  assert.equal(restored.state.files['Novels/site/2/20/index.html'], undefined);
+  assert.equal(restored.state.files['Covers/2'], undefined);
+  assert.equal(planRestore(currentState(), restored).next.novels.length, 2);
+  assert.equal(fs.readdirSync(input.contentDirectory).some(
+    name => name.startsWith('.reader-import-')), false,
+    'local staging and extracted temporary ZIPs must always be cleaned up');
+  assert.deepEqual(fs.readFileSync(input.filename), originalZip,
+    'never change the original Android backup');
+});
+
+test('failed local staging leaves neither copied ZIP nor orphaned imported files', async t => {
+  const input = fixture(t, {
+    'Version.json': manifest({
+      library: true, settings: false, plugins: false, downloadedFiles: true,
+    }),
+    'NovelAndChapters/1.json': { id: 1, name: 'Bad',
+      pluginId: 'site', path: '/book', chapters: [] },
+    'novel-files.zip': Buffer.from('this is not a ZIP'),
+  });
+  await assert.rejects(importBackup({ ...input, forceLocalStage: true }));
+  assert.deepEqual(fs.readdirSync(input.contentDirectory), []);
+});
+
+test('Desktop metadata may retain a non-library record for compatibility', async t => {
+  const input = fixture(t, {
+    'Version.json': {
+      ...manifest({ library: true, settings: false, plugins: false,
+        downloadedFiles: false }),
+      desktopState: { repositories: [], pluginStorage: {} },
+      desktopNovelCount: 1, desktopNovelOrder: [9],
+    },
+    'NovelAndChapters/9.json': {
+      id: 9, pluginId: 'site', path: '/cached',
+      name: 'Previously known record', inLibrary: false, chapters: [],
+    },
+    'Category.json': [],
+  });
+  const restored = await importBackup(input);
+  assert.equal(restored.isDesktopBackup, true);
+  assert.equal(restored.state.novels.length, 1);
+  assert.equal(restored.state.novels[0].inLibrary, false);
+});
