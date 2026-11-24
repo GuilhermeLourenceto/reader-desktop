@@ -111,6 +111,10 @@ Para desenvolvedores: [como começar](desktop/docs/DEVELOPMENT.md) · [arquitetu
 
 Sugestões, traduções, relatórios de problemas e contribuições de código são bem-vindos. Use as [issues](https://github.com/GuilhermeLourenceto/reader-desktop/issues) ou confira o [guia de contribuição](CONTRIBUTING.md).
 
+## Contato
+
+Para dúvidas, sugestões ou conversar sobre o projeto, entre em contato pelo **Discord:** `faw8413` (faw.lourenceto).
+
 ## Créditos e origem
 
 Um agradecimento especial à **equipe e aos contribuidores do [LNReader](https://github.com/LNReader/lnreader)**, cujo trabalho de código aberto tornou este projeto possível.
