@@ -1,6 +1,6 @@
-# Política de segurança — LNReader Desktop
+# Política de segurança — Reader Desktop
 
-O projeto ainda é **experimental**. Não há compromisso de suporte a versões
+O projeto está em **beta**. Não há compromisso de suporte a versões
 antigas e o instalador Windows não possui assinatura digital de distribuição.
 
 A aplicação executa extensões em Web Workers e valida operações de rede

@@ -1,10 +1,5 @@
 # Isolamento de fontes — arquitetura do Desktop
 
-Este documento nasceu na versão 0.1.0. O modelo de Web Workers continua
-no código, mas os resultados dos testes citados abaixo pertencem à época da
-sua execução. Os módulos principais agora convivem com serviços em
-`src/infrastructure/` e funcionalidades em `src/features/sources/`.
-
 Cada fonte carregada executa em um Web Worker dedicado. O `pluginManager`, os
 pacotes e os auxiliares originais executam dentro dele; a thread do React recebe
 somente os dados e proxies dos métodos. A abertura do app verifica os arquivos
@@ -37,11 +32,7 @@ instalados sem executar todos os plugins.
 
 ## Validação
 
-`test/version01-smoke.cjs` instala no perfil temporário uma fonte cujo código
-executa `while(true)`. O teste verifica que JavaScript da interface e a animação
-do spinner continuam ativos, interrompe a fonte pelo botão e volta à leitura
-em cache. Os testes existentes cobrem cache, instalação, busca, paginação,
-HTTP, downloads e backups. A Central Novel também foi validada no novo runtime.
+Execute os testes de regressão de fontes, cancelamento, rede e leitura offline conforme o [guia de desenvolvimento](DEVELOPMENT.md).
 
 ## Limites
 
@@ -51,7 +42,4 @@ provocado por código hostil. Fontes que dependem de DOM, login interativo ou
 WebView continuam exigindo adaptação. Bloqueios de sites e erros de DNS/TLS não
 são resolvidos desativando a proteção da conexão.
 
-A janela instalada mantém sandbox e isolamento de contexto. Neste ambiente de
-QA, os testes ocultos precisaram de TEMP/TMP dentro do projeto e `--no-sandbox`
-exclusivamente no comando de teste. Essa exceção não é adicionada ao aplicativo
-nem ao instalador.
+A janela instalada mantém sandbox e isolamento de contexto.

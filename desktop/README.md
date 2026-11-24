@@ -11,8 +11,6 @@ da fonte e ler desde o início também ficam nesse painel. O código Android ant
 
 Versão declarada no código: **0.4.6 Beta (Windows e Linux)**. Ainda não foi publicada uma versão Stable. Consulte o [histórico de versões](CHANGELOG.md).
 
-[Relatório de validação para pré-estável Linux](docs/PREESTAVEL-LINUX.md).
-
 ## Capturas de tela
 
 Capturas **reais do Electron no Debian 13**, geradas por testes gráficos em 14/11/2026 com dados demonstrativos. O visual e as fontes podem variar de acordo com tema, versão e sistema.
@@ -25,18 +23,7 @@ Capturas **reais do Electron no Debian 13**, geradas por testes gráficos em 14/
 | **Filtros da biblioteca** | **Diagnósticos e relatórios** |
 | ![Filtros de categoria, estado e ordenação](docs/screenshots/desktop-filters.png) | ![Erros recentes, exportação de relatório e histórico](docs/screenshots/desktop-diagnostics.png) |
 
-## Validação histórica no Linux (14/11/2026)
-
-| Área | Verificação local em Debian 13 KDE Plasma/Wayland |
-| :--- | :--- |
-| Código e interface | `npm run test:all`: 215 testes unitários aprovados, 1 opcional ignorado e testes gráficos/jornadas aprovados |
-| Instaladores | `npm run dist:linux` gerou AppImage e `.deb` amd64; ambos iniciaram com `--disable-gpu` em perfis descartáveis (o `.deb` foi extraído, sem instalação no sistema) |
-| Backup do aplicativo empacotado | Worker funcionou a partir de `app.asar`; exportação/importação e preferências preservadas |
-| Volume | 6.000 obras, 92.985 capítulos, 474 MiB de dados e duas restaurações com verificação SHA-256 |
-| Limite histórico | Arquivo offline de 530 MiB exportado e restaurado por streaming sem limite de 512 MiB |
-| Pendências | Instalação do `.deb` via gerenciador de pacotes; outras distribuições, sessão X11 e backups reais variados do LNReader Android |
-
-Os testes usam perfis temporários e arquivos sintéticos. **Pré-estável não significa livre de falhas:** use cópias dos backups importantes, sobretudo na primeira migração entre Android e Desktop. A versão Windows permanece Beta e não foi revalidada nesta rodada.
+## Funcionamento
 
 A interface utiliza uma cópia versionada da paleta original,
 em `vendor/lnreader/src/theme/md3/defaultTheme.ts`, e as fontes
@@ -44,9 +31,6 @@ Noto Sans, PT Sans e PT Serif armazenadas dentro de `vendor/lnreader/assets/`.
 Esse conjunto é independente da pasta Android na compilação. A navegação, filtros de categorias, contadores nas
 capas, ícones das fontes e leitor em tela inteira seguem o visual do Android.
 Os backups ficam em **Mais → Backups**.
-A revisão das regras de funcionamento do Android está em
-[`docs/COMPATIBILIDADE-ORIGINAL.md`](./docs/COMPATIBILIDADE-ORIGINAL.md), com os
-arquivos originais consultados, adaptações, testes e diferenças ainda pendentes.
 Abrir detalhes não adiciona mais uma obra automaticamente à biblioteca.
 O progresso usa a escala nativa 0–100 e capítulos são marcados como lidos a
 partir de 97%, com histórico registrado separadamente.
@@ -133,21 +117,10 @@ distribuições precisam do pacote de compatibilidade do FUSE.
 
 A automação [Desktop builds](../.github/workflows/desktop.yml) prevê lint,
 build independente do Android, testes Electron e uma matriz de empacotamento
-Windows/Ubuntu. A publicação de releases é condicionada a jobs específicos;
-artefatos de teste não equivalem a instaladores distribuídos. Há ainda
+Windows/Ubuntu. Artefatos de teste não equivalem a instaladores distribuídos. Há ainda
 workflows de portabilidade, preparação Linux e stress, com gatilhos próprios.
 
-**Validação local de 14/11/2026:** a `main` compilou no Debian 13 KDE Plasma/Wayland,
-com `npm run test:all`, `npm run dist:linux`, execução do AppImage em perfil
-isolado com `--disable-gpu` e teste do worker de backup dentro do ASAR
-aprovado. O pacote `.deb` foi gerado, inspecionado e seu executável iniciou
-após extração em pasta temporária (com `--disable-gpu`). A instalação no sistema
-com `dpkg` **não foi realizada**. O teste `apt-get -s install` confirmou que o
-gerenciador resolveria as dependências.
-Esse resultado é independente do [GitHub Actions](https://github.com/GuilhermeLourenceto/lnreader-desktop/actions):
-não implica CI aprovado, assinatura digital ou suporte confirmado em todas as
-distribuições, sessões X11 ou máquinas Windows. Consulte também o
-[guia Linux](docs/CONTINUAR-NO-LINUX.md).
+**Validação:** execute os testes no sistema de destino antes de distribuir um instalador. Consulte o [guia de desenvolvimento](docs/DEVELOPMENT.md).
 
 ## Estrutura independente e código original reaproveitado
 
@@ -182,7 +155,7 @@ nenhuma importação. A sincronização opcional **não faz parte de
 Ao copiar só a pasta `desktop/` para outro repositório, a compilação
 continua funcionando sem ele.
 
-A branch Git pertence ao repositório, não à pasta. A `main` contém o Desktop a partir da v0.3.0; a `seguranca-e-estabilidade` foi preservada como referência. O código Android anterior permanece no histórico Git.
+A branch `main` contém o Reader Desktop.
 
 A interface React Native, consultas Drizzle/SQLite e serviços Android
 não são incluídos. Os arquivos baixados ficam em `content/`, separados
@@ -209,8 +182,7 @@ virtualização de cartões: apenas as linhas visíveis e uma pequena margem
 ficam montadas no renderer. O grid mantém capas, badges, seleção, pesquisa,
 categorias e menus de contexto. Listas pequenas usam a renderização anterior.
 Os metadados das obras e capítulos permanecem em memória, portanto a
-virtualização não garante um tamanho fixo de RAM. O projeto possui teste gráfico com 10 mil obras e 200 mil capítulos,
-aprovado localmente no Debian 13 durante a rodada de 14/11/2026.
+virtualização não garante um tamanho fixo de RAM. O projeto possui testes gráficos para bibliotecas grandes.
 
 ## Biblioteca, leitura e backups
 
@@ -270,8 +242,6 @@ disco, mais de 100 mil entradas e falta de espaço para extrair os arquivos.
 Metadados JSON são limitados separadamente para proteger a memória. Os jobs
 são executados em worker e interrompidos apenas após cinco minutos sem progresso;
 backups grandes podem demorar e ocupar espaço temporário em disco.
-O resultado da revisão de persistência, memória, rede e fontes está em
-[`docs/REVISAO-ESTABILIDADE.md`](./docs/REVISAO-ESTABILIDADE.md), incluindo testes e limitações.
 
 ## Leitura
 
@@ -333,7 +303,7 @@ local e uma pasta temporária própria: instala o plugin pelo carregador origina
 abre uma obra, lê e salva um capítulo, rejeita scripts no HTML e repete a leitura
 offline. A janela de teste fica oculta e fecha ao terminar.
 
-Veja os [testes de volume](docs/STRESS-TESTS.md) e as [mudanças da versão](CHANGELOG.md).
+Consulte o [histórico de versões](CHANGELOG.md).
 Falta ampliar a validação para outros computadores e versões do Windows.
 
 ## Estrutura da pasta
@@ -367,8 +337,7 @@ podem ser abertas no navegador ou capturadas com o Chrome headless.
 
 Não assuma paridade com o LNReader Android: funcionalidades como sincronização
 em nuvem, rastreadores, TTS, exportação EPUB e tarefas com o aplicativo fechado
-não são oferecidas como recursos desktop confirmados nesta versão. Para diferenças
-conhecidas, consulte [COMPATIBILIDADE-ORIGINAL.md](docs/COMPATIBILIDADE-ORIGINAL.md).
+não são oferecidas como recursos desktop confirmados nesta versão.
 
 A janela usa isolamento de contexto, sandbox e Node desabilitado. O leitor
 sanitiza HTML. `unsafe-eval` permanece necessário para o carregador original

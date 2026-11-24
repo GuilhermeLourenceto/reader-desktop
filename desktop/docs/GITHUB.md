@@ -1,7 +1,6 @@
-# Repositório LNReader Desktop
+# Repositório Reader Desktop
 
-A partir da v0.3.0, a branch padrão `main` contém o LNReader Desktop.
-O antigo código Android continua recuperável pelo histórico Git.
+A branch padrão `main` contém o Reader Desktop.
 
 - `desktop/src/`: inicialização Electron e módulos de baixo nível.
 - `desktop/src/features/`: funcionalidades de biblioteca, leitor, fontes e interface.
@@ -66,8 +65,6 @@ O Desktop não é uma distribuição oficial do LNReader Android.
 
 ## Colaboração
 
-Envie pull requests para `main`. O empacotamento Linux já está configurado
-na própria `main`; a antiga branch experimental é parte do histórico.
+Envie pull requests para `main`. O empacotamento Windows e Linux está configurado no projeto.
 Leia [CONTRIBUTING.md](../../CONTRIBUTING.md) e
 [ARCHITECTURE.md](ARCHITECTURE.md) antes de alterar o motor de plugins.
-A `main` segue sendo a branch padrão do GitHub e contém o Desktop a partir da v0.3.0.

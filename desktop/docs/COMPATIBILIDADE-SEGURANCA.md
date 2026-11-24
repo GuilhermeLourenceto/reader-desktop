@@ -1,15 +1,10 @@
 # Compatibilidade e isolamento das fontes
 
-> **Origem histórica:** avaliação da antiga branch `seguranca-e-estabilidade` em
-> 29/10/2026. A implementação atual é mantida na `main`. Os resultados de
-> fontes externas abaixo representam aquela data, não uma certificação atual.
->
-> **Código de referência:** `src/infrastructure/networkPolicy.cjs`,
-> `src/request.cjs`, `src/sourceClient.js`, `src/main.cjs`.
+**Código de referência:** `src/infrastructure/networkPolicy.cjs`, `src/request.cjs`, `src/sourceClient.js`, `src/main.cjs`.
 
 ## Objetivo
 
-Reduzir bloqueios desnecessários de fontes legítimas sem voltar ao modelo anterior, no qual fontes tinham uma sessão HTTP compartilhada.
+Manter a compatibilidade com fontes legítimas e o isolamento das sessões HTTP.
 
 ## Referência de segurança: LNReader Android
 
@@ -30,7 +25,7 @@ No LNReader Android, o `src/plugins/pluginManager.ts` avalia as extensões JavaS
 
 - Requisições associadas a uma fonte usam a **mesma sessão persistente de cookies** da janela de login dessa fonte.
 - Se a extensão não definir um User-Agent, a ponte HTTP utiliza o **User-Agent dessa sessão**. Um User-Agent explícito da extensão continua tendo prioridade.
-- Tempo limite HTTP aumentado moderadamente de **30 para 38 segundos**. O limite de execução das operações da fonte continua em **45 segundos**.
+- Tempo limite HTTP de **38 segundos**. O limite de execução das operações da fonte continua em **45 segundos**.
 - A janela interativa permite até **três janelas secundárias de autenticação** para provedores externos HTTPS e para o próprio site original, incluindo `about:blank` inicial que scripts de login podem usar. Janelas secundárias não têm Node.js, preload ou permissões do aplicativo e são fechadas junto com o login.
 - A autenticação ocorre somente após uma ação do usuário. A interface oferece uma opção para verificar o acesso quando a fonte comunica HTTP 403/Cloudflare e tenta carregar novamente depois de fechar a janela.
 
@@ -46,23 +41,11 @@ No LNReader Android, o `src/plugins/pluginManager.ts` avalia as extensões JavaS
 
 ### Limitações conhecidas
 
-1. **Situação atual:** `validateNetworkDns()` consulta e valida endereços resolvidos antes da chamada privilegiada; portanto a antiga lacuna de *somente verificar IP explícito* foi corrigida. Isso não elimina automaticamente todos os riscos de mudança de DNS entre verificação e conexão (*rebinding/TOCTOU*); manter testes de DNS, redirecionamentos e sessões reais por fonte.
+1. `validateNetworkDns()` consulta e valida endereços resolvidos antes da chamada privilegiada. Isso não elimina automaticamente todos os riscos de mudança de DNS entre verificação e conexão (*rebinding/TOCTOU*); manter testes de DNS, redirecionamentos e sessões reais por fonte.
 2. Desafios Cloudflare podem rejeitar navegadores embutidos ou exigir passos que um teste sem interação humana não reproduz. **Não há promessa de bypass**, somente suporte a uma sessão real de navegador com cookies.
 3. O teste de integração com servidor HTTP local valida a arquitetura de login, **não** valida acesso à Central Novel nem seu próprio Cloudflare.
 4. Instabilidade transitória, DNS, TLS e HTTP 5xx do site externo não devem ser tratados automaticamente como regressões da extensão.
 
-## Evidências de regressão
+## Validação
 
-A matriz `desktop/test/source-matrix.cjs` instala e tenta navegar/ler nove fontes reais, sem acessar perfis pessoais. A cobertura de 29/10/2026 foi:
-
-- **Novel Mania**, **Royal Road**, **NovelFull**, **Hasu Translations**, **NovelDeGlace**: leitura concluída em pelo menos uma rodada anterior.
-- **Central Novel**: HTTP 403; implementação exige teste interativo de verificação no próprio computador.
-- **Kiniga**: TLS do site indisponível no ambiente de CI.
-- **Better Novels**: erro DNS no ambiente de CI.
-- **Scribble Hub**: listagem vazia; causa inconclusiva.
-
-**Importante:** resultados são amostras pontuais. O mesmo site pode responder de forma diferente por IP, região, horário, conta e perfil de sessão.
-
-## Verificações pendentes na `main`
-
-Testar login real em fontes com desafio no Windows e Linux, persistência de cookies após reiniciar, exclusão de dados de sessão ao remover uma extensão, redirecionamentos e falhas DNS reais. A análise histórica desta branch já foi incorporada à `main`; não há merge pendente dessa branch. A falta de jobs de CI executados na revisão de 13/11/2026 impede afirmar que essa matriz foi revalidada.
+Execute a matriz `desktop/test/source-matrix.cjs` e os testes de rede e autenticação em ambiente isolado. Verifique login real, persistência de cookies, remoção e reinstalação de extensões, redirecionamentos e falhas DNS. Resultados dependem do site, IP, região, horário e sessão; testes automatizados não certificam compatibilidade universal.

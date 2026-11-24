@@ -79,7 +79,7 @@ A versão declarada no código-fonte (`desktop/package.json`) é **0.4.6 Beta**.
 
 O Reader Desktop utiliza um **formato de backup baseado no LNReader** e aceita a **importação de backups ZIP do LNReader Android**. Assim, você pode trazer sua biblioteca, capítulos, categorias e progresso de leitura para o computador, conforme os dados presentes no backup.
 
-Também é possível **exportar backups nesse formato**, facilitando a continuidade entre os dois aplicativos. Recomendamos guardar uma cópia do backup original antes de restaurá-lo. Veja os [detalhes de compatibilidade](desktop/docs/COMPATIBILIDADE-ORIGINAL.md).
+Também é possível **exportar backups nesse formato**, facilitando a continuidade entre os dois aplicativos. Recomendamos guardar uma cópia do backup original antes de restaurá-lo.
 
 ## Compilar a partir do código
 
