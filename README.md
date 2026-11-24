@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/GuilhermeLourenceto/lnreader-desktop/releases"><img src="https://img.shields.io/badge/vers%C3%A3o-0.4.5%20Beta-6479be?style=flat-square" alt="Versão 0.4.5 Beta" /></a>
+  <a href="https://github.com/GuilhermeLourenceto/reader-desktop/releases"><img src="https://img.shields.io/badge/vers%C3%A3o-0.4.6%20Beta-6479be?style=flat-square" alt="Versão 0.4.6 Beta" /></a>
   <img src="https://img.shields.io/badge/Windows%20%7C%20Linux-x64-2b3448?style=flat-square" alt="Windows e Linux x64" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/licen%C3%A7a-MIT-367c69?style=flat-square" alt="Licença MIT" /></a>
 </p>
@@ -56,10 +56,10 @@ Inspirado pelo ecossistema do [LNReader](https://github.com/LNReader/lnreader), 
 
 ## Download
 
-A versão declarada no código-fonte (`desktop/package.json`) é **0.4.5 Beta**. Para baixar instaladores, consulte a página de lançamentos **quando houver artefatos publicados**. A versão do código não garante que um instalador correspondente esteja disponível:
+A versão declarada no código-fonte (`desktop/package.json`) é **0.4.6 Beta**. Para baixar instaladores, consulte a página de lançamentos **quando houver artefatos publicados**. A versão do código não garante que um instalador correspondente esteja disponível:
 
 <p align="center">
-  <a href="https://github.com/GuilhermeLourenceto/lnreader-desktop/releases"><strong>Ver releases e baixar o Reader Desktop</strong></a>
+  <a href="https://github.com/GuilhermeLourenceto/reader-desktop/releases"><strong>Ver releases e baixar o Reader Desktop</strong></a>
 </p>
 
 | Sistema | Arquivo |
@@ -86,8 +86,8 @@ Também é possível **exportar backups nesse formato**, facilitando a continuid
 **Requisitos:** Git, Node.js 24 e npm.
 
 ```bash
-git clone https://github.com/GuilhermeLourenceto/lnreader-desktop.git
-cd lnreader-desktop/desktop
+git clone https://github.com/GuilhermeLourenceto/reader-desktop.git
+cd reader-desktop/desktop
 npm ci
 npm start
 ```
@@ -101,15 +101,15 @@ npm run dist:linux  # Linux
 
 Os arquivos gerados ficam em `desktop/release/`. Não é necessário instalar o Android SDK.
 
-**Estado da validação:** os workflows da `main` apresentaram falhas de inicialização em 13/11/2026, antes dos passos dos jobs; por isso, o estado atual do build não deve ser tratado como aprovado. Confira o [GitHub Actions](https://github.com/GuilhermeLourenceto/lnreader-desktop/actions) e execute os testes localmente antes de distribuir uma compilação.
+**Validação:** confira os [resultados do GitHub Actions](https://github.com/GuilhermeLourenceto/reader-desktop/actions) e execute os testes localmente antes de distribuir uma compilação. A aprovação do código não certifica automaticamente os instaladores.
 
-Para navegar por guias e registros anteriores, veja o [índice da documentação](desktop/docs/README.md).
+Para navegar pelos guias, veja o [índice da documentação](desktop/docs/README.md).
 
 Para desenvolvedores: [como começar](desktop/docs/DEVELOPMENT.md) · [arquitetura](desktop/docs/ARCHITECTURE.md) · [histórico de versões](desktop/CHANGELOG.md) · [como contribuir](CONTRIBUTING.md).
 
 ## Contribua
 
-Sugestões, traduções, relatórios de problemas e contribuições de código são bem-vindos. Use as [issues](https://github.com/GuilhermeLourenceto/lnreader-desktop/issues) ou confira o [guia de contribuição](CONTRIBUTING.md).
+Sugestões, traduções, relatórios de problemas e contribuições de código são bem-vindos. Use as [issues](https://github.com/GuilhermeLourenceto/reader-desktop/issues) ou confira o [guia de contribuição](CONTRIBUTING.md).
 
 ## Créditos e origem
 

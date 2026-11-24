@@ -68,4 +68,4 @@ O estado React ainda mantém metadados da biblioteca em memória; `renderer.jsx`
 
 ## Branch
 
-A `main` concentra o desenvolvimento do Reader Desktop. A versão declarada no código é 0.4.5 Beta; commits posteriores à última versão documentada não são automaticamente releases ou builds testados. O histórico preserva o código Android antigo.
+A `main` concentra o desenvolvimento do Reader Desktop. A versão declarada no código é 0.4.6 Beta; commits posteriores à última versão documentada não são automaticamente releases ou builds testados. O histórico preserva o código Android antigo.

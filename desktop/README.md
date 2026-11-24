@@ -1,4 +1,4 @@
-# LNReader Desktop
+# Reader Desktop
 
 Port para Windows 10/11 e Linux usando Electron. A interface desktop é nova,
 adaptada para mouse, teclado e telas maiores. Em janelas largas, os detalhes da
@@ -9,7 +9,7 @@ o painel de filtros oferece ordem inversa e ordenação por nome/número.
 As opções para definir a direção
 da fonte e ler desde o início também ficam nesse painel. O código Android antigo continua acessível no histórico Git; a `main` agora contém somente o projeto Desktop.
 
-Versão atual: **0.4.5 Beta (Windows e Linux)**. A `main` é uma **candidata a pré-estável no Linux** após testes locais em Debian 13 KDE Plasma/Wayland; ainda não foi publicada uma versão Stable. Consulte as [notas de lançamento](docs/RELEASE_NOTES_0.4.5.md).
+Versão declarada no código: **0.4.6 Beta (Windows e Linux)**. Ainda não foi publicada uma versão Stable. Consulte o [histórico de versões](CHANGELOG.md).
 
 [Relatório de validação para pré-estável Linux](docs/PREESTAVEL-LINUX.md).
 
@@ -25,7 +25,7 @@ Capturas **reais do Electron no Debian 13**, geradas por testes gráficos em 14/
 | **Filtros da biblioteca** | **Diagnósticos e relatórios** |
 | ![Filtros de categoria, estado e ordenação](docs/screenshots/desktop-filters.png) | ![Erros recentes, exportação de relatório e histórico](docs/screenshots/desktop-diagnostics.png) |
 
-## Situação da pré-estabilidade no Linux
+## Validação histórica no Linux (14/11/2026)
 
 | Área | Verificação local em Debian 13 KDE Plasma/Wayland |
 | :--- | :--- |
@@ -204,7 +204,7 @@ no leitor desktop. Instale fontes apenas de repositórios confiáveis.
 
 ## Consumo de memória da biblioteca
 
-A partir da **v0.4.4**, bibliotecas filtradas com mais de 100 obras usam
+Atualmente, bibliotecas filtradas com mais de 100 obras usam
 virtualização de cartões: apenas as linhas visíveis e uma pequena margem
 ficam montadas no renderer. O grid mantém capas, badges, seleção, pesquisa,
 categorias e menus de contexto. Listas pequenas usam a renderização anterior.
@@ -333,16 +333,6 @@ local e uma pasta temporária própria: instala o plugin pelo carregador origina
 abre uma obra, lê e salva um capítulo, rejeita scripts no HTML e repete a leitura
 offline. A janela de teste fica oculta e fecha ao terminar.
 
-Validação da versão 0.2.0 em Windows (29/10/2026): **38 testes de dados** passaram. A interface foi validada
-no Electron, incluindo barras sem espaço reservado, amplitude das teclas,
-páginas horizontais alinhadas, posição ao redimensionar a janela, nove paletas,
-carregamento automático e nova tentativa de páginas sem repetir chamadas.
-Uma fonte de teste com `while(true)` foi interrompida com a interface respondendo.
-A Central Novel passou por instalação, listagem, detalhes e leitura no worker.
-Capturas de apresentação estão em `docs/screenshots/`.
-O CI do Desktop valida as compilações sem Expo ou React Native, incluindo checkout isolado da pasta `desktop/`. Um ZIP real do LNReader foi
-restaurado e reexportado com todos os arquivos conferidos. A aba Atualizações
-passou por download, exclusão, nova tentativa, leitura offline e falhas parciais.
 Veja os [testes de volume](docs/STRESS-TESTS.md) e as [mudanças da versão](CHANGELOG.md).
 Falta ampliar a validação para outros computadores e versões do Windows.
 
@@ -405,17 +395,7 @@ npm run test:all      # Suíte local completa do Desktop
 O código original em `vendor/lnreader/` é versionado separadamente e não deve
 ser reformatado automaticamente ao modificar módulos próprios do Desktop.
 
-## Registro histórico: versão 0.3.0 Beta
-
-A branch principal passou a conter o Desktop independente. Esta versão reúne o isolamento do SDK
-original em `vendor/lnreader/`, atualizações da biblioteca, login individual por fonte,
-recuperação de erros, melhorias de backups, refatoração inicial da interface e suíte
-automatizada de 45 testes unitários e 10 jornadas de usuário. A compilação e o instalador
-Windows passaram no CI daquela versão; Linux e fontes reais exigiam
-verificação adicional. Esses resultados históricos não validam a `main` atual. Veja [RELEASE_NOTES_0.3.0.md](docs/RELEASE_NOTES_0.3.0.md).
-
-
-### Atalhos e busca
+## Atalhos e busca
 
 - **F11** alterna a tela cheia em qualquer tela principal do aplicativo.
 - **Fontes** abre inicialmente **Buscar obras em todas as fontes**; a aba Gerenciar fontes continua disponível.

@@ -34,7 +34,7 @@
 - Menus e filtros seguem os dez idiomas, paletas e temas; correções em contadores traduzidos.
 - Regressões automatizadas em Windows/Linux para 10 mil livros, filtros combinados, tradução, nove paletas e layout em tamanhos diferentes, além de persistência das configurações.
 
-Consulte [as notas de v0.4.5](docs/RELEASE_NOTES_0.4.5.md). Versão beta; a 0.4.4 permanece disponível.
+Versão beta.
 
 
 ## 0.4.4 Beta — Biblioteca leve no Windows e Linux
@@ -44,7 +44,7 @@ Consulte [as notas de v0.4.5](docs/RELEASE_NOTES_0.4.5.md). Versão beta; a 0.4.
 - Testes automatizados em Windows e Linux para rolagem completa, pesquisa, mudança de aba e integridade com 10.000 obras e 200.000 capítulos.
 - Sem alterações no formato de backups, nos arquivos do SDK Android ou na biblioteca armazenada. O uso de memória dos metadados ainda existe.
 
-Consulte [as notas de v0.4.4](docs/RELEASE_NOTES_0.4.4.md). Versão beta, sem assinatura digital.
+Versão beta, sem assinatura digital.
 
 
 ## 0.4.3 Beta — Windows e Linux
