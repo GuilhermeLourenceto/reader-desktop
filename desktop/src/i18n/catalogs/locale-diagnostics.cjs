@@ -35,4 +35,7 @@ Problema no leitor|Reader problem|Problema del lector|Problème du lecteur|Lesea
 Problema na interface|Interface problem|Problema de la interfaz|Problème d’interface|Oberflächenproblem|Problema dell’interfaccia|Проблема интерфейса|画面の問題|인터페이스 문제|界面问题
 Problema na conexão|Connection problem|Problema de conexión|Problème de connexion|Verbindungsproblem|Problema di connessione|Проблема соединения|接続の問題|연결 문제|连接问题
 Página temporariamente indisponível|Page temporarily unavailable|Página temporalmente no disponible|Page temporairement indisponible|Seite vorübergehend nicht verfügbar|Pagina temporaneamente non disponibile|Страница временно недоступна|ページを一時的に表示できません|페이지를 일시적으로 사용할 수 없습니다|页面暂时不可用
+Apagar o histórico de diagnósticos?|Clear diagnostic history?|¿Borrar el historial de diagnósticos?|Effacer l’historique des diagnostics ?|Diagnoseverlauf löschen?|Cancellare la cronologia diagnostica?|Очистить историю диагностики?|診断履歴を削除しますか？|진단 기록을 지울까요?|清除诊断历史？
+Relatórios salvos manualmente não serão apagados.|Manually saved reports will not be deleted.|Los informes guardados manualmente no se eliminarán.|Les rapports enregistrés manuellement ne seront pas supprimés.|Manuell gespeicherte Berichte werden nicht gelöscht.|I rapporti salvati manualmente non verranno eliminati.|Сохранённые вручную отчёты не будут удалены.|手動で保存したレポートは削除されません。|수동으로 저장한 보고서는 삭제되지 않습니다.|手动保存的报告不会被删除。
+Apagar histórico|Clear history|Borrar historial|Effacer l’historique|Verlauf löschen|Cancella cronologia|Очистить историю|履歴を削除|기록 지우기|清除历史
 `;

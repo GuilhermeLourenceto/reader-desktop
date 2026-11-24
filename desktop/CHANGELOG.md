@@ -1,6 +1,9 @@
 # Histórico de versões
 
-## Em desenvolvimento na `main` (após o código 0.4.5 Beta)
+## 0.4.6 Beta — correções de localização e estabilidade
+
+- Corrigidas 14 chaves de tradução de mensagens nativas e de configurações nos dez idiomas. Identificadores técnicos não passam mais pelo tradutor. Novos testes de regressão.
+- Validação local no Linux: build, lint, testes automatizados e testes reais do Electron (recuperação, fechamento, idioma inicial, diagnósticos e 270 combinações de idioma, tema e paleta).
 
 - Restauração Android mais rápida em volumes FUSE (incluindo Google Drive/rclone): leitura sequencial única para uma cópia temporária local antes de abrir o ZIP, com verificação de espaço livre e limpeza posterior; arquivos já locais não são duplicados. No backup Android de 93 MB testado em Debian KDE: importação pelo Drive em 11,2 s e importação local em 2,9 s.
 - Respeito ao campo Android `inLibrary`: registros usados apenas como cache/consulta deixam de ser importados como obras da biblioteca e seus arquivos offline/capas são ignorados; backups Desktop mantêm a compatibilidade com registros legados. Testes adicionais de falha, limpeza e importação real pelo worker empacotado.
@@ -21,7 +24,7 @@
 - Guia de desenvolvimento, orientação de pull requests, testes de fronteiras arquiteturais e verificação de imports relativos.
 - Revisão da documentação pública para distinguir medições históricas, limites do backup legado, suporte a ZIP64 e estado atual da configuração de CI.
 
-**Status:** mudanças de desenvolvimento; sem novo número de versão, instalador certificado ou aprovação de CI nesta etapa. Consulte [o guia de desenvolvimento](docs/DEVELOPMENT.md).
+**Status:** versão beta, sem certificação dos instaladores. Consulte [o guia de desenvolvimento](docs/DEVELOPMENT.md).
 
 ## 0.4.5 Beta — biblioteca desktop, filtros, seleção e temas
 

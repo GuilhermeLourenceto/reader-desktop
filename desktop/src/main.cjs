@@ -499,7 +499,7 @@ app
       if (
         typeof id !== 'string' ||
         !/^[a-zA-Z0-9_.-]+$/.test(id) ||
-        ['.', '..', ui('__proto__'), ui('constructor'), 'prototype'].includes(
+        ['.', '..', '__proto__', 'constructor', 'prototype'].includes(
           id,
         )
       )

@@ -126,3 +126,52 @@ test('missing and invalid locale requests preserve the last valid language', () 
   setLocale('en');
   assert.equal(getLocale(), 'en', 'explicitly selecting English still works');
 });
+
+test('renamed Reader Desktop dialogs and settings resolve in every locale', () => {
+  const expected = {
+    'O Reader Desktop ainda não conseguiu concluir o fechamento.': 'Reader Desktop has not finished closing yet.',
+    'O Reader Desktop falhou repetidamente e será fechado. A biblioteca salva foi mantida.': 'Reader Desktop failed repeatedly and will close. Your saved library was kept.',
+    'O Reader Desktop precisou recarregar a interface depois de uma falha. A biblioteca salva será restaurada.': 'Reader Desktop reloaded the interface after a failure. Your saved library will be restored.',
+    'Não foi possível abrir o Reader Desktop': 'Could not open Reader Desktop',
+    'Reader Desktop e informações da versão': 'About Reader Desktop and this version',
+    'Importar um backup do Reader Desktop': 'Import a Reader Desktop backup',
+    'Apagar o histórico de diagnósticos?': 'Clear diagnostic history?',
+    'Relatórios salvos manualmente não serão apagados.': 'Manually saved reports will not be deleted.',
+    'Apagar histórico': 'Clear history',
+    'categorias': 'categories',
+    'configurações': 'settings',
+    'fontes': 'sources',
+    'Seções ausentes no backup; os dados atuais serão preservados:': 'Sections missing from the backup; current data will be preserved:',
+    'Restaurar seções selecionadas do backup?': 'Restore selected backup sections?',
+  };
+  for (const [key, english] of Object.entries(expected)) {
+    assert.ok(Object.hasOwn(messages, key), 'Missing catalog key: ' + key);
+    assert.equal(t(key, {}, 'en'), english);
+    assert.equal(t(key, {}, 'pt-BR'), key);
+    for (const [code] of languages) {
+      const label = t(key, {}, code);
+      assert.ok(label.trim(), key + ': ' + code);
+      if (key.includes('Reader Desktop')) {
+        assert.ok(label.includes('Reader Desktop'), key + ': ' + code);
+        assert.ok(!label.includes('LNReader'), key + ': ' + code);
+        if (code !== 'pt-BR') assert.notEqual(label, key, key + ': ' + code);
+      }
+    }
+  }
+});
+
+test('literal main process ui calls have catalog entries', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const source = fs.readFileSync(path.join(__dirname, '../src/main.cjs'), 'utf8');
+  const keys = new Set(
+    [...source.matchAll(/\bui\(\s*(['"])([^'"\n]*)\1/g)].map((match) => match[2]),
+  );
+  assert.ok(keys.size >= 20, 'Expected native UI messages');
+  assert.deepEqual(
+    [...keys].filter((key) => !Object.hasOwn(messages, key)),
+    [],
+    'Missing native UI translations',
+  );
+  assert.match(source, /\['\.', '\.\.', '__proto__', 'constructor', 'prototype'\]/);
+});
