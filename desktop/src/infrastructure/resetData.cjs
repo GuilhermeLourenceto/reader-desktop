@@ -71,7 +71,9 @@ async function safeDirectory(filename, device) {
 async function assertFile(filename, info, device, inspectHeader = true) {
   if (!info.isFile() || info.dev !== device || info.nlink !== 1) unsafe(filename);
   if (/\.zip$/i.test(filename)) throw new Error('RESET_ARCHIVE: ' + filename);
-  if (!inspectHeader) return;
+  // Empty Chromium lock files cannot contain a ZIP signature and may be
+  // opened exclusively by the browser process on Windows.
+  if (!inspectHeader || info.size < 4) return;
   // A user can save an archive under a name without the .zip extension.
   // Also refuse ZIP signatures at the start of a file slated for cleanup.
   const handle = await fsp.open(filename, 'r');

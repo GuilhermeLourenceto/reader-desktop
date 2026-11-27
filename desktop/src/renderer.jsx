@@ -1308,7 +1308,10 @@ function App() {
               setNotice('Configurações padrão restauradas.');
             }}
             onResetData={async () => {
-              if (activeTasks.current || downloading.current || sourceWorking || closing) return 'blocked';
+              if (activeTasks.current || downloading.current || sourceWorking || closing) {
+                setNotice(translateMessage('Aguarde as operações em andamento antes de apagar os dados.'));
+                return 'blocked';
+              }
               let result;
               await run(async () => {
                 await persistNow();

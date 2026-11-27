@@ -725,7 +725,7 @@ app
         // any renderer/backup worker is initialized. Never use normal close,
         // which intentionally saves the previous React snapshot.
         clearInterval(backupTimer);
-        requests.cancelAll();
+        try { requests.cancelAll(); } catch { /* Exit must still follow a published marker. */ }
         setImmediate(() => {
           try {
             const image = process.platform === 'linux' && process.env.APPIMAGE;

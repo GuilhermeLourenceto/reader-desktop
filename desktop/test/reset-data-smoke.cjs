@@ -100,6 +100,8 @@ if (!process.versions.electron) {
           await click('Mais');
           await click('Configurações');
           await click('Apagar todos os dados');
+          for (let i = 0; i < 200 && choices.length === 3; i++) await new Promise(resolve => setTimeout(resolve, 25));
+          assert.equal(choices.length, 2, 'native cancellation must have been processed');
           await wait("!document.querySelector('button[aria-label=\"Apagar todos os dados\"]').disabled");
           assert.equal(fs.existsSync(path.join(root, marker)), false);
           await click('Apagar todos os dados');

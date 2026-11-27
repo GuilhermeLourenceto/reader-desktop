@@ -26,7 +26,7 @@ const digest = filename => createHash('sha256').update(fs.readFileSync(filename)
 test('reset only removes owned data, preserves ZIPs and starts onboarding', async t => {
   const { profile, put, reset } = fixture(t);
   const data = ['library.json', 'library.json.bak', 'library.json.tmp', 'library.json.corrupt-123', 'before-restore.json', 'before-restore.json.bak', 'before-restore.json.tmp', 'automatic-backup-status.json', 'automatic-backup-status.json.tmp', 'content/' + 'a'.repeat(64), 'content/' + 'b'.repeat(64) + '.12345678-1234-1234-1234-123456789abc.tmp', 'diagnostics/reader.1.jsonl'].map(name => put(name));
-  const keep = ['manual.ZIP', 'ReaderDesktop-auto-2026-11-27T00-00-00-000Z.zip', 'content/my-backup.zip', 'diagnostics/report.txt', 'notes.txt'].map(name => put(name, Buffer.from('504b0304aabb', 'hex')));
+  const keep = ['manual.ZIP', 'ReaderDesktop-auto-2026-11-27T00-00-00-000Z.zip', 'content/my-backup.zip', 'diagnostics/report.txt', 'notes.txt'].map(name => put(name, Buffer.from('504b0506' + '00'.repeat(18), 'hex')));
   const hashes = keep.map(digest);
   const oldPartition = put('Partitions/lnreader-source-removed/Network/Cookies');
   markReset(profile);
@@ -83,4 +83,29 @@ test('links to external directories and invalid markers fail closed', async t =>
   const library = put('library.json');
   await assert.rejects(reset(), /RESET_UNSAFE/);
   assert.equal(fs.existsSync(library), true);
+});
+
+test('separate browser storage and removed source partitions are both included', async t => {
+  const { root, profile, put } = fixture(t);
+  const browserRoot = path.join(root, 'browser');
+  const partition = path.join(browserRoot, 'Partitions', 'lnreader-source-old');
+  fs.mkdirSync(partition, { recursive: true });
+  fs.writeFileSync(path.join(partition, 'LOCK'), '');
+  put('library.json');
+  const plan = await inspectReset(profile, browserRoot);
+  assert.deepEqual(plan.sessionPaths.sort(), [profile, partition].sort());
+  assert.deepEqual(plan.files, [path.join(profile, 'library.json')]);
+});
+
+test('renamed archive in browser data is caught on restart, before any deletion', async t => {
+  const { profile, put, reset } = fixture(t);
+  const library = put('library.json');
+  const archive = put('Cookies', Buffer.from('504b0506' + '00'.repeat(18), 'hex'));
+  const before = digest(archive);
+  await inspectReset(profile, profile, { browserHeaders: false });
+  markReset(profile);
+  await assert.rejects(reset(), /RESET_ARCHIVE/);
+  assert.equal(pendingReset(profile), true);
+  assert.equal(fs.existsSync(library), true);
+  assert.equal(digest(archive), before);
 });
