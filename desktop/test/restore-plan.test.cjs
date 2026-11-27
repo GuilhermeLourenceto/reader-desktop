@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { planRestore } = require('../src/restorePlan.cjs');
+const { planRestore, rewriteOfflineReferences } = require('../src/restorePlan.cjs');
 
 const oldState = () => ({
   novels: [{
@@ -145,9 +145,7 @@ test('novel and chapter ID collisions remap offline HTML, images and categories'
     },
   });
   const result = planRestore(current, imported, files => files,
-    (_name, value, replacements) => replacements.reduce(
-      (html, { from, to }) => html.split(from).join(to), value,
-    ));
+    (_name, value, replacements) => rewriteOfflineReferences(value, replacements));
   const book = result.next.novels.find(n => n.pluginId === 'other');
   assert.ok(book);
   assert.notEqual(book.id, 4);
@@ -377,4 +375,36 @@ test('a restore that fails validation keeps every previous setting and book unto
   };
   assert.throws(() => planRestore(current, restore(damaged)), /Obras duplicadas/);
   assert.deepEqual(current, before);
+});
+
+test('swapped chapter IDs rewrite offline references once, preserving their original image association', () => {
+  const current = oldState();
+  current.novels[0].chapters = [
+    { id: 2, path: '/first', name: 'First' },
+    { id: 1, path: '/second', name: 'Second' },
+  ];
+  current.files = {};
+  const incoming = structuredClone(current);
+  incoming.novels[0].chapters[0].id = 1;
+  incoming.novels[0].chapters[1].id = 2;
+  incoming.files = {
+    'Novels/site/4/1/index.html': '<img src="file:///Novels/site/4/1/0.png">',
+    'Novels/site/4/2/index.html': '<img src="file:///Novels/site/4/2/0.png">',
+    'Novels/site/4/1/0.png': 'first image',
+    'Novels/site/4/2/0.png': 'second image',
+  };
+  const result = planRestore(current, restore(incoming), x => x,
+    (_name, html, replacements) => rewriteOfflineReferences(html, replacements));
+  assert.equal(result.next.files['Novels/site/4/2/index.html'], '<img src="file:///Novels/site/4/2/0.png">');
+  assert.equal(result.next.files['Novels/site/4/1/index.html'], '<img src="file:///Novels/site/4/1/0.png">');
+  assert.equal(result.next.files['Novels/site/4/2/0.png'], 'first image');
+  assert.equal(result.next.files['Novels/site/4/1/0.png'], 'second image');
+});
+
+test('one-pass rewrite handles chains, repeated references and unrelated novels', () => {
+  const html = '/Novels/site/1/1/a /Novels/site/1/2/b /Novels/site/1/1/c /Novels/other/1/1/d';
+  assert.equal(rewriteOfflineReferences(html, [
+    { from: '/Novels/site/1/1/', to: '/Novels/site/1/2/' },
+    { from: '/Novels/site/1/2/', to: '/Novels/site/1/3/' },
+  ]), '/Novels/site/1/2/a /Novels/site/1/3/b /Novels/site/1/2/c /Novels/other/1/1/d');
 });

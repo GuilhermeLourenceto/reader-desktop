@@ -300,3 +300,20 @@ test('streaming exporter emits Android-readable appearance keys without changing
   const restored = await importBackup({ filename, contentDirectory: root });
   assert.equal(restored.isDesktopBackup, true);
 });
+
+test('streaming export never removes a foreign destination temporary file', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-export-isolated-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const store = new DiskFiles(path.join(root, 'content'));
+  const filename = path.join(root, 'backup.zip');
+  const foreign = filename + '.tmp';
+  fs.writeFileSync(foreign, 'foreign staging data');
+  await exportBackup({ state: emptyState(), contentDirectory: store.directory, filename });
+  assert.equal(fs.readFileSync(foreign, 'utf8'), 'foreign staging data');
+  const valid = fs.readFileSync(filename);
+  const bad = { ...emptyState(), files: { 'Plugins/site/index.js': '@file:' + 'f'.repeat(64) } };
+  await assert.rejects(exportBackup({ state: bad, contentDirectory: store.directory, filename }));
+  assert.deepEqual(fs.readFileSync(filename), valid);
+  assert.equal(fs.readFileSync(foreign, 'utf8'), 'foreign staging data');
+  assert.deepEqual(fs.readdirSync(root).filter(n => n.startsWith('.reader-backup-')), []);
+});

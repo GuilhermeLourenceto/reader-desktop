@@ -26,7 +26,7 @@ const {
 const { emptyState, safePath } = require('./backup.cjs');
 const { backupJob, isBackupJobActive } = require('./backupJobs.cjs');
 const { sourcePartitionName, resetSessionForPath, freshSettings, pendingReset, markReset, resetLocale, inspectReset, completeReset } = require('./infrastructure/resetData.cjs');
-const { planRestore } = require('./restorePlan.cjs');
+const { planRestore, rewriteOfflineReferences } = require('./restorePlan.cjs');
 const { createAutoBackupManager } = require('./autoBackup.cjs');
 const { createDiagnostics } = require('./infrastructure/diagnostics.cjs');
 const { validateNetworkUrl } = require('./infrastructure/networkPolicy.cjs');
@@ -799,10 +799,8 @@ app
         restored,
         files => diskFiles.import(files),
         (_name, reference, replacements) => {
-          let html = diskFiles.read(reference).toString('utf8');
-          for (const { from, to } of replacements)
-            html = html.split(from).join(to);
-          return diskFiles.write(Buffer.from(html, 'utf8'));
+          const html = diskFiles.read(reference).toString('utf8');
+          return diskFiles.write(Buffer.from(rewriteOfflineReferences(html, replacements), 'utf8'));
         },
       );
       // A full no-op restore should not rewrite library.json or its recovery

@@ -197,7 +197,9 @@ async function exportBackup({ state, contentDirectory, filename, includeDownload
   const workspace = await fs.promises.mkdtemp(
     path.join(path.dirname(filename), '.reader-backup-'),
   );
-  const temp = filename + '.tmp';
+  // Each export owns its private workspace, including the final staging ZIP.
+  // Keep it on the destination filesystem for the final atomic rename.
+  const temp = path.join(workspace, 'export.zip.tmp');
   const files = { directory: contentDirectory };
   let count = 0;
   const addStored = async (zip, name, value, compress) => {
@@ -225,7 +227,6 @@ async function exportBackup({ state, contentDirectory, filename, includeDownload
     // Validate every name, including files not selected for the archive.
     // Otherwise an invalid entry could be silently omitted.
     for (const name of Object.keys(state.files)) safePath(name);
-    if (fs.existsSync(temp)) throw new Error('Exportação anterior ainda está em andamento');
     const pluginZip = await nested('Plugins/', ZipBackupName.PLUGINS);
     const novelZip = includeDownloads
       ? await nested('Novels/', ZipBackupName.NOVEL_FILES) : null;
@@ -281,7 +282,6 @@ async function exportBackup({ state, contentDirectory, filename, includeDownload
     await fs.promises.rename(temp, filename);
     return { missingCount: 0 };
   } finally {
-    await fs.promises.rm(temp, { force: true }).catch(() => {});
     await fs.promises.rm(workspace, { recursive: true, force: true });
   }
 }

@@ -1,17 +1,35 @@
 const { Worker } = require('node:worker_threads');
 const path = require('node:path');
+const fs = require('node:fs');
 
 let activeJobs = 0;
 function isBackupJobActive() { return activeJobs > 0; }
 
+const exportDestinations = new Set();
+
+function destinationKey(filename) {
+  const absolute = path.resolve(filename);
+  const canonical = path.join(fs.realpathSync(path.dirname(absolute)), path.basename(absolute));
+  return process.platform === 'win32' ? canonical.toLowerCase() : canonical;
+}
+
 function backupJob(input) {
   return new Promise((resolve, reject) => {
+    const destination = input.action === 'export' ? destinationKey(input.filename) : null;
+    if (destination && exportDestinations.has(destination)) {
+      reject(new Error('Exportação anterior ainda está em andamento'));
+      return;
+    }
     const worker = new Worker(path.join(__dirname, 'backup-worker.cjs'), {
       workerData: input,
       resourceLimits: { maxOldGenerationSizeMb: 1024 },
     });
     activeJobs++;
-    worker.once('exit', () => { activeJobs--; });
+    if (destination) exportDestinations.add(destination);
+    worker.once('exit', () => {
+      activeJobs--;
+      if (destination) exportDestinations.delete(destination);
+    });
     let settled = false, timer;
     const finish = (error, value) => {
       if (settled) return;

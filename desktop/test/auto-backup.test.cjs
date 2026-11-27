@@ -23,7 +23,8 @@ function fixture(t, frequency = 'launch') {
     jobs.push({ filename, snapshot, includeDownloads });
     if (delay) await delay;
     if (fail) {
-      fs.writeFileSync(filename + '.tmp', 'partial');
+      // Model a separate export owning a destination-derived temporary file.
+      fs.writeFileSync(filename + '.tmp', 'foreign staging data');
       throw Error('disk full');
     }
     fs.writeFileSync(filename, 'valid-' + jobs.length);
@@ -104,7 +105,7 @@ test('manually named ZIP resembling an automatic archive is not deleted unless r
   assert.equal(f.status().managed[f.folder].length, 5);
 });
 
-test('failed export leaves five valid archives and cleans temporary ZIP; subsequent launch succeeds', async t => {
+test('failed export leaves five valid archives and preserves foreign temporary ZIP; subsequent launch succeeds', async t => {
   const f = fixture(t);
   for (let i = 0; i < 5; i++) {
     f.setState({ ...f.state, settings: { ...f.state.settings, marker: i } });
@@ -115,11 +116,13 @@ test('failed export leaves five valid archives and cleans temporary ZIP; subsequ
   f.setFail(true);
   f.setState({ ...f.state, settings: { ...f.state.settings, marker: 5 } });
   assert.equal(await f.make().check({ launch: true }), false);
-  assert.deepEqual(f.listAuto(), old);
-  assert.equal(fs.readdirSync(f.folder).some(name => name.endsWith('.zip.tmp')), false);
+  const foreign = f.jobs.at(-1).filename + '.tmp';
+  assert.deepEqual(f.listAuto().filter(name => !name.endsWith('.tmp')), old);
+  assert.equal(fs.readFileSync(foreign, 'utf8'), 'foreign staging data');
   f.setFail(false);
   assert.equal(await f.make().check({ launch: true }), true);
-  assert.equal(f.listAuto().length, 5);
+  assert.equal(f.listAuto().filter(name => !name.endsWith('.tmp')).length, 5);
+  assert.equal(fs.readFileSync(foreign, 'utf8'), 'foreign staging data');
   assert.equal(fs.existsSync(path.join(f.folder, old[0])), false);
 });
 

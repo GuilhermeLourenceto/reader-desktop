@@ -165,11 +165,8 @@ function createAutoBackupManager({ dataDirectory, getState, contentDirectory, ex
         message: 'Backup automático concluído.' }); } catch {}
       return true;
     } catch (error) {
-      // The ZIP worker writes to a temporary path before committing a ZIP.
-      // A failed export must never consume an older valid backup.
-      if (filename) {
-        try { fs.unlinkSync(filename + '.tmp'); } catch { /* No partial ZIP. */ }
-      }
+      // The ZIP worker owns its staging directory. Never remove a shared
+      // destination-derived temporary file on failure.
       console.warn('Automatic backup was not completed:', error.message);
       try { report({ level: 'warning', code: 'BKP-AUTO-FAILED', operation: 'backup',
         message: error.message }); } catch {}

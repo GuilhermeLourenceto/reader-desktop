@@ -4,6 +4,14 @@ const { validateState } = require('./storage.cjs');
 const { fromAndroidPreferences } = require('./state/backupPreferences.cjs');
 const { preserveDesktopPreferences } = require('./state/preserveDesktopPreferences.cjs');
 
+// A replacement's destination may itself be another original path. Apply
+// the mapping to original matches only; never scan generated output again.
+function rewriteOfflineReferences(html, replacements) {
+  const targets = new Map(replacements.map(({ from, to }) => [from, to]));
+  return html.replace(/\/Novels\/[^/]+\/\d+\/\d+\//g, original =>
+    targets.get(original) ?? original);
+}
+
 function allocateIds(existing, incoming) {
   const used = new Set(existing.filter(Number.isSafeInteger));
   let next = 1;
@@ -197,4 +205,4 @@ function planRestore(current, restored, importFiles = files => files,
   return { next: validated, changed: !isDeepStrictEqual(current, validated) };
 }
 
-module.exports = { planRestore };
+module.exports = { planRestore, rewriteOfflineReferences };
