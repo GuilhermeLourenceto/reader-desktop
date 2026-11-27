@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { userMessageForError } from '../../domain/userFacingError.cjs';
 import { appThemes } from '../../appThemes';
 import { languages, t as translateMessage } from '../../i18n.cjs';
 import { resolveAppearance } from '../../appearance.cjs';
@@ -25,7 +26,7 @@ export default function Onboarding({ settings, onChange, onChooseFolder, onResto
       const selected = await onChooseFolder();
       if (selected) update({ desktopBackupDirectory: selected });
     } catch (err) {
-      setError(err.message || String(err));
+      setError(translateMessage(userMessageForError(err), {}, lang));
     }
   };
   const next = async () => {
@@ -34,7 +35,7 @@ export default function Onboarding({ settings, onChange, onChooseFolder, onResto
     if (frequency !== 'off' && !folder) { setError(t('folderRequired')); return; }
     setWorking(true);
     try { await onFinish(); }
-    catch (err) { setError(err?.message || t('finishError')); }
+    catch { setError(t('finishError')); }
     finally { setWorking(false); }
   };
   return (

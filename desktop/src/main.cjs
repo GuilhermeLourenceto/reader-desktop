@@ -25,7 +25,7 @@ const {
 } = require('./storage.cjs');
 const { emptyState, safePath } = require('./backup.cjs');
 const { backupJob, isBackupJobActive } = require('./backupJobs.cjs');
-const { freshSettings, pendingReset, markReset, resetLocale, inspectReset, completeReset } = require('./infrastructure/resetData.cjs');
+const { sourcePartitionName, resetSessionForPath, freshSettings, pendingReset, markReset, resetLocale, inspectReset, completeReset } = require('./infrastructure/resetData.cjs');
 const { planRestore } = require('./restorePlan.cjs');
 const { createAutoBackupManager } = require('./autoBackup.cjs');
 const { createDiagnostics } = require('./infrastructure/diagnostics.cjs');
@@ -155,18 +155,15 @@ app
             const defaultSession = session.defaultSession;
             if (path.relative(browserRoot, defaultSession.getStoragePath()) !== '')
               throw new Error('Unexpected browser storage path');
-            const sessions = [defaultSession, ...paths.map(directory => {
-              const source = session.fromPath(directory);
-              if (path.relative(directory, source.getStoragePath()) !== '')
-                throw new Error('Unexpected source storage path');
-              return source;
-            })];
+            const sessions = [defaultSession, ...paths.map(directory =>
+              resetSessionForPath(session, browserRoot, directory),
+            )];
             for (const currentSession of new Set(sessions)) {
               await currentSession.closeAllConnections();
               // Explicitly omit download files; this only clears browsing data.
               await currentSession.clearData({ dataTypes: [
                 'backgroundFetch', 'cache', 'cookies', 'fileSystems',
-                'indexedDB', 'localStorage', 'serviceWorkers', 'webSQL',
+                'indexedDB', 'localStorage', 'serviceWorkers',
               ] });
               await currentSession.clearAuthCache();
               await currentSession.cookies.flushStore();
@@ -552,12 +549,10 @@ app
         )
       )
         throw new Error('Identificador de fonte inválido.');
-      if (!sourceSessions.has(id))
-        sourceSessions.set(
-          id,
-          session.fromPartition('persist:lnreader-source-' + id),
-        );
-      return sourceSessions.get(id);
+      const partition = sourcePartitionName(id);
+      if (!sourceSessions.has(partition))
+        sourceSessions.set(partition, session.fromPartition(partition));
+      return sourceSessions.get(partition);
     };
     const requests = new (require('./request.cjs').RequestPool)(net, 8, 128, {
       // Allow local fixture servers only in unpackaged test builds.

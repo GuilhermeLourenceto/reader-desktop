@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
-const { freshSettings, pendingReset, markReset, resetLocale, inspectReset, completeReset } = require('../src/infrastructure/resetData.cjs');
+const { sourcePartitionName, resetSessionForPath, freshSettings, pendingReset, markReset, resetLocale, inspectReset, completeReset } = require('../src/infrastructure/resetData.cjs');
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-reset-'));
@@ -141,4 +141,24 @@ test('links in recognized browser storage still block cleanup', async t => {
   fs.symlinkSync(outside, path.join(profile, 'IndexedDB'), process.platform === 'win32' ? 'junction' : 'dir');
   await assert.rejects(inspectReset(profile, profile), /RESET_UNSAFE/);
   assert.equal(fs.readFileSync(archive, 'utf8'), 'keep');
+});
+
+
+test('reset reuses the live source partition key instead of opening a duplicate browser context', async t => {
+  const { root, profile } = fixture(t);
+  const browserRoot = path.join(root, 'browser');
+  const currentPath = path.join(browserRoot, 'Partitions', 'lnreader-source-mixed');
+  const legacyPath = path.join(profile, 'Partitions', 'lnreader-source-old');
+  const calls = [];
+  const live = { getStoragePath: () => currentPath };
+  const legacy = { getStoragePath: () => legacyPath };
+  const session = {
+    fromPartition(name) { calls.push(['partition', name]); return live; },
+    fromPath(directory) { calls.push(['path', directory]); return legacy; },
+  };
+  assert.equal(sourcePartitionName('MiXeD'), 'persist:lnreader-source-mixed');
+  assert.equal(resetSessionForPath(session, browserRoot, currentPath), live);
+  assert.equal(resetSessionForPath(session, browserRoot, legacyPath), legacy);
+  assert.deepEqual(calls, [['partition', sourcePartitionName('MiXeD')], ['path', legacyPath]]);
+  assert.throws(() => resetSessionForPath(session, browserRoot, path.join(browserRoot, 'Partitions', 'lnreader-source-wrong')), /RESET_UNSAFE/);
 });

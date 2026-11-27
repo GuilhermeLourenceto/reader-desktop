@@ -32,7 +32,9 @@ if (!process.versions.electron) {
       fs.writeFileSync(path.join(profile, name), JSON.stringify(state));
     fs.writeFileSync(path.join(profile, 'automatic-backup-status.json'), '{}');
     const zip = Buffer.from('504b0506' + '00'.repeat(18), 'hex');
-    const backups = [path.join(profile, 'manual.ZIP'), path.join(archives, 'manual.zip')];
+    const internalBackups = path.join(profile, 'My backups');
+    fs.mkdirSync(internalBackups);
+    const backups = [path.join(profile, 'manual.ZIP'), path.join(archives, 'manual.zip'), path.join(internalBackups, 'manual.zip')];
     for (let i = 0; i < 5; i++) backups.push(path.join(archives, 'ReaderDesktop-auto-2026-11-0' + (i + 1) + 'T00-00-00-000Z.zip'));
     backups.forEach(filename => fs.writeFileSync(filename, zip));
     const hashes = backups.map(sha);
@@ -115,6 +117,8 @@ if (!process.versions.electron) {
           await wait("!!document.querySelector('.first-run[data-step=\"1\"]')");
           assert.equal(await execute("localStorage.getItem('reset-private-test')"), null);
           assert.deepEqual(await cookies.get({ url }), []);
+          await cookies.set({ url, name: 'new', value: 'new-session' });
+          assert.equal((await cookies.get({ url, name: 'new' }))[0].value, 'new-session');
           assert.equal(await execute("window.desktop.load().then(s => s.novels.length)"), 0);
           clearTimeout(deadline);
           app.exit(0);

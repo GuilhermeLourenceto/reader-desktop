@@ -26,6 +26,24 @@ const LOG = /^reader(?:\.[12])?\.jsonl$/;
 const PARTITION = /^lnreader-source-[a-z0-9_.-]+$/i;
 const SINGLETON = /^Singleton(?:Lock|Socket|Cookie)$/;
 
+// Chromium stores persistent partitions under a lower-case directory name.
+// Use one canonical context key for normal browsing and reset, so opening a
+// source after cleanup cannot create a second context for the same storage.
+function sourcePartitionName(id) {
+  return 'persist:lnreader-source-' + id.toLowerCase();
+}
+
+function resetSessionForPath(session, browserRoot, directory) {
+  const parts = path.relative(browserRoot, directory).split(path.sep);
+  // The live browser root uses named contexts. Only legacy storage outside
+  // that root may be opened by path, and it cannot be reused by a live source.
+  const current = parts.length === 2 && parts[0] === 'Partitions' && PARTITION.test(parts[1])
+    ? session.fromPartition('persist:' + parts[1].toLowerCase())
+    : session.fromPath(directory);
+  if (path.relative(directory, current.getStoragePath()) !== '') unsafe(directory);
+  return current;
+}
+
 function freshSettings() {
   return {
     desktopOnboardingCompleted: false,
@@ -225,4 +243,4 @@ async function completeReset({ profile, browserRoot, clearSessions, writeInitial
   syncDirectory(profile);
 }
 
-module.exports = { freshSettings, pendingReset, markReset, resetLocale, inspectReset, completeReset };
+module.exports = { sourcePartitionName, resetSessionForPath, freshSettings, pendingReset, markReset, resetLocale, inspectReset, completeReset };
