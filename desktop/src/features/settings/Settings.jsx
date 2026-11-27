@@ -21,6 +21,7 @@ export default function Settings({
   onRestore,
   onChooseBackupFolder,
   onReset,
+  onResetData,
   busy,
   version,
   openDiagnosticsRequest = 0,
@@ -157,6 +158,23 @@ export default function Settings({
               <small>
                 Voltar às preferências iniciais sem apagar suas obras ou fontes.
               </small>
+            </span>
+          </button>
+        </div>
+        <div className="settings-group">
+          <button
+            type="button"
+            className="setting-row setting-link setting-danger"
+            aria-label="Apagar todos os dados"
+            disabled={busy}
+            onClick={async () => {
+              if (await onResetData() === 'backup') setPage('backup');
+            }}
+          >
+            <SettingIcon name="trash" />
+            <span className="setting-copy">
+              <strong>Apagar todos os dados</strong>
+              <small>Reiniciar como uma nova instalação, preservando os backups ZIP.</small>
             </span>
           </button>
         </div>

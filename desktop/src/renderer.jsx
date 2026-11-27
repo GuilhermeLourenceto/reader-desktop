@@ -1311,6 +1311,20 @@ function App() {
               update({ ...current.current, settings: nextSettings });
               setNotice('Configurações padrão restauradas.');
             }}
+            onResetData={async () => {
+              if (activeTasks.current || downloading.current || sourceWorking || closing) {
+                setNotice(translateMessage('Aguarde as operações em andamento antes de apagar os dados.'));
+                return 'blocked';
+              }
+              let result;
+              await run(async () => {
+                await persistNow();
+                result = await window.desktop.resetData();
+                // If preflight was blocked, the profile remains live.
+                if (result === 'blocked') await persistNow();
+              });
+              return result;
+            }}
             onChooseBackupFolder={() => window.desktop.chooseBackupDirectory()}
             onBackup={() =>
               run(async () => {

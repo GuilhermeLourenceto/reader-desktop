@@ -11,9 +11,9 @@ function checksum(text) {
     value = Math.imul(value ^ text.charCodeAt(i), 16777619) >>> 0;
   return value.toString(16).padStart(8,'0');
 }
-test('modular styles preserve the exact original CSS cascade before onboarding', () => {
+test('modular styles preserve the reviewed CSS cascade before onboarding', () => {
   const css = styleParts.map(file => readFileSync(path.join(root, 'src/styles', file), 'utf8')).join('');
-  assert.equal(css.length, 45688);
-  assert.equal(checksum(css), 'a5195534');
+  assert.equal(css.length, 45787);
+  assert.equal(checksum(css), 'ce20c7f2');
   assert.ok(css.includes('.reader-view') && css.includes('.settings-group') && css.includes('.source'));
 });

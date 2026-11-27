@@ -130,7 +130,7 @@ app.on('browser-window-created', (_event, win) => {
       }
       await click('Configurações');
       await wait("document.querySelector('[data-settings-page=settings]') !== null");
-      assert.deepEqual(await menuLabels(), ['Geral', 'Aparência', 'Biblioteca', 'Leitor', 'Restaurar configurações padrão']);
+      assert.deepEqual(await menuLabels(), ['Geral', 'Aparência', 'Biblioteca', 'Leitor', 'Restaurar configurações padrão', 'Apagar todos os dados']);
       await capture('preview-settings');
       await click('Aparência');
       await select('Tema do aplicativo', 'light');
