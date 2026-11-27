@@ -1,3 +1,4 @@
+import { userMessageForError } from '../../domain/userFacingError.cjs';
 import { t as translateMessage } from '../../i18n.cjs';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import sanitize from 'sanitize-html';
@@ -107,7 +108,13 @@ export default function NovelDetails({
           setLimit((value) => Math.min(value + 100, info.total));
       } else await info.load();
     } catch (error) {
-      if (alive.current) setPageError(error.message || String(error));
+      if (alive.current) {
+        setPageError(translateMessage(userMessageForError(error)));
+        void window.desktop.diagnostics.report({
+          level: 'error', code: 'SRC-PAGE-FAILED', operation: 'source',
+          message: error.message || String(error),
+        }).catch(() => {});
+      }
     } finally {
       autoLoading.current = false;
       if (alive.current) setPageLoading(false);

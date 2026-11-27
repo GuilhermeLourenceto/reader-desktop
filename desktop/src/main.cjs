@@ -410,13 +410,14 @@ app
     register('diagnostics-export', async () => {
       const result = await dialog.showSaveDialog(mainWindow, {
         defaultPath: 'ReaderDesktop-diagnostico-' + new Date().toISOString().slice(0, 10) + '.txt',
-        filters: [{ name: 'Relatório de diagnóstico', extensions: ['txt'] }],
+        filters: [{ name: ui('Relatório de diagnóstico'), extensions: ['txt'] }],
       });
       if (result.canceled || !result.filePath) return null;
       const saved = await diagnostics.exportReport(result.filePath, {
         version: require('../package.json').version,
         platform: process.platform,
         arch: process.arch,
+        locale: state.settings?.desktopInterfaceLanguage,
       });
       if (!saved.saved) throw new Error('Não foi possível salvar o relatório.');
       return saved;

@@ -90,7 +90,7 @@ app.on('browser-window-created', (_, win) => {
         );
         assert.ok(
           await js(
-            `document.body.innerText.includes(${JSON.stringify(t('Privacidade e navegação', code))})`,
+            `document.body.innerText.includes(${JSON.stringify(t('Idioma da interface', code))})`,
           ),
         );
         // Theme names are read from JS metadata; verify they translate live
@@ -199,6 +199,22 @@ app.on('browser-window-created', (_, win) => {
           t('Seguir aplicativo', code),
         );
         await click(t('Voltar nas configurações', code));
+        await click(t('Voltar nas configurações', code));
+        await click(t('Diagnósticos', code));
+        await wait("document.querySelector('.diagnostics-panel') && !document.querySelector('.diagnostics-panel [role=status]')");
+        await js("window.desktop.diagnostics.report({level:'error',code:'LOCALE-DIAG-TEST',operation:'reader',message:'Localization fixture'})");
+        await click(t('Atualizar', code));
+        await wait("document.querySelector('.diagnostics-entry-summary strong')");
+        assert.equal(
+          await js("document.querySelector('.diagnostics-entry-summary strong').textContent.trim()"),
+          t('Problema no leitor', code),
+        );
+        assert.equal(
+          await js("document.querySelector('.diagnostics-entry-summary .diagnostics-level').textContent.trim()"),
+          t('Erro', code),
+        );
+        await click(t('Voltar nas configurações', code));
+        await click(t('Configurações', code));
         await click(t('Geral', code));
         // Exercise the REAL library controls in EACH of the 10 languages,
         // not only static dictionary entries or the final Chinese locale.

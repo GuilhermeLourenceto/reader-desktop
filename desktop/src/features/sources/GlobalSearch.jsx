@@ -1,3 +1,4 @@
+import { userMessageForError } from '../../domain/userFacingError.cjs';
 import React, { useEffect, useRef, useState } from 'react';
 import Spinner from '../../components/Spinner';
 import { t } from '../../i18n.cjs';
@@ -39,10 +40,16 @@ export default function GlobalSearch({ plugins, fetchPage, cards }) {
       });
       session.items = [...session.items, ...additions];
       session.page++;
-      session.hasMore = response.length > 0 && additions.length > 0;
+      session.hasMore = response.length > 0;
+      if (session.hasMore && additions.length === 0)
+        session.error = t('A fonte repetiu uma página sem novos resultados. Tente novamente para consultar a próxima página.');
     } catch (error) {
       if (token === generation.current)
-        session.error = error.message || String(error);
+        session.error = t(userMessageForError(error));
+      void window.desktop.diagnostics.report({
+        level: 'error', code: 'SRC-SEARCH-FAILED', operation: 'source',
+        message: error.message || String(error),
+      }).catch(() => {});
     } finally {
       session.pending = false;
       publish();

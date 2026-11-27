@@ -1,3 +1,4 @@
+const { t } = require('../i18n.cjs');
 // Bounded, private, best-effort diagnostics. No application state is stored here.
 const fs = require('node:fs');
 const path = require('node:path');
@@ -218,13 +219,15 @@ function createDiagnostics({ directory, now = () => Date.now(), maxFileBytes = M
   }, false);
   const exportReport = (destination, meta = {}) => schedule(async () => {
     const { entries } = await read(500);
+    const label = (key, values = {}) => t(key, values, meta.locale || 'pt-BR');
+    const unknown = label('Desconhecido');
     const header = [
-      'READER DESKTOP - RELATÓRIO DE DIAGNÓSTICO',
-      'Este relatório é local. Revise-o antes de compartilhar.',
-      `Gerado em: ${new Date(now()).toISOString()}`,
-      `Versão: ${redact(meta.version || 'desconhecida')}`,
-      `Sistema: ${redact(meta.platform || 'desconhecido')} ${redact(meta.arch || '')}`,
-      `Eventos incluídos: ${entries.length}`,
+      label('READER DESKTOP - RELATÓRIO DE DIAGNÓSTICO'),
+      label('Este relatório é local. Revise-o antes de compartilhar.'),
+      label('Gerado em: {v0}', { v0: new Date(now()).toISOString() }),
+      label('Versão: {v0}', { v0: redact(meta.version || unknown) }),
+      label('Sistema: {v0}', { v0: (redact(meta.platform || unknown) + ' ' + redact(meta.arch || '')).trim() }),
+      label('Eventos incluídos: {v0}', { v0: entries.length }),
       '',
     ];
     const body = entries.map(item =>

@@ -1,13 +1,17 @@
+import { userMessageForError } from '../../domain/userFacingError.cjs';
 // Multi-book actions and batch downloads without UI rendering code.
 import { t as translateMessage } from '../../i18n.cjs';
+import { errorText } from '../../sourceRuntime';
 
 export function createLibraryActions({
   current, update, downloading, cancelDownload, setNotice, downloadChapters,
 }) {
   const libraryAction = async (action, ids) => {
+    const chosen = new Set(ids);
     const books = current.current.novels.filter(
-      (book) => ids.includes(book.id) && book.inLibrary,
+      (book) => chosen.has(book.id) && book.inLibrary,
     );
+    const eligible = new Set(books.map(book => book.id));
     if (!books.length) return;
     if (action === 'remove') {
       if (
@@ -22,7 +26,7 @@ export function createLibraryActions({
       update({
         ...current.current,
         novels: current.current.novels.map((book) =>
-          ids.includes(book.id) ? { ...book, inLibrary: false } : book,
+          eligible.has(book.id) ? { ...book, inLibrary: false } : book,
         ),
       });
     } else if (action === 'reset') {
@@ -38,7 +42,7 @@ export function createLibraryActions({
       update({
         ...current.current,
         novels: current.current.novels.map((book) =>
-          ids.includes(book.id)
+          eligible.has(book.id)
             ? {
                 ...book,
                 chapters: book.chapters.map((chapter) => ({
@@ -55,7 +59,7 @@ export function createLibraryActions({
     } else if (action === 'download') {
       if (downloading.current) {
         setNotice(
-          'Já há um download em andamento. Aguarde ou pare a fila atual.',
+          translateMessage('Já há um download em andamento. Aguarde ou pare a fila atual.'),
         );
         return;
       }
@@ -77,7 +81,11 @@ export function createLibraryActions({
           );
         }
       } catch (error) {
-        setNotice(errorText(error));
+        void window.desktop.diagnostics.report({
+          level: 'error', code: 'RDR-DOWNLOAD-FAILED', operation: 'reader',
+          message: errorText(error),
+        }).catch(() => {});
+        setNotice(translateMessage(userMessageForError(error)));
       } finally {
         downloading.current = false;
       }

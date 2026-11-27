@@ -446,16 +446,14 @@ export default function SourceViews({
               )}
               {pageError && (
                 <div className="pagination-error">
-                  <p>Não foi possível carregar mais novels: {pageError}</p>
+                  <p>Não foi possível carregar mais novels: {pageError.message}</p>
                   <button
                     disabled={busy || loadingMore}
                     onClick={() => void loadMore()}
                   >
                     Tentar novamente
                   </button>
-                  {/(403|captcha|cloudflare|webview|challenge|verifica)/i.test(
-                    pageError,
-                  ) && (
+                  {pageError.needsLogin && (
                     <button
                       disabled={busy || loadingMore}
                       onClick={() =>
