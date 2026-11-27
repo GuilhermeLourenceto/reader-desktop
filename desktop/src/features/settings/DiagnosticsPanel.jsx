@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { t as translateMessage } from '../../i18n.cjs';
+import { t as translateMessage, getLocale } from '../../i18n.cjs';
 
 const EMPTY = {
   entries: [],
@@ -7,25 +7,25 @@ const EMPTY = {
   limitBytes: 15 * 1024 * 1024,
   retentionDays: 14,
 };
-const textForLevel = { error: 'Erro', warning: 'Aviso', info: 'Atividade' };
-const operationLabels = {
-  app: 'Problema no aplicativo',
-  backup: 'Problema no backup',
-  restore: 'Problema na restauração',
-  storage: 'Problema ao salvar dados',
-  source: 'Problema com uma fonte',
-  reader: 'Problema no leitor',
-  interface: 'Problema na interface',
-  network: 'Problema na conexão',
-};
 const shortDate = (value) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? 'Data indisponível'
-    : date.toLocaleString();
+    : date.toLocaleString(getLocale());
 };
 
 export default function DiagnosticsPanel() {
+  const textForLevel = { error: 'Erro', warning: 'Aviso', info: 'Atividade' };
+  const operationLabels = {
+    app: 'Problema no aplicativo',
+    backup: 'Problema no backup',
+    restore: 'Problema na restauração',
+    storage: 'Problema ao salvar dados',
+    source: 'Problema com uma fonte',
+    reader: 'Problema no leitor',
+    interface: 'Problema na interface',
+    network: 'Problema na conexão',
+  };
   const [history, setHistory] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -90,7 +90,7 @@ export default function DiagnosticsPanel() {
   const records = history.entries.filter(
     (entry) => filter === 'all' || entry.level === filter,
   );
-  const size = (history.usedBytes / (1024 * 1024)).toFixed(1);
+  const size = (history.usedBytes / (1024 * 1024)).toLocaleString(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const maximum = Math.round(history.limitBytes / (1024 * 1024));
   return (
     <section
@@ -104,8 +104,9 @@ export default function DiagnosticsPanel() {
           relatório é enviado automaticamente.
         </p>
         <small>
-          {size} MiB utilizados de até {maximum} MiB · Retenção de{' '}
-          {history.retentionDays} dias
+          {translateMessage('{v0} MiB utilizados de até {v1} MiB · Retenção de {v2} dias', {
+            v0: size, v1: maximum, v2: history.retentionDays,
+          })}
         </small>
       </div>
       <div className="diagnostics-actions">

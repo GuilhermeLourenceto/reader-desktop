@@ -1,8 +1,22 @@
+import { t as translateMessage } from '../../i18n.cjs';
+import { userMessageForError } from '../../domain/userFacingError.cjs';
 // Encapsulates source browsing, pagination and intersection-based loading.
 import { useCallback, useEffect } from 'react';
 import { loadPlugin } from '../../sourceClient';
 import { errorText, fetchSourcePage } from '../../sourceRuntime';
 import { validateFilters } from '../../sourceGuards.cjs';
+
+// Keep the access-check flag independent of the displayed language.
+function sourceError(error) {
+  const detail = errorText(error);
+  void window.desktop.diagnostics.report({
+    level: 'error', code: 'SRC-BROWSE-FAILED', operation: 'source', message: detail,
+  }).catch(() => {});
+  return {
+    message: translateMessage(userMessageForError(error)),
+    needsLogin: /(?:403|captcha|cloudflare|webview|challenge|verifica)/i.test(detail),
+  };
+}
 
 export function useSourceBrowse({
   browseSession, mainRef, browseMarker,
@@ -10,7 +24,7 @@ export function useSourceBrowse({
   setLoadingMore, setPageError, setHasMore, setResults,
   setSource, setNovelQuery, setView, setSourceOptions, setSourceFilters,
 }) {
-  const browse = async (pluginId, term = '', options) => {
+  const browse = async (pluginId, term = '', options, retry = false) => {
     const session = {
       pluginId,
       term: term.trim(),
@@ -21,7 +35,7 @@ export function useSourceBrowse({
       options: options || { showLatestNovels: false, filters: undefined },
     };
     browseSession.current = session;
-    setLoadingMore(false);
+    setLoadingMore(retry);
     setPageError('');
     setHasMore(true);
     setResults([]);
@@ -51,14 +65,18 @@ export function useSourceBrowse({
       setResults(items);
       setHasMore(session.hasMore);
     } catch (error) {
-      if (browseSession.current === session) setPageError(errorText(error));
+      if (browseSession.current === session) setPageError(sourceError(error));
     } finally {
-      if (browseSession.current === session) session.pending = false;
+      if (browseSession.current === session) {
+        session.pending = false;
+        if (retry) setLoadingMore(false);
+      }
     }
   };
   const loadMore = useCallback(async () => {
     const session = browseSession.current;
     if (!session || session.pending || !session.hasMore) return;
+    if (session.page === 0) return browse(session.pluginId, session.term, session.options, true);
     session.pending = true;
     setLoadingMore(true);
     setPageError('');
@@ -80,13 +98,14 @@ export function useSourceBrowse({
       session.items = [...session.items, ...additions];
       session.hasMore = response.length > 0;
       if (response.length && !additions.length)
-        setPageError(
-          'A fonte repetiu uma página sem novos resultados. Tente novamente para consultar a próxima página.',
-        );
+        setPageError({
+          message: translateMessage('A fonte repetiu uma página sem novos resultados. Tente novamente para consultar a próxima página.'),
+          needsLogin: false,
+        });
       setResults(session.items);
       setHasMore(session.hasMore);
     } catch (error) {
-      if (browseSession.current === session) setPageError(errorText(error));
+      if (browseSession.current === session) setPageError(sourceError(error));
     } finally {
       if (browseSession.current === session) {
         session.pending = false;

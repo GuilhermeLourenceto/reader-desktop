@@ -174,3 +174,15 @@ test('large error bursts are bounded and do not crash the logger', async () => {
     assert.ok(listed.usedBytes <= listed.limitBytes);
   });
 });
+
+test('export report header follows selected locale and leaves original diagnostic details intact', async () => {
+  await withLogger(async (logger, folder, root) => {
+    await logger.record({ code: 'UI-ERROR', operation: 'interface', message: 'Original technical detail' });
+    const destination = path.join(root, 'report.txt');
+    await logger.exportReport(destination, { locale: 'ja', version: '0.4.6', platform: 'linux' });
+    const report = await fs.promises.readFile(destination, 'utf8');
+    assert.match(report, /診断レポート/);
+    assert.match(report, /Original technical detail/);
+    assert.ok(!report.includes('RELATÓRIO DE DIAGNÓSTICO'));
+  });
+});

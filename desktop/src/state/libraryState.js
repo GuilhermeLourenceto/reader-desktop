@@ -7,22 +7,25 @@ export function hydrate(state) {
     if (key.startsWith('plugin_db:')) localStorage.removeItem(key);
   localStorage.setItem(INSTALLED_PLUGINS_KEY, JSON.stringify(state.plugins));
   localStorage.setItem('repositories', JSON.stringify(state.repositories));
+  let cacheOverflow = false;
   for (const [key, value] of Object.entries(state.pluginStorage || {})) {
     try {
       localStorage.setItem(key, value);
     } catch {
-      window.dispatchEvent(
-        new CustomEvent('notice', {
-          detail:
-            'O cache das fontes excedeu o espaço disponível. Parte do cache será refeita pelas fontes.',
-        }),
-      );
+      cacheOverflow = true;
       break;
     }
   }
   // Only change the displayed language after the rest of hydration finishes.
   // A storage failure must not switch the interface before the state loads.
   setLocale(state.settings?.desktopInterfaceLanguage);
+  if (cacheOverflow)
+    window.dispatchEvent(
+      new CustomEvent('notice', {
+        detail:
+          'O cache das fontes excedeu o espaço disponível. Parte do cache será refeita pelas fontes.',
+      }),
+    );
 }
 export function snapshot(state) {
   const { files: _files, ...metadata } = state;

@@ -1,3 +1,4 @@
+import { userMessageForError } from '../../domain/userFacingError.cjs';
 // Library/source refresh coordination; the App supplies persistence and UI callbacks.
 import { t as translateMessage } from '../../i18n.cjs';
 import { loadPlugin, fetchNovel } from '../../sourceClient';
@@ -72,8 +73,8 @@ export function createRefreshActions({
     if (allPages) return { partial };
     setNotice(
       partial
-        ? 'Obra atualizada. Algumas páginas falharam; você pode tentar carregá-las novamente.'
-        : 'Obra e capítulos atualizados.',
+        ? translateMessage('Obra atualizada. Algumas páginas falharam; você pode tentar carregá-las novamente.')
+        : translateMessage('Obra e capítulos atualizados.'),
     );
   };
   const refreshLibrary = async () => {
@@ -103,7 +104,11 @@ export function createRefreshActions({
               }),
             );
         } catch (error) {
-          failures.push(`${book.name}: ${errorText(error)}`);
+          void window.desktop.diagnostics.report({
+            level: 'error', code: 'SRC-UPDATE-FAILED', operation: 'source',
+            message: errorText(error),
+          }).catch(() => {});
+          failures.push(`${book.name}: ${translateMessage(userMessageForError(error))}`);
         }
       }
       update({
@@ -115,10 +120,10 @@ export function createRefreshActions({
       });
       setNotice(
         stopUpdates.current
-          ? 'Verificação interrompida. Atualizações já encontradas foram mantidas.'
+          ? translateMessage('Verificação interrompida. Atualizações já encontradas foram mantidas.')
           : failures.length
-            ? 'Verificação concluída com avisos.'
-            : 'Biblioteca atualizada.',
+            ? translateMessage('Verificação concluída com avisos.')
+            : translateMessage('Biblioteca atualizada.'),
       );
     } finally {
       setUpdatesFailures(failures);

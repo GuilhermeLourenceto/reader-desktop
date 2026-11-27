@@ -277,7 +277,7 @@ function App() {
     }
   };
   useEffect(() => {
-    const onNotice = (event) => setNotice(String(event.detail));
+    const onNotice = (event) => setNotice(translateMessage(String(event.detail)));
     const onSourceActivity = (event) => setSourceWorking(Boolean(event.detail));
     const onStorage = () => {
       if (current.current) update({ ...current.current });
@@ -1292,8 +1292,12 @@ function App() {
             busy={busy}
             version={appVersion}
             onChange={(changes) => {
-              if (changes.desktopInterfaceLanguage)
+              if (changes.desktopInterfaceLanguage) {
                 setLocale(changes.desktopInterfaceLanguage);
+                setNotice('');
+                setLastDiagnostic(null);
+                setReaderError(null);
+              }
               update({
                 ...current.current,
                 settings: { ...current.current.settings, ...changes },

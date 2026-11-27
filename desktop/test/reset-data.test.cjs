@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
-const { freshSettings, pendingReset, markReset, inspectReset, completeReset } = require('../src/infrastructure/resetData.cjs');
+const { freshSettings, pendingReset, markReset, resetLocale, inspectReset, completeReset } = require('../src/infrastructure/resetData.cjs');
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-reset-'));
@@ -108,4 +108,37 @@ test('renamed archive in browser data is caught on restart, before any deletion'
   assert.equal(pendingReset(profile), true);
   assert.equal(fs.existsSync(library), true);
   assert.equal(digest(archive), before);
+});
+
+test('legitimate backup subfolders and unrelated partitions are not traversed or removed', async t => {
+  const { profile, put, reset } = fixture(t);
+  const library = put('library.json');
+  const archives = [put('My backups/manual.zip'), put('My backups/Automatic/auto.ZIP'),
+    put('Partitions/unrelated/backup.zip')];
+  const hashes = archives.map(digest);
+  markReset(profile, 'pt-BR');
+  assert.equal(resetLocale(profile), 'pt-BR');
+  await reset(async paths => assert.deepEqual(paths, []));
+  assert.deepEqual(archives.map(digest), hashes);
+  assert.equal(JSON.parse(fs.readFileSync(library, 'utf8')).settings.desktopInterfaceLanguage, 'en');
+});
+
+test('legacy marker is readable and invalid locale cannot authorize a reset', async t => {
+  const { profile, put, reset } = fixture(t);
+  const marker = put('reset-pending.json', '{"version":1}\n');
+  assert.equal(resetLocale(profile), 'en');
+  await reset();
+  fs.writeFileSync(marker, JSON.stringify({ version: 1, locale: '../other' }));
+  assert.equal(resetLocale(profile), 'en');
+  await assert.rejects(reset(), /RESET_UNSAFE/);
+  assert.equal(pendingReset(profile), true);
+});
+
+test('links in recognized browser storage still block cleanup', async t => {
+  const { root, profile, put } = fixture(t);
+  const outside = path.join(root, 'outside'); fs.mkdirSync(outside);
+  const archive = path.join(outside, 'backup.zip'); fs.writeFileSync(archive, 'keep');
+  fs.symlinkSync(outside, path.join(profile, 'IndexedDB'), process.platform === 'win32' ? 'junction' : 'dir');
+  await assert.rejects(inspectReset(profile, profile), /RESET_UNSAFE/);
+  assert.equal(fs.readFileSync(archive, 'utf8'), 'keep');
 });

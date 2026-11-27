@@ -1,3 +1,4 @@
+import { t as translateMessage } from '../../i18n.cjs';
 // Chapter listing pagination and navigation across source pages.
 import { loadPlugin, fetchPage } from '../../sourceClient';
 import { withSourceDeadline } from '../../sourceGuards.cjs';
@@ -44,9 +45,11 @@ export function createNovelPagingActions({
   };
   const navigateChapter = async (offset) => {
     let book = current.current.novels.find((item) => item.id === novelId);
+    if (!book) return;
     const step =
       chapterDirection(book).direction === 'descending' ? -offset : offset;
     const active = book.chapters.find((item) => item.id === chapterId);
+    if (!active) return;
     let index = book.chapters.findIndex((item) => item.id === chapterId) + step;
     const page = Number(active.page || 1);
     const targetPage = page + step;
@@ -64,8 +67,8 @@ export function createNovelPagingActions({
     else
       setNotice(
         offset > 0
-          ? 'Não há próximo capítulo disponível.'
-          : 'Não há capítulo anterior disponível.',
+          ? translateMessage('Não há próximo capítulo disponível.')
+          : translateMessage('Não há capítulo anterior disponível.'),
       );
   };
   return { loadNovelPage, navigateChapter };

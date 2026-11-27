@@ -1,3 +1,4 @@
+import { userMessageForError } from '../../domain/userFacingError.cjs';
 // Chapter fetching, offline cache lookup, HTML sanitization and progress transition.
 import sanitize from 'sanitize-html';
 import { t as translateMessage } from '../../i18n.cjs';
@@ -125,7 +126,7 @@ export function createChapterActions({
           setNotice(
             translateMessage(
               'Capítulo aberto, mas não foi possível salvá-lo offline: {v0}',
-              { v0: errorText(error) },
+              { v0: translateMessage(userMessageForError(error)) },
             ),
           );
         }
@@ -167,7 +168,7 @@ export function createChapterActions({
           bookId: book.id,
           chapterId: item.id,
           force,
-          message: errorText(error),
+          message: translateMessage(userMessageForError(error)),
         });
       }
     } finally {

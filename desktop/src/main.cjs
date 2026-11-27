@@ -25,7 +25,7 @@ const {
 } = require('./storage.cjs');
 const { emptyState, safePath } = require('./backup.cjs');
 const { backupJob, isBackupJobActive } = require('./backupJobs.cjs');
-const { freshSettings, pendingReset, markReset, inspectReset, completeReset } = require('./infrastructure/resetData.cjs');
+const { freshSettings, pendingReset, markReset, resetLocale, inspectReset, completeReset } = require('./infrastructure/resetData.cjs');
 const { planRestore } = require('./restorePlan.cjs');
 const { createAutoBackupManager } = require('./autoBackup.cjs');
 const { createDiagnostics } = require('./infrastructure/diagnostics.cjs');
@@ -147,6 +147,7 @@ app
     const browserRoot = app.getPath('sessionData');
     stateFile = path.join(profile, 'library.json');
     if (pendingReset(profile)) {
+      setLocale(resetLocale(profile));
       try {
         await completeReset({
           profile, browserRoot,
@@ -456,13 +457,14 @@ app
     register('diagnostics-export', async () => {
       const result = await dialog.showSaveDialog(mainWindow, {
         defaultPath: 'ReaderDesktop-diagnostico-' + new Date().toISOString().slice(0, 10) + '.txt',
-        filters: [{ name: 'Relatório de diagnóstico', extensions: ['txt'] }],
+        filters: [{ name: ui('Relatório de diagnóstico'), extensions: ['txt'] }],
       });
       if (result.canceled || !result.filePath) return null;
       const saved = await diagnostics.exportReport(result.filePath, {
         version: require('../package.json').version,
         platform: process.platform,
         arch: process.arch,
+        locale: state.settings?.desktopInterfaceLanguage,
       });
       if (!saved.saved) throw new Error('Não foi possível salvar o relatório.');
       return saved;
@@ -711,7 +713,7 @@ app
           return 'blocked';
         }
         try {
-          markReset(profile);
+          markReset(profile, state.settings?.desktopInterfaceLanguage);
         } catch (error) {
           // A published marker must not be followed by normal writes.
           if (!pendingReset(profile)) {

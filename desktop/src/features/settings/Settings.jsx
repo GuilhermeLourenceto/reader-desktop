@@ -411,8 +411,7 @@ export default function Settings({
             </p>
           )}
           <p className="settings-note">
-            A restauração pede confirmação antes de substituir os dados e guarda
-            uma cópia do estado anterior.
+            A restauração mescla os dados e guarda uma cópia do estado anterior se houver mudanças.
           </p>
         </>
       )}

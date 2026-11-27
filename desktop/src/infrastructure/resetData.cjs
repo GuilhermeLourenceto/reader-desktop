@@ -6,7 +6,20 @@ const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 
 const MARKER = 'reset-pending.json';
-const MARKER_CONTENT = '{"version":1}\n';
+const RESET_LOCALES = new Set(['pt-BR', 'en', 'es', 'fr', 'de', 'it', 'ru', 'ja', 'ko', 'zh-CN']);
+// Electron clearData targets browser-managed storage, not arbitrary folders.
+// Unknown root directories (including a user-selected backup directory) are
+// left alone. Within these storage trees, fail closed on ZIPs and links.
+const BROWSER_DIRS = new Set([
+  'cache', 'code cache', 'gpucache', 'dawngraphitecache', 'dawnwebgpucache',
+  'shadercache', 'grshadercache', 'graphitedawncache', 'dawncache', 'media cache',
+  'local storage', 'session storage', 'indexeddb', 'service worker',
+  'file system', 'webstorage', 'databases', 'network', 'storage',
+  'cachestorage', 'blob_storage', 'shared dictionary', 'sharedstorage',
+  'shared_proto_db', 'web applications', 'extension state',
+  'local extension settings', 'sync extension settings',
+  'extension rules', 'extensions', 'reporting and nel',
+]);
 const ROOT_DATA = /^(?:library|before-restore)\.json(?:\.bak|\.tmp|\.corrupt-\d+)?$|^automatic-backup-status\.json(?:\.tmp)?$/;
 const BLOB = /^[a-f0-9]{64}(?:\.[a-f0-9-]{36}\.tmp|\.tmp)?$/;
 const LOG = /^reader(?:\.[12])?\.jsonl$/;
@@ -35,14 +48,36 @@ function syncDirectory(directory) {
   finally { fs.closeSync(fd); }
 }
 
-function markReset(profile) {
+function readResetMarker(profile) {
+  const filename = path.join(profile, MARKER);
+  const info = fs.lstatSync(filename);
+  if (!info.isFile() || info.nlink !== 1 || info.size > 128) unsafe(filename);
+  let marker;
+  try { marker = JSON.parse(fs.readFileSync(filename, 'utf8')); }
+  catch { unsafe(filename); }
+  if (!marker || marker.version !== 1 ||
+      Object.keys(marker).some(key => !['version', 'locale'].includes(key)) ||
+      (Object.hasOwn(marker, 'locale') && !RESET_LOCALES.has(marker.locale))) unsafe(filename);
+  return marker;
+}
+
+function resetLocale(profile) {
+  try { return readResetMarker(profile).locale || 'en'; }
+  catch { return 'en'; }
+}
+
+function markReset(profile, locale = 'en') {
   if (pendingReset(profile)) throw new Error('Reset already pending');
   const target = path.join(profile, MARKER);
   const temporary = target + '.' + randomUUID() + '.tmp';
   let published = false;
   try {
     const fd = fs.openSync(temporary, 'wx', 0o600);
-    try { fs.writeFileSync(fd, MARKER_CONTENT); fs.fsyncSync(fd); }
+    try {
+      const language = RESET_LOCALES.has(locale) ? locale : 'en';
+      fs.writeFileSync(fd, JSON.stringify({ version: 1, locale: language }) + '\n');
+      fs.fsyncSync(fd);
+    }
     finally { fs.closeSync(fd); }
     fs.renameSync(temporary, target);
     published = true;
@@ -141,19 +176,20 @@ async function inspectReset(profile, browserRoot, { browserHeaders = true } = {}
       } else if (name === MARKER || SINGLETON.test(name)) {
         // Chromium singleton locks are not part of the data being removed.
         continue;
-      } else if (info.isDirectory()) {
-        if (info.dev !== device) unsafe(filename);
-        await scanBrowser(filename);
-        if (name === 'Partitions') {
-          for (const partition of await fsp.readdir(filename)) {
-            if (!PARTITION.test(partition)) continue;
-            const target = path.join(filename, partition);
-            if (await safeDirectory(target, device)) sessionPaths.push(target);
+      } else if (name.toLowerCase() === 'partitions') {
+        if (!await safeDirectory(filename, device)) continue;
+        for (const partition of await fsp.readdir(filename)) {
+          if (!PARTITION.test(partition)) continue;
+          const target = path.join(filename, partition);
+          if (await safeDirectory(target, device)) {
+            await scanBrowser(target);
+            sessionPaths.push(target);
           }
         }
-      } else if (info.isSymbolicLink() || !info.isFile()) {
-        unsafe(filename);
-      } else if (/^(?:Cookies|History|Web Data|Login Data|Network Persistent State|Trust Tokens|QuotaManager|TransportSecurity|Preferences|Local State)(?:-journal|-wal|-shm)?$/.test(name)) {
+      } else if (BROWSER_DIRS.has(name.toLowerCase())) {
+        if (!await safeDirectory(filename, device)) continue;
+        await scanBrowser(filename);
+      } else if (/^(?:Cookies|History|Web Data|Login Data|Network Persistent State|Trust Tokens|QuotaManager|TransportSecurity|Preferences|Local State)(?:-journal|-wal|-shm)?$/i.test(name)) {
         await assertFile(filename, info, device, browserHeaders);
       }
       // Root-level exports and other ordinary files are not deleted by us.
@@ -165,13 +201,12 @@ async function inspectReset(profile, browserRoot, { browserHeaders = true } = {}
 
 async function completeReset({ profile, browserRoot, clearSessions, writeInitial }) {
   const marker = path.join(profile, MARKER);
-  const markerInfo = await getInfo(marker);
-  if (!markerInfo || !markerInfo.isFile() || markerInfo.nlink !== 1 || markerInfo.size !== Buffer.byteLength(MARKER_CONTENT) ||
-      await fsp.readFile(marker, 'utf8') !== MARKER_CONTENT) unsafe(marker);
+  readResetMarker(profile);
   const plan = await inspectReset(profile, browserRoot);
   // No renderer, backup manager or library recovery is running at this point.
   // If the browser refuses cleanup, leave the marker and library untouched.
   await clearSessions(plan.sessionPaths);
+  const changedDirectories = new Set();
   for (const filename of plan.files) {
     const directory = path.dirname(filename);
     const dirInfo = await safeDirectory(directory);
@@ -180,7 +215,9 @@ async function completeReset({ profile, browserRoot, clearSessions, writeInitial
     if (!info) continue;
     await assertFile(filename, info, dirInfo.dev);
     await fsp.unlink(filename);
+    changedDirectories.add(directory);
   }
+  for (const directory of changedDirectories) syncDirectory(directory);
   // The callback uses the existing atomic state writer, not the merge path.
   await writeInitial();
   syncDirectory(profile);
@@ -188,4 +225,4 @@ async function completeReset({ profile, browserRoot, clearSessions, writeInitial
   syncDirectory(profile);
 }
 
-module.exports = { freshSettings, pendingReset, markReset, inspectReset, completeReset };
+module.exports = { freshSettings, pendingReset, markReset, resetLocale, inspectReset, completeReset };
