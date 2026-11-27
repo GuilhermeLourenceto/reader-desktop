@@ -174,3 +174,46 @@ test('download repairs an unreadable local chapter from its source', async () =>
   assert.deepEqual(patches, [[1, [2], { isDownloaded: true, desktopAssetsCached: true }]]);
   assert.equal(reports[0].code, 'RDR-CACHE-READ-FAILED');
 });
+
+test('reader marks a chapter with a missing cached image as needing asset download', async () => {
+  const patches = [], errorStates = [];
+  const book = { id: 1, pluginId: 'fixture', chapters: [
+    { id: 2, path: '/chapter', name: 'Chapter', isDownloaded: true, desktopAssetsCached: true },
+  ] };
+  const imageAttributes = { src: 'file:///Novels/fixture/1/2/0.b64.png', 'data-original-src': 'https://example.org/image.png' };
+  const image = {
+    getAttribute: name => imageAttributes[name] || null,
+    setAttribute: (name, value) => { imageAttributes[name] = value; },
+    removeAttribute: name => { delete imageAttributes[name]; },
+  };
+  class Parser {
+    parseFromString() {
+      return {
+        body: { textContent: 'Chapter', innerHTML: '<p>Chapter</p>' },
+        querySelectorAll: selector => selector === 'img' ? [image] : [],
+        querySelector: selector => selector === 'img[src]' && imageAttributes.src ? image : null,
+      };
+    }
+  }
+  const sanitize = Object.assign(html => html, { defaults: { allowedTags: [], allowedAttributes: {} } });
+  const { loadChapter } = loadFeature('reader/chapterActions.js', {
+    'sanitize-html': sanitize,
+    '../../../vendor/lnreader/src/plugins/constants': { INSTALLED_PLUGINS_KEY: 'test' },
+  }, { DOMParser: Parser, window: { desktop: {
+    file: async action => {
+      if (action === 'tryRead') return '<p>Chapter</p><img src="file:///Novels/fixture/1/2/0.b64.png">';
+      if (action === 'readBase64') throw Error('ENOENT');
+    }, diagnostics: diag(),
+  } } }).createChapterActions({
+    flushProgress: () => {}, current: ref({ novels: [book], settings: {}, files: {} }),
+    chapterLoadId: ref(0), restoringScroll: ref(false), pendingScroll: ref(null),
+    setReaderError: error => errorStates.push(error), setChapterLoading: () => {},
+    setHtml: () => {}, setNovelId: () => {}, setChapterId: () => {}, setView: () => {},
+    setReaderRevision: () => {}, setNotice: () => {}, changeNovel: novel => patches.push(novel),
+  });
+  await loadChapter(book, book.chapters[0]);
+  assert.deepEqual(errorStates, [null]);
+  assert.equal(imageAttributes.src, 'https://example.org/image.png');
+  assert.equal(patches[0].chapters[0].isDownloaded, true);
+  assert.equal(patches[0].chapters[0].desktopAssetsCached, false);
+});

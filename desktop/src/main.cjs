@@ -239,7 +239,7 @@ app
         if (fs.existsSync(filename))
           recoveryFiles.push(validateState(JSON.parse(fs.readFileSync(filename, 'utf8'))).files);
       }
-      diskFiles.prune(state.files, ...recoveryFiles);
+      if (recoveryFiles.length) diskFiles.prune(state.files, ...recoveryFiles);
     } catch {
       /* Keep unused blobs when the recovery index cannot be checked. */
     }
