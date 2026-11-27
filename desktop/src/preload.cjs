@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('desktop', {
   backup: state => ipcRenderer.invoke('backup', state),
   chooseBackupDirectory: () => ipcRenderer.invoke('choose-backup-directory'),
   restore: () => ipcRenderer.invoke('restore'),
+  resetData: () => ipcRenderer.invoke('reset-data'),
   sourceLogin: id => ipcRenderer.invoke('source-login', id),
   diagnostics: {
     list: options => ipcRenderer.invoke('diagnostics-list', options),

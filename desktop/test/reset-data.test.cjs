@@ -1,0 +1,86 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { createHash } = require('node:crypto');
+const { freshSettings, pendingReset, markReset, inspectReset, completeReset } = require('../src/infrastructure/resetData.cjs');
+
+function fixture(t) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-reset-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const profile = path.join(root, 'profile');
+  fs.mkdirSync(profile);
+  const put = (name, content = 'private data') => {
+    const target = path.join(profile, name);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, content);
+    return target;
+  };
+  const reset = (clearSessions = async () => {}, writeInitial = async () => put('library.json', JSON.stringify({ novels: [], settings: freshSettings() }))) =>
+    completeReset({ profile, browserRoot: profile, clearSessions, writeInitial });
+  return { root, profile, put, reset };
+}
+const digest = filename => createHash('sha256').update(fs.readFileSync(filename)).digest('hex');
+
+test('reset only removes owned data, preserves ZIPs and starts onboarding', async t => {
+  const { profile, put, reset } = fixture(t);
+  const data = ['library.json', 'library.json.bak', 'library.json.tmp', 'library.json.corrupt-123', 'before-restore.json', 'before-restore.json.bak', 'before-restore.json.tmp', 'automatic-backup-status.json', 'automatic-backup-status.json.tmp', 'content/' + 'a'.repeat(64), 'content/' + 'b'.repeat(64) + '.12345678-1234-1234-1234-123456789abc.tmp', 'diagnostics/reader.1.jsonl'].map(name => put(name));
+  const keep = ['manual.ZIP', 'ReaderDesktop-auto-2026-11-27T00-00-00-000Z.zip', 'content/my-backup.zip', 'diagnostics/report.txt', 'notes.txt'].map(name => put(name, Buffer.from('504b0304aabb', 'hex')));
+  const hashes = keep.map(digest);
+  const oldPartition = put('Partitions/lnreader-source-removed/Network/Cookies');
+  markReset(profile);
+  let sessions;
+  await reset(async paths => { sessions = paths; fs.unlinkSync(oldPartition); });
+  assert.deepEqual(sessions, [path.join(profile, 'Partitions', 'lnreader-source-removed')]);
+  assert.equal(pendingReset(profile), false);
+  assert.equal(JSON.parse(fs.readFileSync(data[0], 'utf8')).settings.desktopOnboardingCompleted, false);
+  for (const filename of data.slice(1)) assert.equal(fs.existsSync(filename), false, filename);
+  assert.deepEqual(keep.map(digest), hashes);
+});
+
+test('archive in browser tree blocks reset without deleting old library', async t => {
+  const { profile, put, reset } = fixture(t);
+  const library = put('library.json');
+  const archive = put('Cache/hidden-backup.ZIP');
+  markReset(profile);
+  await assert.rejects(reset(), /RESET_ARCHIVE/);
+  assert.equal(fs.existsSync(archive), true);
+  assert.equal(fs.existsSync(library), true);
+  assert.equal(pendingReset(profile), true);
+});
+
+test('ZIP content under a managed name is refused', async t => {
+  const { profile, put } = fixture(t);
+  put('content/' + 'a'.repeat(64), Buffer.from('504b05060000', 'hex'));
+  await assert.rejects(inspectReset(profile, profile), /RESET_ARCHIVE/);
+  assert.equal(pendingReset(profile), false);
+});
+
+test('interrupted reset remains pending and retry creates a fresh state', async t => {
+  const { profile, put, reset } = fixture(t);
+  put('library.json'); put('library.json.bak');
+  const zip = put('backup.zip'); const hash = digest(zip);
+  markReset(profile);
+  await assert.rejects(reset(async () => { throw Error('session failure'); }), /session failure/);
+  assert.equal(fs.existsSync(path.join(profile, 'library.json')), true);
+  await assert.rejects(reset(async () => {}, async () => { throw Error('write failure'); }), /write failure/);
+  assert.equal(pendingReset(profile), true);
+  await reset();
+  assert.equal(pendingReset(profile), false);
+  assert.equal(digest(zip), hash);
+});
+
+test('links to external directories and invalid markers fail closed', async t => {
+  const { root, profile, put, reset } = fixture(t);
+  const outside = path.join(root, 'outside'); fs.mkdirSync(outside);
+  const external = path.join(outside, 'backup.zip'); fs.writeFileSync(external, 'external');
+  fs.symlinkSync(outside, path.join(profile, 'content'), process.platform === 'win32' ? 'junction' : 'dir');
+  await assert.rejects(inspectReset(profile, profile), /RESET_UNSAFE/);
+  assert.equal(fs.readFileSync(external, 'utf8'), 'external');
+  fs.unlinkSync(path.join(profile, 'content'));
+  put('reset-pending.json', 'invalid');
+  const library = put('library.json');
+  await assert.rejects(reset(), /RESET_UNSAFE/);
+  assert.equal(fs.existsSync(library), true);
+});

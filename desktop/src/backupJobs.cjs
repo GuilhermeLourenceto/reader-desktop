@@ -1,12 +1,17 @@
 const { Worker } = require('node:worker_threads');
 const path = require('node:path');
 
+let activeJobs = 0;
+function isBackupJobActive() { return activeJobs > 0; }
+
 function backupJob(input) {
   return new Promise((resolve, reject) => {
     const worker = new Worker(path.join(__dirname, 'backup-worker.cjs'), {
       workerData: input,
       resourceLimits: { maxOldGenerationSizeMb: 1024 },
     });
+    activeJobs++;
+    worker.once('exit', () => { activeJobs--; });
     let settled = false, timer;
     const finish = (error, value) => {
       if (settled) return;
@@ -43,4 +48,4 @@ function backupJob(input) {
     });
   });
 }
-module.exports = { backupJob };
+module.exports = { backupJob, isBackupJobActive };

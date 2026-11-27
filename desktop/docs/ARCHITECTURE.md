@@ -62,6 +62,10 @@ Os arquivos de entrada `main.cjs`, `preload.cjs`, `renderer.jsx` e `plugin-worke
 - Antes de distribuir, rodar `npm run build`, `npm run check`, testes Electron e empacotamento Windows/Linux.
 - A refatoração é estrutural: alterações de protocolo IPC, dados, formato de backup ou execução de extensões exigem testes específicos.
 
+## Redefinição de dados
+
+A redefinição completa é uma operação IPC exclusiva. O processo principal exige confirmação, verifica operações ativas, suspende backups automáticos e grava um marcador persistente. Na abertura seguinte, antes de carregar a biblioteca, `infrastructure/resetData.cjs` valida o perfil, protege arquivos ZIP e remove somente arquivos internos identificados. Sessões do Electron são limpas pela API do próprio Electron. O estado inicial reutiliza o assistente existente. Um marcador pendente impede a recuperação de uma biblioteca parcialmente apagada. O registro de rotação é removido sem apagar os ZIPs antigos. Não há exclusão recursiva do perfil.
+
 ## Limitações conhecidas
 
 O estado React ainda mantém metadados da biblioteca em memória; `renderer.jsx` continua responsável por parte dos efeitos e pela composição do leitor. A modularização pode prosseguir em etapas pequenas, sem reescrita geral. Web Workers isolam a execução das extensões do renderer, mas não equivalem a processos com memória independente.

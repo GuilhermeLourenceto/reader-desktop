@@ -250,3 +250,39 @@ test('clock rollback still keeps the five most recently created automatic backup
   assert.equal(files.includes(made[1]), false);
 });
 
+
+test('reset guard refuses a running export and pauses future rotation', async t => {
+  const f = fixture(t, '24'), manager = f.make();
+  let resolve;
+  f.setDelay(new Promise(r => { resolve = r; }));
+  const pending = manager.check({ launch: true });
+  assert.equal(manager.pauseForReset(), false);
+  resolve();
+  assert.equal(await pending, true);
+  assert.equal(manager.pauseForReset(), true);
+  assert.equal(manager.pauseForReset(), false);
+  f.advance(25 * 3600000);
+  f.setState({ ...f.state, novels: [{ id: 2 }] });
+  assert.equal(await manager.check(), false);
+  assert.equal(f.jobs.length, 1);
+  manager.resumeAfterReset();
+  assert.equal(await manager.check(), true);
+});
+
+test('reset ownership removal preserves all old automatic archives during later rotation', async t => {
+  const f = fixture(t);
+  for (let i = 0; i < 5; i++) {
+    f.setState({ ...f.state, novels: [{ id: i }] });
+    assert.equal(await f.make().check({ launch: true }), true);
+    f.advance(86400000);
+  }
+  const old = f.listAuto().map(name => [name, fs.readFileSync(path.join(f.folder, name))]);
+  fs.unlinkSync(path.join(f.root, 'automatic-backup-status.json'));
+  for (let i = 5; i < 12; i++) {
+    f.setState({ ...f.state, novels: [{ id: i }] });
+    assert.equal(await f.make().check({ launch: true }), true);
+    f.advance(86400000);
+  }
+  for (const [name, bytes] of old) assert.deepEqual(fs.readFileSync(path.join(f.folder, name)), bytes);
+  assert.equal(f.listAuto().length, 10);
+});

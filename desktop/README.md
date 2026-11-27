@@ -379,4 +379,6 @@ ser reformatado automaticamente ao modificar módulos próprios do Desktop.
 
 Em **Mais → Configurações → Restaurar configurações padrão**, confirme para devolver as preferências de aparência, biblioteca e leitura aos valores iniciais. Essa ação **não apaga** livros, fontes instaladas, downloads, histórico ou progresso. Um backup completo continua disponível em **Mais → Backups**.
 
+**Apagar todos os dados** é uma ação separada em Mais → Configurações. Ela exige confirmação e reinicia o aplicativo no primeiro acesso, apagando biblioteca, preferências, fontes, conteúdo offline, sessões e diagnósticos internos. Os ZIPs existentes não são excluídos; backups antigos deixam de participar da rotação automática. Se houver tarefas em andamento ou arquivos ZIP em pastas internas que não possam ser limpas com segurança, a ação é bloqueada. A opção de criar backup primeiro abre a tela de Backups sem apagar dados. Se a limpeza for interrompida após a confirmação, abra o aplicativo novamente para concluí-la.
+
 Ao explorar fontes no Desktop, a roda do mouse também movimenta as listas quando o cursor está nas laterais da janela, fora da coluna central. Áreas com rolagem própria mantêm o comportamento normal.

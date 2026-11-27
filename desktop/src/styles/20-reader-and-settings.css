@@ -332,3 +332,7 @@ footer {
 .theme-sample i:nth-of-type(2) {
   width: 85%;
 }
+.setting-danger > .icon,
+.setting-danger .setting-copy strong {
+  color: var(--error, #b91c1c);
+}

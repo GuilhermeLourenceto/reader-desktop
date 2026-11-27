@@ -24,7 +24,8 @@ const {
   readState,
 } = require('./storage.cjs');
 const { emptyState, safePath } = require('./backup.cjs');
-const { backupJob } = require('./backupJobs.cjs');
+const { backupJob, isBackupJobActive } = require('./backupJobs.cjs');
+const { freshSettings, pendingReset, markReset, inspectReset, completeReset } = require('./infrastructure/resetData.cjs');
 const { planRestore } = require('./restorePlan.cjs');
 const { createAutoBackupManager } = require('./autoBackup.cjs');
 const { createDiagnostics } = require('./infrastructure/diagnostics.cjs');
@@ -34,8 +35,9 @@ const { installFullscreenShortcut } = require('./infrastructure/fullscreenShortc
 const defaultProfile = path.join(app.getPath('appData'), app.getName());
 if (app.getPath('userData') === defaultProfile) {
   const previousProfile = path.join(app.getPath('appData'), 'LNReader Desktop');
-  if (fs.existsSync(path.join(previousProfile, 'library.json')) ||
-      fs.existsSync(path.join(previousProfile, 'library.json.bak'))) {
+  if (!pendingReset(defaultProfile) && (pendingReset(previousProfile) ||
+      fs.existsSync(path.join(previousProfile, 'library.json')) ||
+      fs.existsSync(path.join(previousProfile, 'library.json.bak')))) {
     app.setPath('userData', previousProfile);
   }
 }
@@ -45,7 +47,7 @@ const diagnostics = createDiagnostics({
 const report = (level, code, operation, message) => {
   void diagnostics.record({ level, code, operation, message });
 };
-const primaryInstance = !app.isPackaged || app.requestSingleInstanceLock();
+const primaryInstance = app.requestSingleInstanceLock();
 if (!primaryInstance) app.quit();
 app.on('second-instance', () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -59,6 +61,9 @@ let mainWindow;
 let stateFile;
 let diskFiles;
 let automaticBackup;
+let resetting = false;
+let resetPromptOpen = false;
+let activeIpc = 0;
 const commit = (next) => {
   writeState(stateFile, next);
   state = next;
@@ -107,6 +112,9 @@ function register(name, handler) {
       !event.senderFrame?.url.startsWith('lnreader://app/')
     )
       throw new Error('Origem inválida');
+    if (resetting) throw new Error('Reset in progress');
+    const tracked = name !== 'reset-data';
+    if (tracked) activeIpc++;
     try {
       return await handler(...args);
     } catch (error) {
@@ -126,14 +134,54 @@ function register(name, handler) {
         report('error', code, selected[0], error?.message || 'Falha na operação.');
       }
       throw error;
+    } finally {
+      if (tracked) activeIpc--;
     }
   });
 }
 app
   .whenReady()
-  .then(() => {
+  .then(async () => {
     if (!primaryInstance) return;
-    stateFile = path.join(app.getPath('userData'), 'library.json');
+    const profile = app.getPath('userData');
+    const browserRoot = app.getPath('sessionData');
+    stateFile = path.join(profile, 'library.json');
+    if (pendingReset(profile)) {
+      try {
+        await completeReset({
+          profile, browserRoot,
+          clearSessions: async (paths) => {
+            const defaultSession = session.defaultSession;
+            if (path.relative(browserRoot, defaultSession.getStoragePath()) !== '')
+              throw new Error('Unexpected browser storage path');
+            const sessions = [defaultSession, ...paths.map(directory => {
+              const source = session.fromPath(directory);
+              if (path.relative(directory, source.getStoragePath()) !== '')
+                throw new Error('Unexpected source storage path');
+              return source;
+            })];
+            for (const currentSession of new Set(sessions)) {
+              await currentSession.closeAllConnections();
+              // Explicitly omit download files; this only clears browsing data.
+              await currentSession.clearData({ dataTypes: [
+                'backgroundFetch', 'cache', 'cookies', 'fileSystems',
+                'indexedDB', 'localStorage', 'serviceWorkers', 'webSQL',
+              ] });
+              await currentSession.clearAuthCache();
+              await currentSession.cookies.flushStore();
+              currentSession.flushStorageData();
+            }
+          },
+          writeInitial: () => writeState(stateFile, validateState({
+            ...emptyState(), settings: freshSettings(),
+          })),
+        });
+      } catch (error) {
+        dialog.showErrorBox(ui('Redefinição pendente'), ui('Não foi possível concluir a limpeza. Mova backups das pastas internas ou verifique as permissões e abra o aplicativo novamente.') + '\n\n' + error.message);
+        app.exit(1);
+        return;
+      }
+    }
     const existingProfile = [stateFile, stateFile + '.bak', stateFile + '.tmp'].some(filename => fs.existsSync(filename));
     const loaded = readState(stateFile, emptyState);
     state = loaded.state;
@@ -143,11 +191,7 @@ app
       // An unfinished first run remains unfinished after an app restart.
       commit({ ...state, settings: {
         ...state.settings,
-        desktopOnboardingCompleted: false,
-        // The first-run language is explicitly English, never the OS locale.
-        desktopInterfaceLanguage: 'en',
-        desktopBackupFrequency: '24',
-        desktopBackupIncludeDownloads: true,
+        ...freshSettings(),
       } });
     } else if (state.settings.desktopOnboardingCompleted == null) {
       // Existing installations must keep opening directly into the library.
@@ -314,7 +358,7 @@ app
       }, 5000);
     };
     mainWindow.webContents.on('unresponsive', async () => {
-      if (recoveringRenderer || unresponsiveDialog || closeRequested) return;
+      if (resetting || recoveringRenderer || unresponsiveDialog || closeRequested) return;
       report('warning', 'UI-UNRESPONSIVE', 'interface', 'A interface deixou de responder.');
       unresponsiveDialog = true;
       const answer = await dialog.showMessageBox(mainWindow, {
@@ -338,6 +382,7 @@ app
       }
     });
     mainWindow.webContents.on('render-process-gone', (_event, details) => {
+      if (resetting) return;
       if (details.reason !== 'clean-exit')
         report('error', 'UI-RENDER-GONE', 'interface', 'Processo da interface encerrado: ' + details.reason);
       if (closeRequested) {
@@ -372,6 +417,7 @@ app
     });
     let mayClose = false;
     mainWindow.on('close', (event) => {
+      if (resetting) { event.preventDefault(); return; }
       if (!mayClose && !mainWindow.webContents.isCrashed()) {
         event.preventDefault();
         if (closeRequested) return;
@@ -629,6 +675,73 @@ app
         }
       }
       return finished;
+    });
+    register('reset-data', async () => {
+      if (resetPromptOpen || resetting || closeRequested) return 'cancelled';
+      resetPromptOpen = true;
+      try {
+        const confirmation = await dialog.showMessageBox(mainWindow, {
+          type: 'warning', noLink: true,
+          message: ui('Apagar todos os dados?'),
+          detail: ui('Biblioteca, progresso, downloads, fontes, sessões e configurações serão apagados. Os backups ZIP existentes serão preservados. O aplicativo reiniciará no primeiro acesso. Esta ação não pode ser desfeita sem um backup.'),
+          buttons: [ui('Cancelar'), ui('Criar backup antes de apagar'), ui('Apagar todos os dados')],
+          defaultId: 0, cancelId: 0,
+        });
+        if (confirmation.response === 1) return 'backup';
+        if (confirmation.response !== 2) return 'cancelled';
+        if (closeRequested || mainWindow.isDestroyed()) return 'cancelled';
+        // Freeze both automatic rotation and IPC before inspecting the profile.
+        // Refuse an active export rather than interrupt it or race its worker.
+        if (activeIpc || isBackupJobActive() || !automaticBackup.pauseForReset()) {
+          await dialog.showMessageBox(mainWindow, {
+            type: 'warning',
+            message: ui('Aguarde as operações em andamento antes de apagar os dados.'),
+          });
+          return 'blocked';
+        }
+        resetting = true;
+        try {
+          // Browser files may still be locked by Chromium. Check their names
+          // now and recheck headers before clearing sessions on next startup.
+          await inspectReset(profile, browserRoot, { browserHeaders: false });
+        } catch (error) {
+          resetting = false;
+          automaticBackup.resumeAfterReset();
+          dialog.showErrorBox(ui('Não foi possível apagar os dados'), ui('Verifique as permissões e mova os backups ZIP que estejam dentro das pastas internas do aplicativo.') + '\n\n' + error.message);
+          return 'blocked';
+        }
+        try {
+          markReset(profile);
+        } catch (error) {
+          // A published marker must not be followed by normal writes.
+          if (!pendingReset(profile)) {
+            resetting = false;
+            automaticBackup.resumeAfterReset();
+            dialog.showErrorBox(ui('Não foi possível apagar os dados'), error.message);
+            return 'blocked';
+          }
+        }
+        // Only the next process performs deletion, before readState or
+        // any renderer/backup worker is initialized. Never use normal close,
+        // which intentionally saves the previous React snapshot.
+        clearInterval(backupTimer);
+        requests.cancelAll();
+        setImmediate(() => {
+          try {
+            const image = process.platform === 'linux' && process.env.APPIMAGE;
+            if (app.isPackaged && image && path.isAbsolute(image) && fs.existsSync(image))
+              app.relaunch({ execPath: image });
+            else app.relaunch();
+          } catch (error) {
+            dialog.showErrorBox(ui('Redefinição pendente'), ui('Abra o aplicativo novamente para concluir a redefinição.'));
+          } finally {
+            app.exit(0);
+          }
+        });
+        return 'scheduled';
+      } finally {
+        resetPromptOpen = false;
+      }
     });
     register('cancel-request', (id) => requests.cancel(id));
     register('cancel-requests', () => requests.cancelAll());

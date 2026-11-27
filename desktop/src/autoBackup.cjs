@@ -90,10 +90,11 @@ function availableName(folder, timestamp) {
 function createAutoBackupManager({ dataDirectory, getState, contentDirectory, exportBackup, now = () => Date.now(), report = () => {} }) {
   const statusPath = path.join(dataDirectory, 'automatic-backup-status.json');
   let busy = false;
+  let paused = false;
   let launchAttempted = false;
 
   async function check({ launch = false } = {}) {
-    if (busy) return false;
+    if (busy || paused) return false;
     const state = getState();
     if (!state || state.settings?.desktopOnboardingCompleted !== true) return false;
     const options = state.settings || {};
@@ -177,6 +178,15 @@ function createAutoBackupManager({ dataDirectory, getState, contentDirectory, ex
       busy = false;
     }
   }
-  return { check };
+  // Refuse instead of interrupting an export or its retention transaction.
+  return {
+    check,
+    pauseForReset() {
+      if (busy || paused) return false;
+      paused = true;
+      return true;
+    },
+    resumeAfterReset() { paused = false; },
+  };
 }
 module.exports = { createAutoBackupManager, HOURS };
