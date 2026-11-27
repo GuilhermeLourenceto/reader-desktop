@@ -3,6 +3,7 @@
 // Only present actionable, non-sensitive messages to users. The original
 // exception belongs in the private, redacted diagnostic report.
 const ACTIONABLE = new Set([
+  'Exportação anterior ainda está em andamento',
   'Fonte não instalada',
   'Fonte não instalada. Instale-a em Fontes.',
   'Capítulo vazio',

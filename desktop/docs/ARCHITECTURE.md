@@ -43,7 +43,7 @@ Os arquivos de entrada `main.cjs`, `preload.cjs`, `renderer.jsx` e `plugin-worke
 2. `main.cjs` valida as chamadas IPC e controla janelas, rede e disco.
 3. As extensões executam em Web Workers; `sourceClient.js` aplica limites e encaminha operações permitidas.
 4. `storage.cjs` mantém metadados em JSON e conteúdo imutável em arquivos SHA-256.
-5. A importação e exportação ZIP são processadas por workers, com streaming/ZIP64 e verificações de integridade. O módulo `backup.cjs` mantém um limite de 512 MiB em rotinas legadas em memória; ele **não é** um teto geral do caminho principal `zipStreaming.cjs`.
+5. A importação e exportação ZIP são processadas por workers, com streaming/ZIP64 e verificações de integridade. Cada exportação possui uma área temporária exclusiva no volume de destino; o coordenador impede duas exportações simultâneas para o mesmo arquivo até a saída do worker. O módulo `backup.cjs` mantém um limite de 512 MiB em rotinas legadas em memória; ele **não é** um teto geral do caminho principal `zipStreaming.cjs`.
 6. `renderer.jsx` coordena as telas, mas delega operações complexas às funcionalidades:
    - `features/downloads/downloadActions.js`: downloads, remoção e progresso da fila.
    - `features/library/libraryActions.js`: operações em lote da biblioteca.
