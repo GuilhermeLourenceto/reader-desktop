@@ -1307,10 +1307,6 @@ function App() {
               update({ ...current.current, settings: nextSettings });
               setNotice('Configurações padrão restauradas.');
             }}
-            onSources={() => {
-              setSourceQuery('');
-              setView('sources');
-            }}
             onChooseBackupFolder={() => window.desktop.chooseBackupDirectory()}
             onBackup={() =>
               run(async () => {

@@ -119,7 +119,18 @@ app.on('browser-window-created', (_event, win) => {
       await click('Mais');
       await wait("document.querySelector('[data-settings-page=more]')!==null");
       await capture('preview-more');
+      const menuLabels = () =>
+        execute("Array.from(document.querySelectorAll('.settings-screen .setting-link'), b => b.getAttribute('aria-label'))");
+      assert.deepEqual(await menuLabels(), ['Configurações', 'Backups', 'Diagnósticos', 'Sobre']);
+      for (const [label, page] of [['Backups', 'backup'], ['Diagnósticos', 'diagnostics'], ['Sobre', 'about']]) {
+        await click(label);
+        await wait(`document.querySelector('[data-settings-page=${page}]') !== null`);
+        await click('Voltar nas configurações');
+        await wait("document.querySelector('[data-settings-page=more]') !== null");
+      }
       await click('Configurações');
+      await wait("document.querySelector('[data-settings-page=settings]') !== null");
+      assert.deepEqual(await menuLabels(), ['Geral', 'Aparência', 'Biblioteca', 'Leitor', 'Restaurar configurações padrão']);
       await capture('preview-settings');
       await click('Aparência');
       await select('Tema do aplicativo', 'light');
@@ -192,10 +203,17 @@ app.on('browser-window-created', (_event, win) => {
       win.setSize(1280, 850);
       await click('Voltar nas configurações');
       await click('Geral');
+      await wait("document.querySelector('[data-settings-page=general]') !== null");
+      assert.equal(await execute("!!document.querySelector('select[aria-label=\"Idioma da interface\"]')"), true);
+      assert.equal(await execute("!!document.querySelector('.settings-screen button[aria-label=\"Modo anônimo\"], .settings-screen button[aria-label=\"Somente baixados\"]')"), false);
+      await click('Voltar nas configurações');
+      await wait("document.querySelector('[data-settings-page=settings]') !== null");
+      await click('Voltar nas configurações');
+      await wait("document.querySelector('[data-settings-page=more]') !== null");
       await click('Modo anônimo');
       await click('Somente baixados');
       await wait(
-        'window.desktop.load().then(state=>state.settings.desktopIncognito===true && state.settings.desktopFontSize===28)',
+        'window.desktop.load().then(state=>state.settings.desktopIncognito===true && state.settings.desktopDownloadedOnly===true && state.settings.desktopFontSize===28)',
       );
       await new Promise(resolve => {
         win.webContents.once('did-finish-load', resolve);

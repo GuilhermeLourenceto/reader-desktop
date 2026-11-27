@@ -20,7 +20,6 @@ export default function Settings({
   onBackup,
   onRestore,
   onChooseBackupFolder,
-  onSources,
   onReset,
   busy,
   version,
@@ -31,15 +30,22 @@ export default function Settings({
     if (openDiagnosticsRequest) setPage('diagnostics');
   }, [openDiagnosticsRequest]);
   const change = (key, value) => onChange({ [key]: value });
-  const entries = [
-    ['general', 'Geral', 'Privacidade e opções de navegação'],
+  const settingsEntries = [
+    ['general', 'Geral', 'Idioma da interface'],
     ['appearance', 'Aparência', 'Tema e cores do aplicativo'],
     ['library', 'Biblioteca', 'Tamanho das capas e contadores'],
     ['reader', 'Leitor', 'Fonte, espaçamento e cores da leitura'],
-    ['backup', 'Backups', 'Exportar e restaurar sua biblioteca'],
-    ['diagnostics', 'Diagnósticos', 'Erros, atividades e relatórios para issues'],
-    ['about', 'Sobre', 'Reader Desktop e informações da versão'],
   ];
+  const moreEntries = [
+    ['backup', 'Backups', 'Crie ou restaure um backup local'],
+    ['diagnostics', 'Diagnósticos', 'Consultar ou salvar relatório de erros'],
+    ['about', 'Sobre', 'Informações da versão'],
+  ];
+  const entries = [...settingsEntries, ...moreEntries];
+  // Every subpage has exactly one parent in the menu hierarchy.
+  const parentPage = settingsEntries.some(([key]) => key === page)
+    ? 'settings'
+    : 'more';
   const row = (key, title, description, action) => (
     <button
       key={key}
@@ -89,7 +95,7 @@ export default function Settings({
           <button
             className="icon-button"
             aria-label="Voltar nas configurações"
-            onClick={() => setPage(page === 'settings' ? 'more' : 'settings')}
+            onClick={() => setPage(parentPage)}
           >
             <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
               <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2Z" />
@@ -106,31 +112,28 @@ export default function Settings({
             <span>Desktop · {version || '…'}</span>
           </div>
           <div className="settings-group">{quick}</div>
+          <p className="settings-note">
+            O histórico anterior é mantido. F11 alterna a tela cheia.
+          </p>
           <div className="settings-group">
             {row(
               'settings',
               'Configurações',
               'Personalize o aplicativo e sua leitura',
             )}
-            {row('backup', 'Backups', 'Crie ou restaure um backup local')}
-            {row('diagnostics', 'Diagnósticos', 'Consultar ou salvar relatório de erros')}
-            {row('about', 'Sobre', 'Informações da versão')}
+            {moreEntries.map(([key, title, description]) =>
+              row(key, title, description),
+            )}
           </div>
         </>
       )}{' '}
       {page === 'settings' && (
         <>
           <div className="settings-group">
-          {entries.map(([key, title, description]) =>
-            row(key, title, description),
-          )}
-          {row(
-            'sources',
-            'Repositórios',
-            'Gerenciar os repositórios de fontes',
-            onSources,
-          )}
-        </div>
+            {settingsEntries.map(([key, title, description]) =>
+              row(key, title, description),
+            )}
+          </div>
         <div className="settings-group">
           <button
             type="button"
@@ -169,11 +172,6 @@ export default function Settings({
               onChange={(value) => change('desktopInterfaceLanguage', value)}
             />
           </div>
-          <h3 className="settings-section-title">Privacidade e navegação</h3>
-          <div className="settings-group">{quick}</div>
-          <p className="settings-note">
-            O histórico anterior é mantido. F11 alterna a tela cheia.
-          </p>
         </>
       )}
       {page === 'appearance' && (

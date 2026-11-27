@@ -30,7 +30,10 @@ em `vendor/lnreader/src/theme/md3/defaultTheme.ts`, e as fontes
 Noto Sans, PT Sans e PT Serif armazenadas dentro de `vendor/lnreader/assets/`.
 Esse conjunto é independente da pasta Android na compilação. A navegação, filtros de categorias, contadores nas
 capas, ícones das fontes e leitor em tela inteira seguem o visual do Android.
-Os backups ficam em **Mais → Backups**.
+Os backups ficam em **Mais → Backups**. Os ajustes rápidos de modo anônimo e
+somente baixados ficam em **Mais**; as preferências de idioma, aparência,
+biblioteca e leitura ficam em **Mais → Configurações**. Os repositórios são
+administrados em **Fontes → Gerenciar fontes**.
 Abrir detalhes não adiciona mais uma obra automaticamente à biblioteca.
 O progresso usa a escala nativa 0–100 e capítulos são marcados como lidos a
 partir de 97%, com histórico registrado separadamente.
@@ -66,7 +69,7 @@ uma atualização sem data mantém a informação já salva.
 
 ## Diagnósticos e relatórios de erro
 
-Em **Mais → Configurações → Diagnósticos**, consulte erros de backups,
+Em **Mais → Diagnósticos**, consulte erros de backups,
 fontes, leitura e interface. É possível filtrar por severidade, copiar
 o código de um evento e **Salvar relatório (.txt)** para anexar a uma issue.
 O botão **Relatar bug no GitHub** abre a página de issues, mas não envia

@@ -70,7 +70,7 @@ app.on('browser-window-created', (_event, win) => {
       for (const secret of ['/home/hidden', 'unsafe123', 'https://secret.example'])
         assert.equal(file.includes(secret), false, 'report must redact ' + secret);
       await click('Voltar nas configurações');
-      await wait("document.querySelector('[data-settings-page=settings]')");
+      await wait("document.querySelector('[data-settings-page=more]')");
       await click('Diagnósticos');
       await wait("document.querySelector('.diagnostics-panel') && !document.querySelector('.diagnostics-panel [role=status]')");
       await wait("document.querySelectorAll('.diagnostics-entry-summary').length>0");
