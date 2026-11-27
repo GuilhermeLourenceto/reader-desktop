@@ -22,6 +22,8 @@ const BROWSER_DIRS = new Set([
 ]);
 const ROOT_DATA = /^(?:library|before-restore)\.json(?:\.bak|\.tmp|\.corrupt-\d+)?$|^automatic-backup-status\.json(?:\.tmp)?$/;
 const BLOB = /^[a-f0-9]{64}(?:\.[a-f0-9-]{36}\.tmp|\.tmp)?$/;
+const IMPORT_WORKSPACE = /^\.reader-import-[a-z0-9]{6}$/i;
+const IMPORT_BLOB = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const LOG = /^reader(?:\.[12])?\.jsonl$/;
 const PARTITION = /^lnreader-source-[a-z0-9_.-]+$/i;
 const SINGLETON = /^Singleton(?:Lock|Socket|Cookie)$/;
@@ -182,12 +184,24 @@ async function inspectReset(profile, browserRoot, { browserHeaders = true } = {}
         files.push(filename);
       }
     }
+    async function inspectAbandonedImports(directory) {
+      if (!await safeDirectory(directory, device)) return;
+      for (const name of await fsp.readdir(directory)) {
+        if (!IMPORT_WORKSPACE.test(name)) continue;
+        const workspace = path.join(directory, name);
+        // An interrupted import can leave UUID-named extracted content here.
+        // Only those known names are eligible; ZIPs, unknown files and their
+        // parent directories remain untouched. A disguised ZIP fails closed.
+        await managedFiles(workspace, IMPORT_BLOB);
+      }
+    }
     for (const name of await fsp.readdir(root)) {
       const filename = path.join(root, name);
       const info = await getInfo(filename);
       if (!info) continue;
       if (isProfile && (name === 'content' || name === 'diagnostics')) {
         await managedFiles(filename, name === 'content' ? BLOB : LOG);
+        if (name === 'content') await inspectAbandonedImports(filename);
       } else if (isProfile && ROOT_DATA.test(name)) {
         await assertFile(filename, info, device);
         files.push(filename);

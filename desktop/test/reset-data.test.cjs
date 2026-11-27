@@ -162,3 +162,27 @@ test('reset reuses the live source partition key instead of opening a duplicate 
   assert.deepEqual(calls, [['partition', sourcePartitionName('MiXeD')], ['path', legacyPath]]);
   assert.throws(() => resetSessionForPath(session, browserRoot, path.join(browserRoot, 'Partitions', 'lnreader-source-wrong')), /RESET_UNSAFE/);
 });
+
+test('abandoned import extracts are removed but ZIPs and unknown files are preserved', async t => {
+  const { profile, put, reset } = fixture(t);
+  const base = 'content/.reader-import-Ab12Cd/';
+  const stale = put(base + '12345678-1234-1234-1234-123456789abc');
+  const source = put(base + 'source.zip', Buffer.from('504b0506' + '00'.repeat(18), 'hex'));
+  const unknown = put(base + 'notes.txt');
+  const hashes = [source, unknown].map(digest);
+  markReset(profile);
+  await reset();
+  assert.equal(fs.existsSync(stale), false);
+  assert.deepEqual([source, unknown].map(digest), hashes);
+});
+
+test('an abandoned import workspace link is blocked before any deletion', async t => {
+  const { root, profile, put } = fixture(t);
+  const outside = path.join(root, 'outside'); fs.mkdirSync(outside);
+  const filename = path.join(outside, '12345678-1234-1234-1234-123456789abc');
+  fs.writeFileSync(filename, 'keep');
+  fs.mkdirSync(path.join(profile, 'content'));
+  fs.symlinkSync(outside, path.join(profile, 'content', '.reader-import-Ab12Cd'), process.platform === 'win32' ? 'junction' : 'dir');
+  await assert.rejects(inspectReset(profile, profile), /RESET_UNSAFE/);
+  assert.equal(fs.readFileSync(filename, 'utf8'), 'keep');
+});

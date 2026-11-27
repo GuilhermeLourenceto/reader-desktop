@@ -146,7 +146,7 @@ app
     const profile = app.getPath('userData');
     const browserRoot = app.getPath('sessionData');
     stateFile = path.join(profile, 'library.json');
-    if (pendingReset(profile)) {
+    while (pendingReset(profile)) {
       setLocale(resetLocale(profile));
       try {
         await completeReset({
@@ -175,9 +175,19 @@ app
           })),
         });
       } catch (error) {
-        dialog.showErrorBox(ui('Redefinição pendente'), ui('Não foi possível concluir a limpeza. Mova backups das pastas internas ou verifique as permissões e abra o aplicativo novamente.') + '\n\n' + error.message);
-        app.exit(1);
-        return;
+        const recovery = await dialog.showMessageBox({
+          type: 'warning', noLink: true,
+          message: ui('Redefinição pendente'),
+          detail: ui('Não foi possível concluir a limpeza. Mova backups das pastas internas ou verifique as permissões e abra o aplicativo novamente.') + '\n\n' + error.message,
+          buttons: [ui('Fechar'), ui('Tentar novamente')],
+          defaultId: 0, cancelId: 0,
+        });
+        if (recovery.response !== 1) {
+          app.exit(1);
+          return;
+        }
+        // Do not open a potentially half-erased library. Retry the same
+        // pending transaction only after the user fixes the underlying issue.
       }
     }
     const existingProfile = [stateFile, stateFile + '.bak', stateFile + '.tmp'].some(filename => fs.existsSync(filename));
