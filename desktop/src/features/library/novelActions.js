@@ -59,12 +59,16 @@ export function createNovelActions({ current, update, pendingProgress, progressT
       ),
     });
   const changeChapterRows = (bookId, ids, patch) => {
+    // Bookmarks and download flags must not discard queued reader progress.
+    // Only an explicit reading-state change supersedes that pending update.
     if (
       pendingProgress.current?.bookId === bookId &&
-      ids.includes(pendingProgress.current.itemId)
+      ids.includes(pendingProgress.current.itemId) &&
+      (Object.hasOwn(patch, 'progress') || Object.hasOwn(patch, 'unread'))
     ) {
       pendingProgress.current = null;
       clearTimeout(progressTimer.current);
+      progressTimer.current = null;
     }
     const book = current.current.novels.find((item) => item.id === bookId);
     const chosen = new Set(ids);

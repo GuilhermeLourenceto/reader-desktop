@@ -217,3 +217,35 @@ test('reader marks a chapter with a missing cached image as needing asset downlo
   assert.equal(patches[0].chapters[0].isDownloaded, true);
   assert.equal(patches[0].chapters[0].desktopAssetsCached, false);
 });
+
+test('bookmark and download changes preserve pending reader progress, explicit unread resets release timer', () => {
+  const book = { id: 1, chapters: [{ id: 2, progress: 25, unread: true, bookmark: false }] };
+  const current = ref({ novels: [book] });
+  const pending = { bookId: 1, itemId: 2, percentage: 60 };
+  const pendingProgress = ref(pending);
+  const progressTimer = ref(setTimeout(() => {}, 10000));
+  const originalTimer = progressTimer.current;
+  try {
+    const { changeChapterRows } = loadFeature('library/novelActions.js', {
+      '../../domain/novels.cjs': {},
+    }).createNovelActions({
+      current, pendingProgress, progressTimer, update: value => { current.current = value; },
+    });
+    changeChapterRows(1, [2], { bookmark: true });
+    changeChapterRows(1, [2], { isDownloaded: true, desktopAssetsCached: true });
+    assert.equal(pendingProgress.current, pending);
+    assert.equal(progressTimer.current, originalTimer);
+    assert.equal(current.current.novels[0].chapters[0].bookmark, true);
+    assert.equal(current.current.novels[0].chapters[0].isDownloaded, true);
+    changeChapterRows(1, [99], { unread: true, progress: 0 });
+    assert.equal(pendingProgress.current, pending);
+    changeChapterRows(1, [2], { unread: true, progress: 0, desktopProgressUnit: 'percent' });
+    assert.equal(pendingProgress.current, null);
+    assert.equal(progressTimer.current, null);
+    assert.equal(current.current.novels[0].chapters[0].progress, 0);
+    assert.equal(current.current.novels[0].chapters[0].bookmark, true);
+    assert.equal(current.current.novels[0].chapters[0].isDownloaded, true);
+  } finally {
+    clearTimeout(originalTimer);
+  }
+});
