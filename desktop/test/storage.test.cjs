@@ -241,3 +241,17 @@ test('cancelled import removes only its new blobs and retains existing library f
   assert.equal(store.read(unrelated).toString(), 'unrelated preserved file');
   await assert.doesNotReject(store.cleanupImported([incoming.slice(6)], {}));
 });
+
+test('pruning retains every recovery snapshot even when the same path refers to different content', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'reader-recovery-hashes-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const store = new DiskFiles(root);
+  const key = 'Novels/site/1/1/index.html';
+  const revisions = ['current', 'previous', 'pending', 'before restore', 'older restore']
+    .map(text => store.write(Buffer.from(text)));
+  const unused = store.write(Buffer.from('unreferenced'));
+  store.prune(...revisions.map(reference => ({ [key]: reference })));
+  assert.deepEqual(revisions.map(reference => store.read(reference).toString()),
+    ['current', 'previous', 'pending', 'before restore', 'older restore']);
+  assert.throws(() => store.read(unused), /ENOENT/);
+});

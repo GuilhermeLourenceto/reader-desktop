@@ -7,7 +7,8 @@ const { preserveDesktopPreferences } = require('./state/preserveDesktopPreferenc
 // A replacement's destination may itself be another original path. Apply
 // the mapping to original matches only; never scan generated output again.
 function rewriteOfflineReferences(html, replacements) {
-  const targets = new Map(replacements.map(({ from, to }) => [from, to]));
+  const targets = replacements instanceof Map
+    ? replacements : new Map(replacements.map(({ from, to }) => [from, to]));
   return html.replace(/\/Novels\/[^/]+\/\d+\/\d+\//g, original =>
     targets.get(original) ?? original);
 }
@@ -170,13 +171,18 @@ function planRestore(current, restored, importFiles = files => files,
     if (Object.hasOwn(next.files, target)) continue;
     let content = value;
     if (name.endsWith('/index.html')) {
-      const replacements = [...mapping.chapterIds]
-        .filter(([oldId, newId]) => mapping.oldNovelId !== mapping.novelId || oldId !== newId)
-        .map(([oldId, newId]) => ({
-          from: '/Novels/' + pluginId + '/' + mapping.oldNovelId + '/' + oldId + '/',
-          to: '/Novels/' + pluginId + '/' + mapping.novelId + '/' + newId + '/',
-        }));
-      if (replacements.length) content = rewriteHtml(name, value, replacements);
+      // Build a novel's mapping once, not once per downloaded chapter.
+      // The same mapping is passed to every HTML belonging to that novel.
+      if (!mapping.replacements) {
+        mapping.replacements = new Map();
+        for (const [oldId, newId] of mapping.chapterIds)
+          if (mapping.oldNovelId !== mapping.novelId || oldId !== newId)
+            mapping.replacements.set(
+              '/Novels/' + pluginId + '/' + mapping.oldNovelId + '/' + oldId + '/',
+              '/Novels/' + pluginId + '/' + mapping.novelId + '/' + newId + '/',
+            );
+      }
+      if (mapping.replacements.size) content = rewriteHtml(name, value, mapping.replacements);
     }
     next.files[target] = content;
   }

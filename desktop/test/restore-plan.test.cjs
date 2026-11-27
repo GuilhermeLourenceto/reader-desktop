@@ -408,3 +408,26 @@ test('one-pass rewrite handles chains, repeated references and unrelated novels'
     { from: '/Novels/site/1/2/', to: '/Novels/site/1/3/' },
   ]), '/Novels/site/1/2/a /Novels/site/1/3/b /Novels/site/1/2/c /Novels/other/1/1/d');
 });
+
+test('restore reuses the same remapping table for every HTML of a novel', () => {
+  const current = oldState();
+  current.novels[0].chapters = [{ id: 2, path: '/first', name: 'First' }, { id: 1, path: '/second', name: 'Second' }];
+  current.files = {};
+  const incoming = structuredClone(current);
+  incoming.novels[0].chapters[0].id = 1;
+  incoming.novels[0].chapters[1].id = 2;
+  incoming.files = {
+    'Novels/site/4/1/index.html': '<img src="file:///Novels/site/4/1/0.png">',
+    'Novels/site/4/2/index.html': '<img src="file:///Novels/site/4/2/0.png">',
+  };
+  const mappings = [];
+  const { next } = planRestore(current, restore(incoming), x => x,
+    (_name, html, replacements) => {
+      mappings.push(replacements);
+      return rewriteOfflineReferences(html, replacements);
+    });
+  assert.equal(mappings.length, 2);
+  assert.equal(mappings[0], mappings[1]);
+  assert.equal(next.files['Novels/site/4/2/index.html'], '<img src="file:///Novels/site/4/2/0.png">');
+  assert.equal(next.files['Novels/site/4/1/index.html'], '<img src="file:///Novels/site/4/1/0.png">');
+});

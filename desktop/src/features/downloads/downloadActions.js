@@ -70,11 +70,18 @@ export function createDownloadActions({
           phase: 'content',
         });
         try {
-          let content = await window.desktop.file(
-            'tryRead',
-            fileKey(book, chapter),
-          );
-          if (!content) {
+          let content;
+          try {
+            content = await window.desktop.file('tryRead', fileKey(book, chapter));
+          } catch (error) {
+            // A missing or corrupted local blob is not a reason to abandon
+            // a download when the source can supply a replacement.
+            void window.desktop.diagnostics.report({
+              level: 'warning', code: 'RDR-CACHE-READ-FAILED', operation: 'reader',
+              message: errorText(error),
+            }).catch(() => {});
+          }
+          if (typeof content !== 'string' || !content.trim()) {
             if (!plugin) throw new Error('Fonte não instalada');
             content = await withSourceDeadline(() =>
               fetchChapter(book.pluginId, chapter.path),

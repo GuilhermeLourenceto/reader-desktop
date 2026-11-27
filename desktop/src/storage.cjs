@@ -111,12 +111,13 @@ class DiskFiles {
     };
     await Promise.all(Array.from({ length: Math.min(8, pending.length) }, remove));
   }
-  prune(files, previousFiles = {}) {
-    const retained = new Set(
-      [...Object.values(files), ...Object.values(previousFiles)]
-        .filter(isReference)
-        .map(value => value.slice(6)),
-    );
+  prune(files, ...recoveryFiles) {
+    // Recovery snapshots can refer to different versions of the same
+    // logical chapter. Union the hashes, never merge their path keys.
+    const retained = new Set();
+    for (const snapshot of [files, ...recoveryFiles])
+      for (const reference of Object.values(snapshot))
+        if (isReference(reference)) retained.add(reference.slice(6));
     for (const name of fs.readdirSync(this.directory)) {
       if (/^[a-f0-9]{64}(?:\.tmp)?$/.test(name) && !retained.has(name))
         fs.unlinkSync(path.join(this.directory, name));

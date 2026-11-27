@@ -143,3 +143,34 @@ test('literal translations in orchestration and exact safe errors exist in every
   for (const [, key] of errors.matchAll(/^\s*'([^']+)',?$/gm))
     for (const [locale] of languages) assert.ok(messages[key]?.[locale], key + ' @ ' + locale);
 });
+
+test('download repairs an unreadable local chapter from its source', async () => {
+  const calls = [], patches = [], reports = [];
+  const html = '<p>Repaired chapter</p>';
+  class Parser {
+    parseFromString() {
+      return { body: { textContent: 'Repaired chapter', innerHTML: html },
+        querySelectorAll: () => [], querySelector: () => null };
+    }
+  }
+  const { startDownloads } = loadFeature('downloads/downloadActions.js', {
+    '../../sourceClient': { loadPlugin: async () => ({}), fetchChapter: async () => {
+      calls.push('fetch'); return html;
+    } },
+  }, { DOMParser: Parser, window: { desktop: {
+    file: async (action, key, value) => {
+      calls.push([action, key, value]);
+      if (action === 'tryRead') throw Error('Arquivo baixado corrompido');
+    },
+    diagnostics: { report: async event => reports.push(event) },
+  } } }).createDownloadActions({
+    downloading: ref(false), cancelDownload: ref(false), setNotice: () => {},
+    setDownloadProgress: () => {}, changeChapterRows: (...args) => patches.push(args),
+  });
+  await startDownloads({ id: 1, pluginId: 'fixture',
+    chapters: [{ id: 2, path: '/chapter', name: 'Chapter', isDownloaded: true, desktopAssetsCached: false }] }, [2]);
+  assert.deepEqual(calls.map(value => Array.isArray(value) ? value[0] : value), ['tryRead', 'fetch', 'write']);
+  assert.equal(calls[2][2], html);
+  assert.deepEqual(patches, [[1, [2], { isDownloaded: true, desktopAssetsCached: true }]]);
+  assert.equal(reports[0].code, 'RDR-CACHE-READ-FAILED');
+});

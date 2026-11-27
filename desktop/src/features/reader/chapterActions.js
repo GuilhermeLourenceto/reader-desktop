@@ -23,6 +23,7 @@ export function createChapterActions({
     try {
       let content;
       let fetched = false;
+      let missingOfflineImage = false;
       if (!force) {
         try {
           content = await window.desktop.file('tryRead', fileKey(book, item));
@@ -74,6 +75,7 @@ export function createChapterActions({
         if (stored)
           image.setAttribute('src', `data:image/png;base64,${stored}`);
         else if (src.startsWith('file:')) {
+          missingOfflineImage = true;
           const original = image.getAttribute('data-original-src');
           if (original && /^https?:\/\//i.test(original))
             image.setAttribute('src', original);
@@ -152,8 +154,8 @@ export function createChapterActions({
                   : {}),
                 isDownloaded: cached,
                 ...(fetched && cached
-                  ? { desktopAssetsCached: !document.querySelector('img[src]') }
-                  : {}),
+                  ? { desktopAssetsCached: !document.querySelector('img[src]') && !missingOfflineImage }
+                  : missingOfflineImage ? { desktopAssetsCached: false } : {}),
               }
             : c,
         ),

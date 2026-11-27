@@ -227,20 +227,19 @@ app
         detail: ui('O arquivo anterior foi preservado na pasta de dados.'),
       });
     try {
-      const previous = JSON.parse(fs.readFileSync(stateFile + '.bak', 'utf8'));
-      let retained = { ...previous.files };
+      const recoveryFiles = [];
+      // Every recovery candidate is an independent snapshot. If any index
+      // cannot be validated, skip pruning instead of guessing its contents.
       for (const filename of [
-        'before-restore.json',
-        'before-restore.json.bak',
+        stateFile + '.bak',
+        stateFile + '.tmp',
+        ...['before-restore.json', 'before-restore.json.bak', 'before-restore.json.tmp']
+          .map(name => path.join(profile, name)),
       ]) {
-        const target = path.join(app.getPath('userData'), filename);
-        if (fs.existsSync(target))
-          Object.assign(
-            retained,
-            JSON.parse(fs.readFileSync(target, 'utf8')).files,
-          );
+        if (fs.existsSync(filename))
+          recoveryFiles.push(validateState(JSON.parse(fs.readFileSync(filename, 'utf8'))).files);
       }
-      diskFiles.prune(state.files, retained);
+      diskFiles.prune(state.files, ...recoveryFiles);
     } catch {
       /* Keep unused blobs when the recovery index cannot be checked. */
     }
